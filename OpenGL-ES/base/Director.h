@@ -27,5 +27,6 @@ public:
 //io Context
 			void         *getIOContext(){return    _ioContext;};
 		    friend      void     __set_globle(ESContext   *_context);
+//wawa
 };
 #endif
