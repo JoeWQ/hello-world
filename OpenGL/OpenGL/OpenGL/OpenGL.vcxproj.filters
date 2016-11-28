@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="源文件\engine">
+      <UniqueIdentifier>{80018b08-dc29-418c-b52f-5565dfe4d5ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\engine">
+      <UniqueIdentifier>{8734eca3-772a-4508-95f7-c1ab6716b4fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\other">
+      <UniqueIdentifier>{5f188a6d-dd29-4cec-a319-cd83547d0da8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\other">
+      <UniqueIdentifier>{9e9e5391-de61-411d-9a2c-c31b3894230e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\engine\GLContext.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLObject.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLProgram.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\TGAImage.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\Tools.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\Geometry.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\Shape.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLMainEntry.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLTexture.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLShadowMap.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\Sprite.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GLCacheManager.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\other\vbm.cpp">
+      <Filter>源文件\other</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\NoiseTexture.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\LightShadowRender.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\OpenGL.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RenderSphere.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\engine\GLContext.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLObject.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLProgram.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\TGAImage.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\Tools.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLState.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\Geometry.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\Shape.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLTexture.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLShadowMap.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\Sprite.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\GLCacheManager.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\other\vbm.h">
+      <Filter>头文件\other</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\NoiseTexture.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\RenderObject.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\engine\LightShadowRender.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RenderSphere.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,51 @@
+ struct      Span
+{
+            int          span;
+            int          jiujiu;
+ };
+  struct     Alex
+ {
+            int         alex;
+            float      salx;
+            char      jibamao;
+            int        yu;
+            int[10][10]       w;
+            struct       Alex*     prev;
+            struct       Span[4]     span;
+  };
+  void*        maomao( )
+{
+          return    (void*)0;
+}
+  struct      Alex*          get_alex(struct     Alex*   p,struct  Alex     alex,int[][10]    w)
+ {
+             int        a;
+             int        b;
+             int*      y;
+
+             y=&alex.span[1].jiujiu;
+             
+             y=&p->span[a+1].jiujiu;
+             a=alex.w[b][a+b]*p->yu;
+ 
+             y=&p->w[a+b][a+2];
+             
+             *y=a+b;
+             return   p;
+  }
+ int       return_int()
+{
+         int[10][10]        w;
+         int                             y,x,a;
+
+         struct             Alex            alex,alex2;
+         struct             Alex*            p;
+
+         p=get_alex(p,alex,p->w);
+         a=*(*(w+2)+1);
+        (*p).salx=0;
+        y=(p+1)->w[2][3]*x;
+        
+         return            p->span[y+x].jiujiu*y;
+ }
+
