@@ -1,0 +1,64 @@
+{}
+HH:=HHV(C,15);
+LL:=LLV(C,15);
+HH1:=BARSLAST(HH > REF(HH,1));
+LL1:=BARSLAST(LL < REF(LL,1));
+STICKLINE((HH1 < LL1)&&(C>=O),CLOSE,OPEN,COLORRED,1);
+STICKLINE((HH1 < LL1)&&(C<O),CLOSE,OPEN,COLORRED,0);
+DRAWLINE((HH1 < LL1)&&(C<O),HIGH,(HH1 < LL1)&&(C<O),O,COLORRED);
+DRAWLINE((HH1 < LL1)&&(C<O),L,(HH1 < LL1)&&(C<O),C,COLORRED);
+DRAWLINE((HH1 < LL1)&&(C>=O),HIGH,(HH1 < LL1)&&(C>=O),C,COLORRED);
+DRAWLINE((HH1 < LL1)&&(C>=O),L,(HH1< LL1)&&(C>=O),O,COLORRED);
+STICKLINE((HH1 > LL1)&&(C<O),CLOSE,OPEN,COLORGREEN,0);
+STICKLINE((HH1 > LL1)&&(C>=O),CLOSE,OPEN,COLORGREEN,1);
+DRAWLINE((HH1 > LL1)&&(C<O),HIGH,(HH1 > LL1)&&(C<O),O,COLORGREEN);
+DRAWLINE((HH1 > LL1)&&(C<O),L,(HH1 > LL1)&&(C<O),C,COLORGREEN);
+DRAWLINE((HH1 > LL1)&&(C>=O),HIGH,(HH1 > LL1)&&(C>=O),C,COLORGREEN);
+DRAWLINE((HH1 > LL1)&&(C>=O),L,(HH1 > LL1)&&(C>=O),O,COLORGREEN);
+DRAWTEXT(CROSS(HH1,LL1),HH,'¿ª¿Õ');
+DRAWNUMBER(CROSS(HH1,LL1),REF(LL,1),REF(LL,1),IFELSE(C>2000,0,IFELSE(C>500,1,IFELSE(C>5,2,4))),COLORLIGHTGREY);
+DRAWTEXT(CROSS(LL1,HH1),LL,'¿ª¶à');
+DRAWNUMBER(CROSS(LL1,HH1),REF(HH,1),REF(HH,1),IFELSE(C>2000,0,IFELSE(C>500,1,IFELSE(C>5,2,4))),COLORLIGHTGREY);
+T:=IFELSE(HH1>LL1,1,-1);
+G:=IFELSE(HH1>LL1,HH,LL);
+DRAWLINE(T=1&&REF(T,1)=1,G,T=1&&REF(T,1)=1,REF(G,1),COLORCYAN);
+DRAWLINE(T=-1&&REF(T,1)=-1,G,T=-1&&REF(T,1)=-1,REF(G,1),COLORRED);
+DRAWSL(T=1,G,0,1,0,COLORCYAN);
+DRAWSL(T=-1,G,0,1,0,COLORRED);
+G1:=VALUEWHEN(ISLASTBAR,G);
+DRAWNUMBER(LOW>0,G1,G1,IFELSE(C>2000,0,IFELSE(C>500,1,IFELSE(C>5,2,4))),COLORYELLOW);
+
+[{RTF}]
+{\rtf1\ansi\deff0{\fonttbl{\f0\fnil\fprq2\fcharset134 FixedSys;}}
+{\colortbl ;\red0\green0\blue0;\red0\green0\blue255;}
+\viewkind4\uc1\pard\cf1\lang2052\f0\fs24 HH:=\cf2 HHV\cf1 (\cf2 C\cf1 ,15);
+\par LL:=\cf2 LLV\cf1 (\cf2 C\cf1 ,15);
+\par HH1:=\cf2 BARSLAST\cf1 (HH > \cf2 REF\cf1 (HH,1));
+\par LL1:=\cf2 BARSLAST\cf1 (LL < \cf2 REF\cf1 (LL,1));
+\par \cf2 STICKLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 CLOSE\cf1 ,\cf2 OPEN\cf1 ,\cf2 COLORRED\cf1 ,1);
+\par \cf2 STICKLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 CLOSE\cf1 ,\cf2 OPEN\cf1 ,\cf2 COLORRED\cf1 ,0);
+\par \cf2 DRAWLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 HIGH\cf1 ,(HH1 < LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 O\cf1 ,\cf2 COLORRED\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 L\cf1 ,(HH1 < LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 C\cf1 ,\cf2 COLORRED\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 HIGH\cf1 ,(HH1 < LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 C\cf1 ,\cf2 COLORRED\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 < LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 L\cf1 ,(HH1< LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 O\cf1 ,\cf2 COLORRED\cf1 );
+\par \cf2 STICKLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 CLOSE\cf1 ,\cf2 OPEN\cf1 ,\cf2 COLORGREEN\cf1 ,0);
+\par \cf2 STICKLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 CLOSE\cf1 ,\cf2 OPEN\cf1 ,\cf2 COLORGREEN\cf1 ,1);
+\par \cf2 DRAWLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 HIGH\cf1 ,(HH1 > LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 O\cf1 ,\cf2 COLORGREEN\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 L\cf1 ,(HH1 > LL1)&&(\cf2 C\cf1 <\cf2 O\cf1 ),\cf2 C\cf1 ,\cf2 COLORGREEN\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 HIGH\cf1 ,(HH1 > LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 C\cf1 ,\cf2 COLORGREEN\cf1 );
+\par \cf2 DRAWLINE\cf1 ((HH1 > LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 L\cf1 ,(HH1 > LL1)&&(\cf2 C\cf1 >=\cf2 O\cf1 ),\cf2 O\cf1 ,\cf2 COLORGREEN\cf1 );
+\par \cf2 DRAWTEXT\cf1 (\cf2 CROSS\cf1 (HH1,LL1),HH,'\'bf\'aa\'bf\'d5');
+\par \cf2 DRAWNUMBER\cf1 (\cf2 CROSS\cf1 (HH1,LL1),\cf2 REF\cf1 (LL,1),\cf2 REF\cf1 (LL,1),\cf2 IFELSE\cf1 (\cf2 C\cf1 >2000,0,\cf2 IFELSE\cf1 (\cf2 C\cf1 >500,1,\cf2 IFELSE\cf1 (\cf2 C\cf1 >5,2,4))),\cf2 COLORLIGHTGREY\cf1 );
+\par \cf2 DRAWTEXT\cf1 (\cf2 CROSS\cf1 (LL1,HH1),LL,'\'bf\'aa\'b6\'e0');
+\par \cf2 DRAWNUMBER\cf1 (\cf2 CROSS\cf1 (LL1,HH1),\cf2 REF\cf1 (HH,1),\cf2 REF\cf1 (HH,1),\cf2 IFELSE\cf1 (\cf2 C\cf1 >2000,0,\cf2 IFELSE\cf1 (\cf2 C\cf1 >500,1,\cf2 IFELSE\cf1 (\cf2 C\cf1 >5,2,4))),\cf2 COLORLIGHTGREY\cf1 );
+\par T:=\cf2 IFELSE\cf1 (HH1>LL1,1,-1);
+\par G:=\cf2 IFELSE\cf1 (HH1>LL1,HH,LL);
+\par \cf2 DRAWLINE\cf1 (T=1&&\cf2 REF\cf1 (T,1)=1,G,T=1&&\cf2 REF\cf1 (T,1)=1,\cf2 REF\cf1 (G,1),\cf2 COLORCYAN\cf1 );
+\par \cf2 DRAWLINE\cf1 (T=-1&&\cf2 REF\cf1 (T,1)=-1,G,T=-1&&\cf2 REF\cf1 (T,1)=-1,\cf2 REF\cf1 (G,1),\cf2 COLORRED\cf1 );
+\par \cf2 DRAWSL\cf1 (T=1,G,0,1,0,\cf2 COLORCYAN\cf1 );
+\par \cf2 DRAWSL\cf1 (T=-1,G,0,1,0,\cf2 COLORRED\cf1 );
+\par G1:=\cf2 VALUEWHEN\cf1 (\cf2 ISLASTBAR\cf1 ,G);
+\par \cf2 DRAWNUMBER\cf1 (\cf2 LOW\cf1 >0,G1,G1,\cf2 IFELSE\cf1 (\cf2 C\cf1 >2000,0,\cf2 IFELSE\cf1 (\cf2 C\cf1 >500,1,\cf2 IFELSE\cf1 (\cf2 C\cf1 >5,2,4))),\cf2 COLORYELLOW\cf1 );
+\par 
+\par }
+[{VERSION1}]

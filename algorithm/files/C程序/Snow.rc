@@ -1,0 +1,8 @@
+  #include <afxres.h>
+  #define  ICON_MAIN  0x100
+  #define  IDC_CUR    0x200
+  #define  ID_SNOW    0x300
+
+  ICON_MAIN    ICON_MAIN    "fly.ico"
+  IDC_CUR      CURSOR       "Main.cur"
+  ID_SNOW      BITMAP      "Ñ©»¨É¢Âä.bmp"
