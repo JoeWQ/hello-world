@@ -38,7 +38,7 @@ Alaska	 app;
 //
 // Definitions used only in this module.
 //
-#define ETARATIO (1.0003)/(1.3333)
+#define ETARATIO 1.0003/1.3333
 //#define ETARATIO (1.3333)/(1.0003)
 
 #define	GL_NORMAL_MAP_ARB						0x8511
@@ -60,7 +60,7 @@ Alaska	 app;
 
 
 ///////////////////////////// cg declarations/////////////////////
-float fresnelbias=.6;
+float fresnelbias=0.6;
 float fresnelscale=0.5;
 float fresnelpower=0.7;
 //float fresnelbias=.5;
@@ -69,9 +69,9 @@ float fresnelpower=0.7;
 float etaratio=ETARATIO;
 
 float texturerotmat[16];
-float watertoworld[16];
-float mirror=.52;//this is the reflectivity value
-float eye_is_at[]={127.0, 130.0, -135.0};
+float watertoworld[16]; 
+float mirror=0.52;//this is the reflectivity value
+float eye_is_at[]={127.0, 150.0, -135.0};
 //float eye_is_at[]={128.0, 128.0, -135.0};
 float light_is_at[]={-600.,600.,194.};
 float *vertexPositions;
@@ -218,8 +218,8 @@ Alaska::Alaska()
 	horiz=0;
 	vert=0;
 	rotx=0;
-
-	a_global=.0008f; // phillips constant
+//Phillips频谱常量
+	a_global=.00081f; // phillips constant
 	wind_global[0] = 30;
 	wind_global[1] = 10;
 	scale_height = 0.1;//scale the wave heights
@@ -227,7 +227,7 @@ Alaska::Alaska()
 	deep = 120;
 
 	cgswitch = -1;
-	wind = .7;
+	wind = 0.7;
 
 	factor = 10.0;	//this determines speed of wave
 }
@@ -244,6 +244,8 @@ Alaska::~Alaska()
 ///////////////////////////////////////////////////////////////////////////////////////////
 //************************ dynamic cube map function **************************************
 ///////////////////////////////////////////////////////////////////////////////////////////
+//注意,下面的参数是为了调节立方体贴图,因为在实际的映射中,立方体贴图的Y轴方向会倒置,
+//除非直接将图片本身做Y轴镜像翻转,或者用程序翻转,否则应用程序会产生不正确的行为
 //These are the rotation angles, to rotate the world at, to create the proper cube map textures.
 //Left and right must be inverted, so to do this we spin in Z axis, on first 2!! Hack I know..I'm working on it!
 float CubeMapRots[6][4] =	// 4, cos it's angle, then XYZ component of that angle.
@@ -837,18 +839,21 @@ GLuint Alaska::CreateBottomMap(void)
 	glDisable(GL_TEXTURE_GEN_R);
 	return texture;
 }
-
+//Phillips 波谱采样，将波谱值的平方根直接作为振幅值
+//Phillips方程: p(k) = a * exp(-k*k*w*w)/(k^6.0)
+//光宇该函数的详细说明,请参见 水波的模拟和动画2.pdf Page24
 // these two functions set up the phillips surface. calculate_h0() calls phillips()
 double phillips(double a,double k[2],double wind[2])
 {
 	double k2 = k[0]*k[0]+k[1]*k[1];
 	if (k2==0)
 		return 0;
-	double v2 = wind[0]*wind[0]+wind[1]*wind[1];
-	double EL = v2 / GRAV_CONSTANT;
-	// the factor *exp(-sqrt(k2)*1.0) can get rid of small waves by increasing 1.0
-	double ret = a*(exp(-1/(k2*(EL)*(EL)))/(k2*k2))*
-		((k[0]*wind[0]+k[1]*wind[1])*(k[0]*wind[0]+k[1]*wind[1]) / (k2*v2))*exp(-sqrt(k2)*1.0);
+	double v2 = wind[0]*wind[0]+wind[1]*wind[1];//风的方向
+	double EL = v2 / GRAV_CONSTANT;//重力加速度
+// the factor *exp(-sqrt(k2)*1.0) can get rid of small waves by increasing 1.0
+	double    w = k[0] * wind[0] + k[1] * wind[1];
+	double ret = a*(exp(-1/(k2*EL*EL))/(k2*k2))*
+		(w*w / (k2*v2))*exp(   -sqrt(k2)*1.0   );
 	// this value must be positive since we take the square root later
 	return ret;
 }
@@ -862,14 +867,21 @@ void	Alaska::calculate_ho()
 	{
 		for (int j=0;j<NY;j++)
 		{
-			// hold_horizontal saves these fixed calculations for later use:k[2],klen,klen*klen
+// hold_horizontal saves these fixed calculations for later use:k[2],klen,klen*klen
+//缩放到[-0.5π----0.5π]之间
 			horizontal[0]=hold_horizontal[i][j][0]=2.0*PI*((double)i-.5*NX)/MAX_WORLD_X;// center the origin
 			horizontal[1]=hold_horizontal[i][j][1]=2.0*PI*((double)j-.5*NX)/MAX_WORLD_Y;// center the origin
-			hold_horizontal[i][j][3]=hold_horizontal[i][j][0]*hold_horizontal[i][j][0]+hold_horizontal[i][j][1]*hold_horizontal[i][j][1];
+//下面的表示是什么意思?
+			hold_horizontal[i][j][3] = horizontal[0] * horizontal[0] + horizontal[1] * horizontal[1];
 			hold_horizontal[i][j][2]=sqrt(hold_horizontal[i][j][3]);
 
 		//	horizontal[0]=hold_horizontal[i][j][0]=2.0*PI*((float)i-.5*NX)/MAX_WORLD_X;
 		//	horizontal[1]=hold_horizontal[i][j][1]=2.0*PI*((float)j-.5*NX)/MAX_WORLD_Y;
+//下面生成数值的过程也不太理解
+//长期观测得到的有关波浪的一个特征是，从波浪纪录上取得的点服
+//从所谓正态分布，可用谱分析的方法来描述，所以在这里我们从波动的内部结构
+//	来分析波浪。即任何波浪白q状况都可通过不同频率的能量分布来描述，这种能量
+//	的频率分布就成为某一波浪的能谱，反映出这种波浪的统计特征。
 
 			gauss(gauss_value);
 			root_of_phillips=sqrt(phillips(a_global,horizontal,wind_global));
@@ -910,6 +922,7 @@ GLuint Alaska::init_normals_texturemap()
 
 void Alaska::calculate_normal_texture_map()
 {
+//将纹理缩放到[0-255]之间
 	for (int i=0;i<64;i++)
 	{
 		for (int j=0;j<64*3;j=j+3)
@@ -940,9 +953,9 @@ void my_normalize(Vector3 &vec)
 
 void make_signedN(Vector3 &v, unsigned char *ip)
 {
-	*(ip++) = (unsigned char) ((v.x * 127.0f) + 127.0f);
-	*(ip++) = (unsigned char) ((v.y * 127.0f) + 127.0f);
-	*(ip++) = (unsigned char) ((v.z * 127.0f) + 127.0f);
+	*ip = (unsigned char) ((v.x * 127.0f) + 127.0f);
+	ip[1]= (unsigned char) ((v.y * 127.0f) + 127.0f);
+	ip[2] = (unsigned char) ((v.z * 127.0f) + 127.0f);
 }
 
 void  Alaska::__MakeNormalizationCubeMap(const int size, const int level)
@@ -954,8 +967,8 @@ void  Alaska::__MakeNormalizationCubeMap(const int size, const int level)
 		printf("BOLLOCKS!!!");
 	}
 
-	float offset = .5;
-	float delta = 1;
+	float offset = 0.5f;
+	float delta = 1.0f;
 	float halfsize = size/2.f;
 	Vector3 v;
 	unsigned char *ip;
@@ -1353,7 +1366,8 @@ void	Alaska::RenderOcean()
 
 	if (cgswitch==-1)
 		set_cube_cg();
-
+//注意下面的 L,K参数的含义
+//这两个参数负责将整个海平面块分为四个部分画出来,由于存在场景的旋转,实际上是在调整X,Z
 	for (int L=0;L<2;L++)
 	{
 		for (int i=0;i<BIG_NX-1;i++)
@@ -1396,7 +1410,8 @@ void	Alaska::RenderOcean()
 	glDisable(GL_TEXTURE_GEN_T);
 	glDisable(GL_TEXTURE_GEN_R);
 
-	if (shownormalsswitch==1)show_normals();
+	if (shownormalsswitch==1)
+		show_normals();
 
 	glPopMatrix();
 }
@@ -1464,7 +1479,7 @@ void Alaska::make_normals(COMPLEX c[NX][NY])
 			normals[i][j][2]=tc[2];
 		}
 	}
-
+//无缝贴图,环绕
 	for (int i=0;i<NX;i++)
 	{
 		normals[i][NX-1][0]=normals[i][0][0];
@@ -1819,11 +1834,11 @@ void drag(int x, int y)
 {
 	glutPostRedisplay();
 }
-
-float	neg1Pow(int k)
-{
-	return pow(-1,k);
-}
+#define  neg1Pow(a)    ((((  (a)+1) & 0x1)<<1) -1)
+//float	neg1Pow(int k)
+//{
+//	return pow(-1,k);
+//}
 
 void	Alaska::pre_choppy()
 {
@@ -1871,6 +1886,8 @@ void	Alaska::pre_choppy()
 	{
 		for (int j=0;j<NY;j++)
 		{
+//lambda表示什么意思
+//lambda是一个调节位移矢量权值大小的参数，这个函数的改变会使得海浪的形状发生很大的变化
 			mDeltaX[i][j].real *= (double) neg1Pow(i+j)*lambda;
 			mDeltaX[i][j].imag *= (double) neg1Pow(i+j)*lambda;
 			mDeltaY[i][j].real *= (double) neg1Pow(i+j)*lambda;
@@ -1896,8 +1913,9 @@ void	Alaska::prep_loop()
 		}
 	}
 
-	//now fill in the final row and column of the sea correctly
-	// and fill in the normals
+//now fill in the final row and column of the sea correctly
+// and fill in the normals
+//环绕
 	for (int i=0;i<NX;i++)
 	{
 		sea[BIG_NX-1][i][0]=sea[0][i][0]+MAX_WORLD_X;
@@ -1964,7 +1982,7 @@ void Alaska::idle(void)
 		}
 	}
 */
-			//////////////////alernativ below///////////
+			//////////////////alernative below///////////
 	int yHalf = NY/2 + 1;
 	for (int i = 0; i<yHalf; ++i)
 	{
@@ -1984,22 +2002,22 @@ void Alaska::idle(void)
 			kvector[0]=hold_horizontal[i][j][0];
 			kvector[1]=hold_horizontal[i][j][1];
 
-		//	klength=sqrt(kvector[0]*kvector[0]+kvector[1]*kvector[1]);
+		//	klength=sqrt(kvector[0]*kvector[0]+kvector[1]*kvector[1]);//在上面的函数中已经计算了平方根了
 			klength=hold_horizontal[i][j][2];
 
 			wkt = sqrt(klength * GRAV_CONSTANT) * time_diff;
 
 			// yLineMirr+mXSize-x is the index of -k
 			int  kNegIndex = yLineMirr*NY + ((NY-j)% NY);
-
-			// This is h~(K, t) from the Tessendorf paper.
+//以下是快速傅里叶变换中的交叉卷积
+// This is h~(K, t) from the Tessendorf paper.
 		   	c[i][j].real= mH0[i][j].real*cos(wkt)
 				+ mH0[i][j].imag*sin(wkt)
 				+ mH0[NX - i-1][NY - j-1].real*cos(wkt)
 				- mH0[NX - i-1][NY -j-1].imag*sin(wkt);
 
 			c[i][j].imag= mH0[i][j].imag*cos(wkt)
-				+ mH0[i][j].real*sin(wkt)
+				+ mH0[i][j].real*sin(wkt) 
 				-mH0[NX - i-1][NY - j-1].imag*cos(wkt)
 	 			- mH0[NX - i-1][NY -j-1].real*sin(wkt);
 
@@ -2068,7 +2086,7 @@ int main(int argc, char** argv)
    	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowPosition(0, 0);
-	glutInitWindowSize(640, 512);
+	glutInitWindowSize(960, 640);
 
 	glutCreateWindow(argv[0]);
 	glutFullScreen();

@@ -21,21 +21,21 @@ void frag(float reflectionFactor : COLOR,
 		  uniform samplerCUBE bottomMap,
 		  uniform samplerCUBE environmentMap)	
 {
-	float ambient=.9;
+	float ambient=0.9;
 //	float4 LMd =float4(.5,.58,.81,0);
-	float4 LMd =float4(.7,.78,.91,1);
+	float4 LMd =float4(0.7,0.78,0.91,1);//color of ocean 
 //	float4 LMs =float4(.3,.38,.61,1);
 
-	//fetch the reflected environment color
+//fetch the reflected environment color
 	float4 reflectedColor=texCUBE(environmentMap,R);
 //	reflectedColor.rgb *=1.8;//increases sun reflection but not enough. needs specular
 
-	//compute the refracted bottom
+//compute the refracted bottom
 	float4 refractedColor=texCUBE(bottomMap,Tcolors);
 
 //	refractedColor.rgb *=1.8;//lighten the bottom
 
-	//find texel from light direction
+//find texel from light direction
 	float3 lightTex=texCUBE(normalizeCube,lightDir).xyz;
 
 	float3 light = expand(lightTex);
@@ -45,18 +45,18 @@ void frag(float reflectionFactor : COLOR,
 	float3 normHalfAngleTex = texCUBE(normalizeCube2,halfAngle).xyz;
 	float3 normHalfAngle = expand(normHalfAngleTex);
 
-	reflectedColor=.6*reflectedColor+(dot(normal,light))*.4;
-//	reflectedColor=.8*reflectedColor+(dot(normal,light))*.2;
+	reflectedColor=0.6*reflectedColor+dot(normal,light)*0.4;
+//	reflectedColor=.8*reflectedColor+dot(normal,light)*0.2;
 
 //	ocolor=float4(lightTex,1);
 
-	//compute the final color
+//compute the final color
 //	ocolor = .6*lerp(refractedColor,reflectedColor,reflectionFactor)+(dot(normal,light))*.4;
 //	ocolor=((.5)*(dot(normal,light))+reflectedColor*(.5))*1.6;
  //	ocolor=lerp(refractedColor,ocolor,reflectionFactor);
 //		ocolor=lerp(refractedColor,reflectedColor,reflectionFactor);
 
-float	diffuse = max(dot(normal,light),0);
+float	diffuse = max(dot(normal,light),0.0);
 //float	specular = saturate(dot(normal,normHalfAngle));
 //float	specular8= pow(specular,8);
 
