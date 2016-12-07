@@ -1,3 +1,4 @@
+#version 330 core
 precision highp   float;
 uniform   mat4    u_mvpMatrix;
 uniform   mat3    u_normalMatrix;

@@ -1,3 +1,4 @@
+#version 330 core
 precision   highp     float;
 //uniform     sampler2D       u_baseMap;
 uniform     vec4            u_renderColor;

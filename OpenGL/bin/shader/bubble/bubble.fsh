@@ -14,4 +14,5 @@ void   main()
 	  if(radius>0.25)
 	     discard;
 	  outColor=mix(color1,color2,smoothstep(0.1,0.25,radius));
+	  outColor = mix(outColor,vec4(0.0),smoothstep(0.0,1.0,radius/0.25)     );
 }
