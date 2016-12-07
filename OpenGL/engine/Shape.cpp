@@ -45,6 +45,10 @@ int    Shape::numberOfVertex()
 {
 	return _numberOfVertex;
 }
+int      Shape::getVertexBufferId()
+{
+	return _vertexVBO;
+}
 void    Shape::bindIndiceObject()
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indiceVBO);

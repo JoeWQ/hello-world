@@ -33,7 +33,7 @@ protected:
 public:
 	virtual     int         numberOfVertex();//获取顶点的数目
 	virtual     int         numberOfIndice();//顶点索引的数目
-
+	int                         getVertexBufferId();
 //以下所有函数的输入为相关的属性在着色器中的位置
 //绑定顶顶缓冲区
 	virtual     void      bindVertexObject(int   _loc);

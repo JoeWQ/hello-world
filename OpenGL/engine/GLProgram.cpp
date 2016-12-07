@@ -15,7 +15,7 @@
 #include<stdio.h>
 #include<map>
 #include<GL/glew.h>
-
+static   const     char    *__now_compile_file_name;
 GLProgram::GLProgram()
 {
 	_object = 0;
@@ -53,10 +53,12 @@ GLProgram               *GLProgram::createWithFile(const   char    *vertex_file_
 	}
 #endif
 	_glProgram = new           GLProgram();
+	__now_compile_file_name = frame_file_name;
 	_glProgram->initWithFile(vertex_file_name, frame_file_name);
 #ifdef __ENABLE_PROGRAM_CACHE__
 	_glProgram->retain();
 	GLCacheManager::getInstance()->inserGLProgram(key, _glProgram);
+	__now_compile_file_name = NULL;
 #endif
 	return   _glProgram;
 }
@@ -111,7 +113,11 @@ bool      GLProgram::initWithFile(const  char  *_vertex_file, const   char  *_fr
 	if (!_frame_file)
 		printf("file %s don't exist!\n",_frame_file);
 
-	assert(_vertex_buff && _frame_buff);
+	if (!_vertex_buff || !_frame_buff)
+	{
+		printf("file '%s' or file '%s' do not be found!\n",_vertex_file,_frame_file);
+		assert(0);
+	}
 
 	bool    _result = this->initWithString(_vertex_buff, _frame_buff);
 	delete    _vertex_buff;
@@ -235,6 +241,10 @@ bool      GLProgram::initWithString(const  char  *_vertex_string, const  char  *
 		}
 		glDeleteProgram(_object);
 		_object = 0;
+		if (__now_compile_file_name)
+		{
+			printf("file '%s'  has some syntax error", __now_compile_file_name);
+		}
 		assert(false);
 	}
 	return   true;
@@ -294,6 +304,8 @@ GLuint      __compile_shader(GLenum _type, const char *_shader_source)
 		}
 		glDeleteShader(_shader);
 		_shader = 0;
+		if (__now_compile_file_name)
+			printf("file '%s' has some syntax error\n", __now_compile_file_name);
 		assert(false);
 	}
 	return    _shader;
