@@ -67,10 +67,10 @@ struct       UserData
 //
 
 void        Init(GLContext    *_context)
-{
+{ 
 	UserData	*_user = new   UserData();
 	_context->userObject = _user;
-	Size    _size = _context->getWinSize(); 
+	Size    _size = _context->getWinSize();
 	_user->_meshObject = Mesh::createWithIntensity(GRID_SIZE - 2, GRID_SIZE - 2, GRID_SIZE - 2, 1.0f);
 //
 	memset(_user->_meshHeight, 0, sizeof(_user->_meshHeight));
@@ -82,10 +82,10 @@ void        Init(GLContext    *_context)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLVector3)*WAVE_SIZE*WAVE_SIZE , NULL, GL_DYNAMIC_DRAW);
 //写入数据
 	const     char      *vcubeMapFiles[6] = {
-										   "tga/water/sky/zpos.bmp",//+Z
-										   "tga/water/sky/yneg.bmp",//-Z
-										   "tga/water/sky/xpos.bmp",//+X
-										   "tga/water/sky/xneg.bmp",//-X
+		"tga/water/sky/zpos.bmp",//+Z
+		"tga/water/sky/zneg.bmp",//-Z
+		"tga/water/sky/xpos.bmp",//+X
+		"tga/water/sky/xneg.bmp",//-X
 										   "tga/water/sky/ypos.bmp",//+Y
 										   "tga/water/sky/yneg.bmp",//-Y
 	                                     };
@@ -100,7 +100,7 @@ void        Init(GLContext    *_context)
 	_user->_viewProjMatrix.perspective(60.0f,_size.width/_size.height,1.0f,1000.0f);
 
 	_user->_freshnelParam = GLVector3(0.12f,0.88f,2.0f);
-	_user->_refractRatio = 1.03 / 1.33f;
+	_user->_refractRatio = 1.0f / 1.33f;
 	_user->_waterColor = GLVector4(0.7f, 0.78f, 0.91f, 1.0f);//海水的颜色
 
 	_user->_deltaTime = 0.0f;
@@ -121,7 +121,6 @@ void        Init(GLContext    *_context)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_CULL_FACE);
-//	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 //
@@ -141,11 +140,11 @@ void         Update(GLContext   *_context, float   _deltaTime)
 		for (int j = 1;j < GRID_SIZE-1; ++j)
 		{
 //八个方向的数值总和 
-			float          _totalValue =  _nowHeight[i - 1][j]  + _nowHeight[i][j - 1] +
-				_nowHeight[i][j + 1]  + _nowHeight[i + 1][j] ;// _nowHeight[i - 1][j - 1] + _nowHeight[i - 1][j] + _nowHeight[i - 1][j + 1] + _nowHeight[i][j - 1] +
-			//	_nowHeight[i][j + 1] + _nowHeight[i + 1][j - 1] + _nowHeight[i + 1][j] + _nowHeight[i + 1][j + 1];
-//注意下面的代码是计算的速率
-			_nowVelocity[i][j] += _totalValue * 0.25  - _nowHeight[i][j];
+			float          _totalValue =  //_nowHeight[i - 1][j]  + _nowHeight[i][j - 1] +_nowHeight[i][j + 1]  + _nowHeight[i + 1][j] ;
+			 _nowHeight[i - 1][j - 1] + _nowHeight[i - 1][j] + _nowHeight[i - 1][j + 1] + _nowHeight[i][j - 1] +
+				_nowHeight[i][j + 1] + _nowHeight[i + 1][j - 1] + _nowHeight[i + 1][j] + _nowHeight[i + 1][j + 1];
+//注意下面的代码是计算的速率,注意,能量一定要保持平衡,否则不能保持波平面的和谐
+			_nowVelocity[i][j] += _totalValue * 0.125  - _nowHeight[i][j];
 			_nowVelocity[i][j] *= WAVE_DAMPING;
 			_outHeight[i][j] = _nowHeight[i][j] + _nowVelocity[i][j];
 		}
@@ -179,7 +178,7 @@ void         Update(GLContext   *_context, float   _deltaTime)
 	memcpy(_nowHeight,_outHeight,sizeof(_user->_meshOutHeight));
 //随机填充数据,模拟雨点
 #ifndef __TEST_TEMPLATE__
-	if (_user->_deltaTime > 0.5f)
+	if (_user->_deltaTime > 0.3f)
 	{
 		_user->_deltaTime = 0.0f;
 		float     idx = _context->randomValue()* WAVE_SIZE;
