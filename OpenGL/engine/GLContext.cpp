@@ -39,6 +39,7 @@ static       unsigned       _static_last_seed = 0;
  //          displayMode=GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL;
            winTitle="OpenGL-Sprite";
 		   _rand_seed=time(NULL);
+		   srand(_rand_seed);
 		   _static_last_seed = _rand_seed;
  }
 //
@@ -146,4 +147,59 @@ static       unsigned       _static_last_seed = 0;
    unsigned    GLContext::loadBufferIdentity()
    {
 	   return  GLCacheManager::getInstance()->loadBufferIdentity();
+   }
+
+   void         GLContext::gauss(float work[2])
+   {
+	   float      x, y;
+	   float     w;
+	   const	int			__maxValue = 0x7FFF;
+	   do 
+	   {
+		   x = rand() / (float)RAND_MAX;// this->randomValue();
+		   y = rand() / (float)RAND_MAX;
+		   x = 2.0f* x - 1.0f;
+		   y = 2.0f * y - 1.0f;
+		   w = x*x + y*y;
+	   } while (w>=1.0f);
+	   w = sqrt( -2.0f * log(w) /w );
+	   work[0] = w * x;
+	   work[1] = w*y;
+	   //若期望值为E,方差为V的话,可以加上
+	   //	work[0] = V*w*x1 + E;
+	   //	work[1] = V*w*x2 + E;
+   }
+//a是一个固定的系数,名称为Phillips系数
+//一般取 0.0081
+//   float       GLContext::phillips(const float a, const float k[2], const float wind[2])
+//   {
+//	   float		K2 = k[0] * k[0] + k[1] * k[1];
+//	   if (K2 == 0.0f)		return 0.0f;
+//
+//	   float		V2 = wind[0] * wind[0] + wind[1] * wind[1];
+//
+//	   float		EL = V2 / __GRAVITY_CONSTANT;
+////点乘
+//	   float		dotValue = k[0] * wind[0] + k[1] * wind[1];
+////返回的值必须是正数,因为后面需要用它作为平方因子
+//	   const float		expValue = exp(-1.0f/(K2 * EL *EL));
+//	   const float		unitValue = dotValue * dotValue/(K2 * V2);
+//	   return  a*expValue / (K2*K2) *unitValue * exp(- sqrt(K2));
+//   }
+
+ //  double phillips(double a, double k[2], double wind[2])
+	float       GLContext::phillips(const float a, const float k[2], const float wind[2])
+   {
+	   float k2 = k[0] * k[0] + k[1] * k[1];
+	   if (k2 == 0)
+		   return 0;
+	   float v2 = wind[0] * wind[0] + wind[1] * wind[1];//风的方向
+	   float EL = v2 / __GRAVITY_CONSTANT;//重力加速度
+	   // the factor *exp(-sqrt(k2)*1.0) can get rid of small waves by increasing 1.0
+	   float    w = k[0] * wind[0] + k[1] * wind[1];
+	   //具体的公式,请参见simulating-ocean-water-01.pdf Page 9
+	   float ret = a*(exp(-1.0 / (k2*EL*EL)) / (k2*k2))*
+		   (w*w / (k2*v2))*exp(-sqrt(k2)*1.0);
+	   // this value must be positive since we take the square root later
+	   return ret;
    }
