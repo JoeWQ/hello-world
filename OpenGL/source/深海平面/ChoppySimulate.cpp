@@ -80,9 +80,9 @@ void  ChoppySimulate::initProgram()
 		"tga/water/sky/xpos.bmp", //+X
 		"tga/water/sky/xneg.bmp",//-X
 		"tga/water/sky/ypos.bmp",//+Y
-		"tga/water/sky/xneg.bmp",//-Y
+		"tga/water/sky/yneg.bmp",//-Y
 		"tga/water/sky/zpos.bmp",//+Z
-		"tga/water/sky/xneg.bmp",//-Z
+		"tga/water/sky/zneg.bmp",//-Z
 	};
 	_skyboxTex = GLCubeMap::createWithFiles(skyboxFile);
 //freshnel²ÎÊý
@@ -184,14 +184,16 @@ void		ChoppySimulate::updateHeightField(float _deltaTime)
 		for (int j = 0; j < WAVE_SIZE; ++j)
 		{
 			const   int       otherY = j < WAVE_SIZE - 1 ? j +1: 0;
-			//GLVector3        xVec = GLVector3(fixX + _deltaXField[otherX][j].real - _deltaXField[i][j].real,
-			//	fixY + _deltaYField[otherX][j].real - _deltaYField[i][j].real,
-			//	_choppyField[otherX][j].real - _choppyField[i][j].real
+			//GLVector3        xVec = GLVector3(fixX + _deltaXField[otherX][j].imag - _deltaXField[i][j].imag,
+			//	 _deltaYField[otherX][j].imag - _deltaYField[i][j].imag,
+			//	 (_choppyField[otherX][j].imag - _choppyField[i][j].imag)*__HEIGHT_SCALE__
 			//	);
-			//GLVector3       yVec = GLVector3(fixX + _deltaXField[i][otherY].real - _deltaXField[i][j].real,
-			//	fixY + _deltaYField[i][otherY].real - _deltaYField[i][j].real,
-			//	_choppyField[i][otherY].real - _choppyField[i][j].real
+			//GLVector3       yVec = GLVector3(_deltaXField[i][otherY].imag - _deltaXField[i][j].imag,
+			//	fixY + _deltaYField[i][otherY].imag - _deltaYField[i][j].imag,
+			//	(_choppyField[i][otherY].imag - _choppyField[i][j].imag) * __HEIGHT_SCALE__
 			//	);
+			//GLVector3  xVec = GLVector3(fixX, _deltaYField[i][otherY].imag - _deltaYField[i][j].imag, (_choppyField[otherX][j].real - _choppyField[i][j].real) *__HEIGHT_SCALE__);
+			//GLVector3  yVec = GLVector3(_deltaXField[otherX][j].imag - _deltaXField[i][j].imag, fixY, (_choppyField[i][otherY].real - _choppyField[i][j].real)*__HEIGHT_SCALE__);
 			GLVector3  xVec = GLVector3(fixX, 0.0f, (_choppyField[otherX][j].real - _choppyField[i][j].real) *__HEIGHT_SCALE__);
 			GLVector3  yVec = GLVector3(0.0f, fixY, (_choppyField[i][otherY].real - _choppyField[i][j].real)*__HEIGHT_SCALE__);
 			_choppyNormal[i][j] = xVec.cross(yVec);
@@ -268,9 +270,9 @@ void       ChoppySimulate::update(float _deltaTime)
 		for (int j = 0; j < WAVE_SIZE; ++j)
 		{
 			GLVector3     *nowWave = &_waterVertex[i][j];
-			nowWave->x = _deltaXField[i][j].real;
-			nowWave->y = _deltaYField[i][j].real;
-			nowWave->z = 0.0f;
+			nowWave->x = _deltaXField[i][j].imag;
+			nowWave->y = _deltaYField[i][j].imag;
+			nowWave->z = _choppyField[i][j].real * __HEIGHT_SCALE__;
 		}
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);

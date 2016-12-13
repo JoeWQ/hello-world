@@ -14,7 +14,7 @@ in		vec3		v_normal;
 
 void  main()
 {
-		vec3	_normal = normalize(v_normal);
+		vec3	_normal = v_normal;//normalize(v_normal);
 		vec3	_eye_normal = normalize(u_eyePosition - v_position);	
 		vec3	_reflectVec = reflect(- _eye_normal,_normal);
 		vec3	_refractVec = refract(-_eye_normal,_normal, u_refractRatio);
@@ -26,13 +26,14 @@ void  main()
 		// 					texture(u_skyboxTexCube,_refractVec),
 		// 					_freshnel
 		// 				);
-		// outColor =mix(		u_waterColor,
-		// 					texture(u_skyboxTexCube,_reflectVec),
-		// 					0.3
-		// 			 );
+		outColor =mix(		u_waterColor,
+							texture(u_skyboxTexCube,_reflectVec),
+							0.3
+					 );
 
-		outColor = mix(		texture(u_skyboxTexCube,_reflectVec),
+		outColor = mix(		texture(u_skyboxTexCube,_reflectVec)*u_waterColor,
 							texture(u_skyboxTexCube,_refractVec),
-							_freshnel
+							0.3
 						);
+//		outColor = texture(u_skyboxTexCube,_reflectVec);
 }
