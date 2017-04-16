@@ -7,6 +7,7 @@
 #include<GL/glew.h>
 #include<math.h>
 #include<assert.h>
+__NS_GLK_BEGIN
 #ifdef  _WIN32
 #define   random       rand
 #endif
@@ -526,3 +527,4 @@ NoiseTexture3     *NoiseTexture3::createWithSeed(unsigned seed,float  frequency,
 	_noisetexture->initWithSeed(seed, frequency, width);
 	return  _noisetexture;
 }
+__NS_GLK_END

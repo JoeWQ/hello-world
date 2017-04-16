@@ -5,12 +5,13 @@
  */
 #ifndef  __RENDER_OBJECT_H__
 #define __RENDER_OBJECT_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<engine/Geometry.h>
+__NS_GLK_BEGIN
 /*
  *draw函数中flag的含义,请参见GLState.h enum _tDrawFlag
  */
-class     RenderObject :public  GLObject
+class     RenderObject :public  Object
 {
 protected:
 	float            _deltaTime;
@@ -23,4 +24,5 @@ public:
 	virtual       void           update(float    _deltaTime){};
 	virtual       void           draw(Matrix        &_projMatrix, unsigned       flag){};
 };
+__NS_GLK_END
 #endif

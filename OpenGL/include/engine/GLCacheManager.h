@@ -7,11 +7,13 @@
 //Version 2.0:修正了程序对象,纹理对象的引用计数bug,以及不能再程序退出时调用析构函数的bug
 #ifndef  __GL_CACHE_MANAGER_H__
 #define __GL_CACHE_MANAGER_H__
+#include<engine/GLState.h>
 #include<engine/GLProgram.h>
 #include<engine/GLTexture.h>
 #include<map>
 #include<string>
 //全局单子
+__NS_GLK_BEGIN
 class  GLCacheManager
 {
 private:
@@ -40,4 +42,5 @@ public:
 //返回单位数组缓冲区
 	unsigned                 loadBufferIdentity();
 };
+__NS_GLK_END
 #endif

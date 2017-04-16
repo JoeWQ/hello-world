@@ -12,6 +12,7 @@
 #include<GL/glew.h>
 #include<assert.h>
 #include<stdlib.h>
+__NS_GLK_BEGIN
 /////////////////////////////////////////Shape Class//////////////////////////////
 Shape::Shape()
 {
@@ -625,3 +626,4 @@ Mesh         *Mesh::createWithIntensity(int grid_size, float scaleX, float scale
 	_mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity);
 	return  _mesh;
 }
+__NS_GLK_END

@@ -5,13 +5,14 @@
   */
 #ifndef  __SPRITE_H__
 #define __SPRITE_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<engine/GLTexture.h>
 #include<engine/GLProgram.h>
 #include<engine/Geometry.h>
+__NS_GLK_BEGIN
 //这里我们假设使用者已经完全掌握了OpenGL的矩阵变换,所以精灵的表现完全按照每一步操作所对应的矩阵内容来表现的
 //这样会使得它的使用更灵活,但是却比较难以掌控,使用者需要多加注意
-class  Sprite :public GLObject
+class  Sprite :public Object
 {
 //纹理
 private:
@@ -50,4 +51,5 @@ public:
 	void       setMipmap();
 	GLProgram		*getGLProgram(){return  _glProgram;};
 };
+__NS_GLK_END
 #endif

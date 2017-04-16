@@ -11,6 +11,8 @@
 #include<GL/glew.h>
 #include<stdio.h>
 #include<string.h>
+__NS_GLK_BEGIN
+
 Sprite::Sprite()
 {
 	_glTexture = NULL;
@@ -138,3 +140,5 @@ void     Sprite::setMipmap()
 {
 	_glTexture->genMipmap();
 }
+
+__NS_GLK_END

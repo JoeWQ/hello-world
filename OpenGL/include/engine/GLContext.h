@@ -3,11 +3,16 @@
 	*version2.0,加入对纹理缓存和着色器缓存的支持
 	//Version 3.0:引入了对随机数,全局投影矩阵的支持
 	//Version 4.0:引入了对事件的管理
+	//Version 5.0(2016-12-9 20:34:11):引入了高斯函数以及Phillips函数(这两个函数主要在海平面系统中使用)
 	&2016-4-30
 	*/
 	#ifndef  __ENTRY_H__
 	#define __ENTYY_H__
 	#include<engine/Geometry.h>
+void         __OnDraw__();
+void         __OnUpdate__(int);
+ int           main(int, char  **);
+__NS_GLK_BEGIN
 	//OpenGL下下文渲染环境,以及继承了一些用处比较频繁的函数
 	struct   GLContext
 	{
@@ -23,6 +28,8 @@
 
 	void(*init)(GLContext *);//    初始化函数
 	void(*finalize)(GLContext *);//程序关闭时回调
+
+	void         dispatchEvent();
 
 	int          lastTickCount;//上次获取的开机毫秒数
 	//非windows系统使用
@@ -42,8 +49,6 @@
 	//一下是关于全局着色的数据
 	GLVector2       _near_far_plane;//近远平面的距离
 	Matrix             _projMatrix;        //全局投影矩阵
-	//随机数种子
-	unsigned          _rand_seed;
 	private:
 	GLContext(GLContext &);
 	GLContext();
@@ -56,7 +61,7 @@
 	void      registerInitFunc(void(*init)(GLContext *));
 	void      registerShutDownFunc(void(*finalize)(GLContext *));
 	//返回窗口的大小
-	Size      &getWinSize();
+	const Size      &getWinSize();
 	//设置窗口的大小
 	void      setWinSize(Size &);
 //设置阴影窗口的宽高
@@ -66,7 +71,6 @@
 	void      setDisplayMode(int flag);
 	int        getDisplayMode();
 	void      setWindowTitle(char   *);
-	char     *getWindowTitle();
 	void       setWinPosition(GLVector2 &);
 	//设置近平面元平面的距离
 	void           setNearFarPlane(GLVector2   &);
@@ -74,13 +78,13 @@
 	//设置全局投影矩阵
 	void                  setProjMatrix(Matrix   &);
 	Matrix            &getProjMatrix();
-	//设置随机数种子
-	void           initSeed(unsigned seed){ _rand_seed = seed; };
-	float           randomValue();//返回[0.0--1.0]之间的浮点数
 	//返回单位顶点缓冲区对象,主要在延迟着色,SSAO中使用
 	unsigned        loadBufferIdentity();
 	void                setGlobleFlag(unsigned  flag){ _globleFlag = flag; };
 	unsigned        getGlobleFlag(){ return _globleFlag; };
+private:
+		char     *getWindowTitle();
 	};
 	//注册将设定好的参数注册进窗口程序,注意这里不能调用OpenGL函数
+__NS_GLK_END
 	#endif

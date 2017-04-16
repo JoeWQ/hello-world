@@ -1,7 +1,7 @@
 !!FP1.0
 # cgc version 3.1.0013, build date Apr 18 2012
 # command line args: -profile fp30
-# source file: D:\Í¼ÐÎÑ§\fftrefraction_src\fftrefraction\f.cg
+# source file: D:\test\hello-world\fftrefraction_src\f.cg
 #vendor NVIDIA Corporation
 #version 3.1.0.13
 #profile fp30

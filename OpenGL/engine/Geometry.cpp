@@ -11,6 +11,7 @@
 //Version 6.0 将切线的计算引入到球体,立方体,地面网格的生成算法中
 //Version 7.0:修正球面的切线的计算,由原来的直接三角函数计算变成求球面的关于x的偏导
 //Version 8.0:引入了对四元数的支持
+//Version 9.0:修正了关于四元数与矩阵之间的转换间的bug,以及Matrix.scale函数的bug
 ///
 //  Includes
 //
@@ -22,6 +23,7 @@
 #define PI 3.1415926535f
 #define    __EPS__  0.0001f
 #define    __SIGN(sign)   (-(  ((sign)&0x1)<<1)+1)
+__NS_GLK_BEGIN
 ESMatrix::ESMatrix()
 {
 	esMatrixLoadIdentity(this);
@@ -1091,42 +1093,42 @@ GLVector3      esMatrixMultiplyVector3( GLVector3   *vec, ESMatrix3   *matrix)
 	return GLVector3(x,y,z);
 }
 /////////////////////////////二维,三维,四维向量右乘矩阵//////////////////////////////////////
-GLVector2    GLVector2::operator*(float  _factor)
+GLVector2    GLVector2::operator*(float  _factor)const
 {
 	return   GLVector2(x*_factor,y*_factor);
 }
-GLVector2   GLVector2::operator*(GLVector2  &_mfactor)
+GLVector2   GLVector2::operator*(GLVector2  &_mfactor)const
 {
 	return  GLVector2(x*_mfactor.x,y*_mfactor.y);
 }
-GLVector2   GLVector2::operator+(GLVector2  &_factor)
+GLVector2   GLVector2::operator+(GLVector2  &_factor)const
 {
 	return  GLVector2(x+_factor.x,y+_factor.y);
 }
-GLVector2   GLVector2::operator-(GLVector2  &_factor)
+GLVector2   GLVector2::operator-(GLVector2  &_factor)const
 {
 	return  GLVector2(x-_factor.x,y-_factor.y);
 }
-GLVector2   GLVector2::operator/(float _factor)
+GLVector2   GLVector2::operator/(float _factor)const
 {
 	return  GLVector2(x/_factor,y/_factor);
 }
-GLVector2    GLVector2::operator/(GLVector2  &_factor)
+GLVector2    GLVector2::operator/(GLVector2  &_factor)const
 {
 	return  GLVector2(x/_factor.x,y/_factor.y);
 }
-GLVector2   GLVector2::normalize()
+GLVector2   GLVector2::normalize()const
 {
 	float  _length = sqrt(x*x+y*y);
 	assert(_length>=__EPS__);
 	return  GLVector2(x/_length,y/_length);
 }
-float     GLVector2::dot(GLVector2 &other)
+float     GLVector2::dot(GLVector2 &other)const
 {
 	return x*other.x + y*other.y;
 }
 /////////////////////////////333333333333333333////////////////////////////////////
-GLVector3   GLVector3::operator*(Matrix3 &src)
+GLVector3   GLVector3::operator*(const Matrix3 &src)const
 {
 	float  x, y, z;
 	x = this->x*src.m[0][0] + this->y*src.m[1][0] + this->z*src.m[2][0];
@@ -1135,37 +1137,37 @@ GLVector3   GLVector3::operator*(Matrix3 &src)
 
 	return  GLVector3(x,y,z);
 }
-GLVector3    GLVector3::operator*(float   _factor)
+GLVector3    GLVector3::operator*(const float   _factor)const
 {
 	return  GLVector3(x*_factor,y*_factor,z*_factor);
 }
-GLVector3   GLVector3::operator*(GLVector3  &_factor)
+GLVector3   GLVector3::operator*(const GLVector3  &_factor)const
 {
 	return  GLVector3(x*_factor.x,y*_factor.y,z*_factor.z);
 }
-GLVector3   GLVector3::operator+(GLVector3  &_factor)
+GLVector3   GLVector3::operator+(const GLVector3  &_factor)const
 {
 	return  GLVector3(x+_factor.x,y+_factor.y,z+_factor.z);
 }
-GLVector3   GLVector3::operator-(GLVector3 &_factor)
+GLVector3   GLVector3::operator-(const GLVector3 &_factor)const
 {
 	return  GLVector3(x-_factor.x,y-_factor.y,z-_factor.z);
 }
-GLVector3   GLVector3::operator/(float _factor)
+GLVector3   GLVector3::operator/(const float _factor)const
 {
 	return  GLVector3(x/_factor,y/_factor,z/_factor);
 }
-GLVector3   GLVector3::operator/(GLVector3 &_factor)
+GLVector3   GLVector3::operator/(const GLVector3 &_factor)const
 {
 	return   GLVector3(x/_factor.x,y/_factor.y,z/_factor.z);
 }
-GLVector3   GLVector3::normalize()
+GLVector3   GLVector3::normalize()const
 {
 	float      _length = sqrt(x*x+y*y+z*z);
 	assert(_length>=__EPS__);
 	return    GLVector3(x/_length,y/_length,z/_length);
 }
-GLVector3   GLVector3::cross(GLVector3 &axis)
+GLVector3   GLVector3::cross(const GLVector3 &axis)const
 {
 	return GLVector3(
 		y*axis.z - z*axis.y,
@@ -1173,29 +1175,94 @@ GLVector3   GLVector3::cross(GLVector3 &axis)
 		x*axis.y - y*axis.x
 		);
 }
-float    GLVector3::dot(GLVector3 &other)
+float    GLVector3::dot(const GLVector3 &other)const
 {
 	return x*other.x + y*other.y + z*other.z;
 }
-/////////////////////////4444444444444444///////////////////////////////////////
-GLVector4     GLVector4::operator*(Matrix &src)
+
+GLVector3 GLVector3::min(const GLVector3 &other)const
 {
-	float  x, y, z, w;
-	x = this->x*src.m[0][0] + this->y*src.m[1][0] + this->z*src.m[2][0] + this->w*src.m[3][0];
-	y = this->x*src.m[0][1] + this->y*src.m[1][1] + this->z*src.m[2][1] + this->w*src.m[3][1];
-	z = this->x*src.m[0][2] + this->y*src.m[1][2] + this->z*src.m[2][2] + this->w*src.m[3][2];
-	w = this->x*src.m[0][3] + this->y*src.m[1][3] + this->z*src.m[2][3] + this->w*src.m[3][3];
-	return GLVector4(x, y, z, w);
+	const float nx = x < other.x ? x : other.x;
+	const float ny = y < other.y ? y : other.y;
+	const float nz = z < other.z ? z : other.z;
+	return GLVector3(nx, ny, nz);
 }
-GLVector4    GLVector4::normalize()
+
+GLVector3 GLVector3::max(const GLVector3 &other)const
+{
+	const float nx = x > other.x ? x : other.x;
+	const float ny = y > other.y ? y : other.y;
+	const float nz = z > other.z ? z : other.z;
+	return GLVector3(nx, ny, nz);
+}
+
+/////////////////////////4444444444444444///////////////////////////////////////
+GLVector4     GLVector4::operator*(Matrix &src)const
+{
+	float  nx,ny, nz, nw;
+	nx = this->x*src.m[0][0] + this->y*src.m[1][0] + this->z*src.m[2][0] + this->w*src.m[3][0];
+	ny = this->x*src.m[0][1] + this->y*src.m[1][1] + this->z*src.m[2][1] + this->w*src.m[3][1];
+	nz = this->x*src.m[0][2] + this->y*src.m[1][2] + this->z*src.m[2][2] + this->w*src.m[3][2];
+	nw = this->x*src.m[0][3] + this->y*src.m[1][3] + this->z*src.m[2][3] + this->w*src.m[3][3];
+	return GLVector4(nx, ny, nz, nw);
+}
+GLVector4    GLVector4::normalize()const
 {
 	float   _length = sqrt(x*x+y*y+z*z+w*w);
 	assert(_length>__EPS__);
 	return  GLVector4(x/_length,y/_length,z/_length,w/_length);
 }
-float    GLVector4::dot(GLVector4 &other)
+float    GLVector4::dot(GLVector4 &other)const
 {
 	return x*other.x + y*other.y + z*other.z + w*other.w;
+}
+
+GLVector4 GLVector4::operator*(const float factor)const
+{
+	return GLVector4(x*factor,y*factor,z*factor,w*factor);
+}
+
+GLVector4 GLVector4::operator*(const GLVector4 &other)const
+{
+	return GLVector4(x*other.x,y*other.y,z*other.z,w*other.w);
+}
+
+GLVector4 GLVector4::operator+(const GLVector4 &other)const
+{
+	return GLVector4(x+other.x,y+other.y,z+other.z,w+other.w);
+}
+
+GLVector4 GLVector4::operator/(const GLVector4 &other)const
+{
+	return GLVector4(x/other.x,y/other.y,z/other.z,w/other.w);
+}
+
+GLVector4 GLVector4::operator/(const float factor)const
+{
+	return GLVector4(x/factor,y/factor,z/factor,w/factor);
+}
+
+GLVector4 GLVector4::operator-(const GLVector4 &other)const
+{
+	return GLVector4(x-other.x,y-other.y,z-other.z,w-other.w);
+}
+
+GLVector4 GLVector4::min(const GLVector4 &other)const
+{
+	const float nx = x < other.x ? x : other.x;
+	const float ny = y < other.y ? y : other.y;
+	const float nz = z < other.z ? z : other.z;
+	const float nw = w < other.w ? w : other.w;
+	return GLVector4(nx,ny,nz,nw);
+}
+
+GLVector4 GLVector4::max(const GLVector4 &other)const
+{
+	const float nx = x > other.x ? x : other.x;
+	const float ny = y > other.y ? y : other.y;
+	const float nz = z > other.z ? z : other.z;
+	const float nw = w > other.w ? w : other.w;
+	return GLVector4(nx, ny, nz, nw);
 }
 ////////////////////////////四维矩阵实现//////////////////////////////////
 Matrix::Matrix()
@@ -1220,14 +1287,15 @@ void    Matrix::copy(Matrix  &srcA)
 	m[3][0] = srcA.m[3][0], m[3][1] = srcA.m[3][1], m[3][2] = srcA.m[3][2], m[3][3] = srcA.m[3][3];
 }
 //右乘缩放矩阵
-void   Matrix::scale(float scaleX, float scaleY, float  scaleZ)
+void   Matrix::scale(const float scaleX, const float scaleY, const float  scaleZ)
 {
-	m[0][0] *= scaleX; m[0][1] *= scaleX; m[0][2] *= scaleX; m[0][3] *= scaleX;
-	m[1][0] *= scaleY; m[1][1] *= scaleY; m[1][2] *= scaleY; m[1][3] *= scaleY;
-	m[2][0] *= scaleZ; m[2][1] *= scaleZ; m[2][2] *= scaleZ; m[2][3] *= scaleZ;
+	m[0][0] *= scaleX; m[0][1] *= scaleY; m[0][2] *= scaleZ; 
+	m[1][0] *= scaleX; m[1][1] *= scaleY; m[1][2] *= scaleZ; 
+	m[2][0] *= scaleX; m[2][1] *= scaleY; m[2][2] *= scaleZ; 
+	m[3][0] *= scaleX; m[3][1] *= scaleY; m[3][2] *= scaleZ; 
 }
 //平移
-void    Matrix::translate(float deltaX, float  deltaY, float deltaZ)
+void    Matrix::translate(const float deltaX, const float  deltaY, const float deltaZ)
 {
 	m[0][0] += m[0][3] * deltaX;
 	m[0][1] += m[0][3] * deltaY;
@@ -1288,7 +1356,7 @@ void    Matrix::rotate(float  angle, float x, float y, float z)
 	this->multiply(tmp);
 }
 //视图投影矩阵
-void    Matrix::lookAt(GLVector3  &eyePosition, GLVector3  &targetPosition, GLVector3  &upVector)
+void    Matrix::lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPosition, const GLVector3  &upVector)
 {
 	Matrix    tmp, *result = &tmp;
 	GLVector3    N = (eyePosition - targetPosition).normalize();
@@ -1377,7 +1445,7 @@ void     Matrix::multiply(Matrix &srcA, Matrix &srcB)
 	memcpy(m, &tmp, sizeof(Matrix));
 }
 //运算符重载
-Matrix     Matrix::operator*(Matrix   &srcA)
+Matrix     Matrix::operator*(const Matrix   &srcA)
 {
 	Matrix  tmp;
 	int         i;
@@ -1416,11 +1484,11 @@ GLVector4  Matrix::operator*(GLVector4  &vec)
 	return GLVector4(x, y, z, w);
 }
 
-Matrix&    Matrix::operator=(Matrix  &src)
+Matrix&    Matrix::operator=(const Matrix  &src)
 {
 	if (this!=&src)
 	memcpy(this,&src,sizeof(Matrix));
-	return src;
+	return *this;
 }
 //正交投影
 void    Matrix::orthoProject(float  left, float right, float  bottom, float  top, float  nearZ, float  farZ)
@@ -1760,17 +1828,17 @@ Matrix	    Quaternion::toRotateMatrix()
 	float          yz = this->y * this->z;
 	float         ww = this->w * this->w;
 
-	_rotate.m[0][0] = 2 * (x*x + ww) - 1.0f;
+	_rotate.m[0][0] = 1.0f - 2 * (x*x + ww) ;
 	_rotate.m[0][1] =2.0f * (xy+ w*z) ;
 	_rotate.m[0][2] = 2.0f*(xz - w*y);
 
 	_rotate.m[1][0] = 2.0f*(xy - w*z);
-	_rotate.m[1][1] = 2.0f*(y*y+ww)-1.0f;
+	_rotate.m[1][1] = 1.0f - 2.0f*(y*y+ww);
 	_rotate.m[1][2] = 2.0f*(yz * w*x);
 
 	_rotate.m[2][0] = 2.0f*(xz + w*y);
 	_rotate.m[2][1] = 2.0f*(yz - w*x);
-	_rotate.m[2][2] = 2.0f*(z*z+ww) - 1.0f;
+	_rotate.m[2][2] = 1.0f - 2.0f*(z*z+ww) ;
 
 	return _rotate;
 }
@@ -1782,8 +1850,10 @@ Quaternion       Quaternion::conjugate()
 
 Quaternion      Quaternion::reverse()
 {
-	float    _length = sqrt(w*w+x*x+y*y+z*z);
+	float    _length = sqrtf(w*w+x*x+y*y+z*z);
 	assert(_length>=__EPS__);
 	return    Quaternion( w/_length,-x/_length,-y/_length,-z/_length   );
 }
 //两个插值函数,以后再实现
+
+__NS_GLK_END

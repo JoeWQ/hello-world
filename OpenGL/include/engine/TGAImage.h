@@ -5,7 +5,8 @@
 #ifndef    __TGA_IMAGE_H__
 #define   __TGA_IMAGE_H__
 //“ı”∞
-#include<engine/GLObject.h>
+#include<engine/Object.h>
+__NS_GLK_BEGIN
 class       TGAImage
 {
 	//container
@@ -44,4 +45,6 @@ public:
 	~TGAImageCubeMap();
 	int        genTextureCubeMap();
 };
+
+__NS_GLK_END
 #endif

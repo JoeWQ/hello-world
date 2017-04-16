@@ -15,6 +15,9 @@
 #include<stdio.h>
 #include<map>
 #include<GL/glew.h>
+__NS_GLK_BEGIN
+//编译着色器
+static    GLuint   __compile_shader(unsigned    _type, const   char    *_shader_source);
 static   const     char    *__now_compile_file_name;
 GLProgram::GLProgram()
 {
@@ -118,7 +121,7 @@ bool      GLProgram::initWithFile(const  char  *_vertex_file, const   char  *_fr
 		printf("file '%s' or file '%s' do not be found!\n",_vertex_file,_frame_file);
 		assert(0);
 	}
-
+	__now_compile_file_name = _vertex_file;
 	bool    _result = this->initWithString(_vertex_buff, _frame_buff);
 	delete    _vertex_buff;
 	delete    _frame_buff;
@@ -169,7 +172,7 @@ bool     GLProgram::initWithFile(const char *vertex, const char *geometry, const
 		printf("file %s don't exist!\n", frame);
 
 	assert(_vertex_buff && _geometry_buffer && _frame_buff);
-
+	__now_compile_file_name = vertex;
 	bool    _result = this->initWithString(_vertex_buff,_geometry_buffer ,_frame_buff);
 	delete    _vertex_buff;
 	delete    _geometry_buffer;
@@ -312,12 +315,12 @@ GLuint      __compile_shader(GLenum _type, const char *_shader_source)
 }
 ///////////////////////////////计算着色器//////////////////////////
 #ifdef  __OPENGL_VERSION__
-GLCompute::GLCompute()
+ComputeShader::ComputeShader()
 {
 	_object = 0;
 	_computeShader = 0;
 }
-GLCompute::~GLCompute()
+ComputeShader::~ComputeShader()
 {
 	glDetachShader(_object, _computeShader);
 	glDeleteShader(_computeShader);
@@ -325,7 +328,7 @@ GLCompute::~GLCompute()
 	_object = 0;
 	_computeShader = 0;
 }
-void      GLCompute::initWithString(const char *shader_string)
+void      ComputeShader::initWithString(const char *shader_string)
 {
 	_computeShader = __compile_shader(GL_COMPUTE_SHADER, shader_string);
 	_object = glCreateProgram();
@@ -352,7 +355,7 @@ void      GLCompute::initWithString(const char *shader_string)
 	}
 }
 
-void      GLCompute::initWithFile(const char *file_name)
+void      ComputeShader::initWithFile(const char *file_name)
 {
 	const  char  *file_content = Tools::getFileContent(file_name);
 	if (!file_content)
@@ -360,41 +363,45 @@ void      GLCompute::initWithFile(const char *file_name)
 		printf("file  %s is  not  exist !\n",file_name);
 		assert(0);
 	}
+	printf("Compile Compute Shader file '%s'\n",file_name);
 	this->initWithString(file_content);
 	delete   file_content;
 }
 
-GLCompute	*GLCompute::createWithFile(const char *file_name)
+ComputeShader	*ComputeShader::createWithFile(const char *file_name)
 {
-	GLCompute		*_glProgram = new   GLCompute();
+	ComputeShader		*_glProgram = new   ComputeShader();
 	_glProgram->initWithFile(file_name);
 	return  _glProgram;
 }
 
-GLCompute	*GLCompute::createWithString(const char *shader_string)
+ComputeShader	*ComputeShader::createWithString(const char *shader_string)
 {
-	GLCompute	*_glProgram = new   GLCompute();
+	ComputeShader	*_glProgram = new   ComputeShader();
 	_glProgram->initWithString(shader_string);
 	return  _glProgram;
 }
 
-void       GLCompute::dispatch(int dispatch_x_size, int dispatch_y_size, int dispatch_z_size)
+void       ComputeShader::dispatch(int dispatch_x_size, int dispatch_y_size, int dispatch_z_size)
 {
+	glUseProgram(_object);
 	glDispatchCompute(dispatch_x_size, dispatch_y_size, dispatch_z_size);
 }
 
-void       GLCompute::enableObject()
-{
-	glUseProgram(_object);
-}
+//void       ComputeShader::perform()
+//{
+//	glUseProgram(_object);
+//}
 
-int         GLCompute::getUniformLocation(const char *name)
+int         ComputeShader::getUniformLocation(const char *name)
 {
 	return  glGetUniformLocation(_object, name);
 }
 
-unsigned GLCompute::getObject()
+unsigned ComputeShader::getObject()
 {
 	return _object;
 }
 #endif
+
+__NS_GLK_END

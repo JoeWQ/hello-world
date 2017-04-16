@@ -8,6 +8,7 @@
 #include<engine/GLCacheManager.h>
 #include<engine/GLState.h>
 #include<assert.h>
+__NS_GLK_BEGIN
 GLCacheManager    GLCacheManager::_glCacheManager;
 //内嵌的程序对象源代码
 //普通着色器
@@ -176,3 +177,4 @@ unsigned      GLCacheManager::loadBufferIdentity()
 	}
 	return _bufferIdentity;
 }
+__NS_GLK_END

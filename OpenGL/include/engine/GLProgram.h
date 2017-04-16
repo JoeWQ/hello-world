@@ -6,9 +6,10 @@
 //Version 4.0:加入对计算着色器的支持,仅限于OpenGL
 #ifndef    __PROGRAM_OBJECT_H__
 #define   __PROGRAM_OBJECT_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<engine/GLState.h>
-class      GLProgram:public    GLObject
+__NS_GLK_BEGIN
+class      GLProgram:public    Object
 {
 private:
 //程序对象
@@ -51,7 +52,7 @@ public:
 //禁止程序对象
 	   void          disableObject();
  //获取程序对象,此函数接口只负责返回数据,但不负责保护
-	   unsigned      getObject(){ return     _object; };
+	   unsigned      getProgram(){ return     _object; };
 //获取统一变量位置
 	   unsigned      getUniformLocation(const  char  *);
 //获取属性变量的位置
@@ -59,31 +60,30 @@ public:
 };
 //只有OpenGL中才能使用
 #ifdef  __OPENGL_VERSION__
-class    GLCompute :public  GLObject
+class    ComputeShader :public  Object
 {
 private:
 	unsigned    _object;
 	unsigned    _computeShader;
 private:
-	GLCompute();
-	GLCompute(GLCompute &);
+	ComputeShader();
+	ComputeShader(ComputeShader &);
 	void            initWithFile(const  char *file_name);
 	void            initWithString(const char *shader_string);
 public:
-	~GLCompute();
-	GLCompute       *createWithString(const  char  *shader_string);
-	GLCompute       *createWithFile(const char *file_name);
+	~ComputeShader();
+	ComputeShader       *createWithString(const  char  *shader_string);
+	ComputeShader       *createWithFile(const char *file_name);
 //在三个维度上分发的数目
 	void                     dispatch(int  dispatch_x_size,int  dispatch_y_size,int  dispatch_z_size);
-//启用着色器
-	void                     enableObject();
+////启用着色器
+//	void                     perform();
 //获取着色器对象
 	unsigned             getObject();
 //获取统一变量的位置
 	int                       getUniformLocation(const char *name);
 };
 #endif
-//编译着色器
-static    unsigned         __compile_shader(unsigned    _type, const   char    *_shader_source);
 //从文件中读取字符串
+__NS_GLK_END
 #endif

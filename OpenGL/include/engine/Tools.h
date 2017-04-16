@@ -5,6 +5,8 @@
 #ifndef    __HELP_H__
 #define   __HELP_H__
 #include<stdio.h>
+#include<engine/GLState.h>
+__NS_GLK_BEGIN
 //// tga header
 #ifndef __APPLE__
 #pragma pack(push,x1)                            // Byte alignment (8-bit)
@@ -92,4 +94,5 @@ static  char *loadBMP(const char *file_name,int *width,int *height,int *bitDepth
 //加载图像文件,目前只支持BMP,TGA两种
 static  char  *loadImage(const char *file_name,int *width,int *height,int *bitDepth);
 };
+__NS_GLK_END
 #endif

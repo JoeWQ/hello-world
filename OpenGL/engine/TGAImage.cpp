@@ -8,6 +8,7 @@
 #include<assert.h>
 #include<math.h>
 #include<stdlib.h>
+__NS_GLK_BEGIN
 
 #define NOISE_TABLE_MASK   255
 #define  M_PI                  3.14159265358
@@ -378,3 +379,5 @@ int       TGAImageCubeMap::genTextureCubeMap()
 	glBindTexture(GL_TEXTURE_CUBE_MAP,0);
 	return    _cubeMapId;
 }
+
+__NS_GLK_END

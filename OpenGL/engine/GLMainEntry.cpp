@@ -27,14 +27,15 @@
 #endif
 #include<stdio.h>
 #include<engine/GLCacheManager.h>
-#include<engine/Sprite.h>
+#include<engine/event//EventManager.h>
 ///////////////////////////////////////////////////////////////////
 //declare function
-void   Init(GLContext   *);
-void   Draw(GLContext *);
-void   Update(GLContext *, float);
-void   ShutDown(GLContext *);
+void   Init(glk::GLContext   *);
+void   Draw(glk::GLContext *);
+void   Update(glk::GLContext *, float);
+void   ShutDown(glk::GLContext *);
 //////////////////////////////////////////////////////////////////
+__NS_GLK_BEGIN
 //callback for event window size changed
 static     void          __onChangeSize(int w, int h)
 {
@@ -47,7 +48,7 @@ static     void          __onChangeSize(int w, int h)
 //draw screen,default frame/second is 30
 static    void         __OnDraw__()
 {
-	GLContext    *_context = GLContext::getInstance();
+	glk::GLContext    *_context = glk::GLContext::getInstance();
 	if (_context->draw)
 	{
 		       _context->draw(_context);
@@ -60,7 +61,7 @@ static    void         __OnDraw__()
 }
 static   void         __OnUpdate__(int   _tag)
 {
-		GLContext		*_context = GLContext::getInstance();
+		glk::GLContext		*_context = glk::GLContext::getInstance();
 		int                     _newTickCount = 0;
 #ifdef _WINDOWS_
 		_newTickCount = GetTickCount();
@@ -69,6 +70,8 @@ static   void         __OnUpdate__(int   _tag)
 		gettimeofday(&val, NULL);
 		_newTickCount = (val.tv_sec - _context->baseTickCount) * 1000 + val.tv_usec / 1000;
 #endif
+		//派发事件
+		_context->dispatchEvent();
 		if (_context->update)
 		{
 #ifdef _WINDOWS_
@@ -110,11 +113,59 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 //	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 //		glfwSetWindowShouldClose(window, GL_TRUE);
 }
+#else
+//键盘处理事件
+void  _static_keyCallback()
+{
+
+}
+static glk::MouseType __static_mouseButtonType;
+//鼠按下释放事件标事件
+static void _static_mousePressCallback(int button, int buttonState, int x, int y)
+{
+	glk::GLContext   *context = glk::GLContext::getInstance();
+	auto &winSize = context->getWinSize();
+	__static_mouseButtonType = glk::MouseType::MouseType_None;
+	glk::GLVector2  mouseClickPosition(x, winSize.height - y);
+	//鼠标的左键按下
+	switch (button)
+	{
+	case GLUT_LEFT_BUTTON:
+		
+		if (buttonState == GLUT_DOWN)
+		{
+			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Left, glk::MouseState::MouseState_Pressed, mouseClickPosition);
+		}
+		else if(buttonState == GLUT_UP)
+		{
+			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Left, glk::MouseState::MouseState_Released, mouseClickPosition);
+		}
+		__static_mouseButtonType = glk::MouseType::MouseType_Left;
+		break;
+	case GLUT_RIGHT_BUTTON:
+		if (buttonState == GLUT_DOWN)
+		{
+			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Right, glk::MouseState::MouseState_Pressed, mouseClickPosition);
+		}
+		else if (buttonState == GLUT_UP)
+		{
+			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Right,glk::MouseState::MouseState_Pressed, mouseClickPosition);
+		}
+		__static_mouseButtonType = glk::MouseType_Right;
+		break;
+	}
+}
+//
+static void _static_mouseMotionCallback(int x,int y)
+{
+	glk::GLVector2 mouseMotionPosition(x,glk::GLContext::getInstance()->getWinSize().height-y);
+	glk::EventManager::getInstance()->addMouseEvent(__static_mouseButtonType, glk::MouseState_Moved, mouseMotionPosition);
+}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point for GLUT based programs
-void      GLMainEntrySetting(GLContext    *_context)
+void      GLMainEntrySetting(glk::GLContext    *_context)
 {
 	_context->userObject = NULL;
 #ifdef __USE_GLFW_MM__
@@ -122,15 +173,16 @@ void      GLMainEntrySetting(GLContext    *_context)
 #else
 	_context->setDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
 #endif
-	_context->setWinSize(Size(960, 768));
-	_context->setShadowSize(Size(1024,1024));
-	_context->setWinPosition(GLVector2(200, 100));
+	_context->setWinSize(glk::Size(960, 640));
+	_context->setShadowSize(glk::Size(1024,1024));
+	_context->setWinPosition(glk::GLVector2(200, 100));
 	_context->registerInitFunc(Init);
 	_context->registerUpdateFunc(Update);
 	_context->registerDrawFunc(Draw);
 	_context->registerShutDownFunc(ShutDown);
 }
 
+__NS_GLK_END
 int      main(int argc, char* argv[])
 {
 //	gltSetWorkingDirectory(argv[0]);
@@ -138,7 +190,7 @@ int      main(int argc, char* argv[])
 #else
 	glutInit(&argc, argv);
 #endif
-	GLContext	 *_context = GLContext::getInstance();
+	glk::GLContext	 *_context = glk::GLContext::getInstance();
 	GLMainEntrySetting(_context);
 #ifdef __USE_GLFW_MM__
 	glfwInit();
@@ -164,8 +216,11 @@ int      main(int argc, char* argv[])
 	glutInitWindowSize((int)_context->winSize.width,(int)_context->winSize.height);
 	glutInitWindowPosition((int)_context->winPosition.x,(int)_context->winPosition.y);
 	glutCreateWindow(_context->winTitle);
-	glutReshapeFunc(__onChangeSize);
-	glutDisplayFunc(__OnDraw__);
+	glutReshapeFunc(glk::__onChangeSize);
+	glutDisplayFunc(glk::__OnDraw__);
+	//鼠标按下释放事件
+	glutMouseFunc(glk::_static_mousePressCallback);
+	glutMotionFunc(glk::_static_mouseMotionCallback);
 #endif
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
@@ -192,7 +247,7 @@ int      main(int argc, char* argv[])
 		glfwSwapBuffers(window);
 	}
 #else
-	glutTimerFunc(34, __OnUpdate__, 0);
+	glutTimerFunc(34, glk::__OnUpdate__, 0);
 
 	glutMainLoop();
 #endif

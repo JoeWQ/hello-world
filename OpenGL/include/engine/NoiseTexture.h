@@ -6,12 +6,13 @@
 */
 #ifndef   __NOISE_TEXTURE_H__
 #define  __NOISE_TEXTURE_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<stdlib.h>
 #include<stdio.h>
+__NS_GLK_BEGIN
 //frequency表示噪声的频率,频率越大,展现的细节就越丰富,当然外形就越不明显
 //一维纹理
-class      NoiseTexture:public GLObject
+class      NoiseTexture:public Object
 {
 private:
 	unsigned      _noiseTextureId;
@@ -27,7 +28,7 @@ public:
 	float                 getWidth(){ return  _width; };
 };
 //二维噪声纹理
-class   NoiseTexture2 :public  GLObject
+class   NoiseTexture2 :public  Object
 {
 private:
 	unsigned         _noiseTextureId;
@@ -43,7 +44,7 @@ public:
 	float                 getWidth(){ return _width; };
 };
 //三维噪声纹理
-class    NoiseTexture3 :public GLObject
+class    NoiseTexture3 :public Object
 {
 private:
 	unsigned      _noiseTextureId;
@@ -59,7 +60,7 @@ public:
 	float             getWidth(){ return  _width; };
 };
 //连续的倍频噪声,注意这是一个立方体
-class   NoiseConsistency :public  GLObject
+class   NoiseConsistency :public  Object
 {
 private:
 	unsigned     _noiseTextureId;
@@ -75,4 +76,5 @@ public:
 	unsigned                 name();
 	float                         getWidth();
 };
+__NS_GLK_END
 #endif

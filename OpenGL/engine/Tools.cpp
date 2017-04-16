@@ -10,6 +10,8 @@
 #include<stdlib.h>
 #include<assert.h>
 #include<map>
+__NS_GLK_BEGIN
+
 static  char  *vLoadBMP(FILE *fp, int *width, int *height, int *bitDepth);
 static  char  *vLoadTGA(FILE *fp, int *width, int *height, int *bitDepth);
 static  char  *vLoadTGA_NO_Change(FILE *fp, int *width, int *height, int *bitDepth);
@@ -285,3 +287,5 @@ char  *Tools::loadImage(const char *file_name, int *width, int *height, int *bit
 	fclose(fp);
 	return buffer;
 }
+
+__NS_GLK_END

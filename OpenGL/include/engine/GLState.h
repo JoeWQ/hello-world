@@ -20,7 +20,7 @@ enum     _tDrawFlag{
 #define      __OPENGL_VERSION__
 #endif
 //是否开启几何着色器,默认是不开启的,在OpenGLES版本中,必须禁止这个宏
-//#define      __GEOMETRY_SHADER__
+#define      __GEOMETRY_SHADER__
 //是否开启缓存,着色器缓存,纹理缓存
 #define     __ENABLE_PROGRAM_CACHE__    
 //开启纹理缓存
@@ -53,4 +53,11 @@ enum     _tDrawFlag{
 #endif
 
 #define    __MATH_PI__        3.1415926535873f
+#define    _RADIUS_FACTOR_ (__MATH_PI__/180.0f)
+//重力系数
+#define    __GRAVITY_CONSTANT		9.810f
+//引擎的命名空间名字
+#define	 __NS_GLK_BEGIN                 namespace glk {
+#define    __NS_GLK_END                     }
+#define    __US_GLK__						    using namespace glk;
 #endif

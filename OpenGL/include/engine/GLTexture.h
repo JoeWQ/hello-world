@@ -4,9 +4,10 @@
  */
 #ifndef  __GLTEXTURE_H__
 #define __GLTEXTURE_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<engine/Geometry.h>
-class  GLTexture:public GLObject
+__NS_GLK_BEGIN
+class  GLTexture:public Object
 {
 private:
 	unsigned int      _textureId;
@@ -32,7 +33,7 @@ public:
 /*
   *
   */
-class   GLCubeMap :public GLObject
+class   GLCubeMap :public Object
 {
 	unsigned         _cubeMapId;
 	Size                  _contentSize;
@@ -48,4 +49,5 @@ public:
 	static     GLCubeMap      *createEmptyMap(Size    &contentSize);
 	unsigned       name();
 };
+__NS_GLK_END
 #endif

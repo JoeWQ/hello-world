@@ -8,10 +8,11 @@
 //Version 4.0:添加了对切线的直接支持
 #ifndef   __SHAPE_H__
 #define  __SHAPE_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
+__NS_GLK_BEGIN
 //所有物体形状的超类,所有使用形状类的GL函数只能使用GL_TRIANGLE_STRIPE调用
 //必须重写该类才能使用
-class    Shape :public  GLObject
+class    Shape :public  Object
 {
 private:
 	Shape(Shape &);
@@ -133,4 +134,5 @@ public:
 	static      Mesh       *Mesh::createWithIntensity(int   grid_size,float  scaleX,float  scaleY,float  texIntensity);
 	virtual     void      bindNormalObject(int _loc);//绑定法线缓冲区
 };
+__NS_GLK_END
 #endif

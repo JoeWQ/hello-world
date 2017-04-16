@@ -69,6 +69,7 @@ void        Init(GLContext    *_context)
 	_user->timeInterval = 0.0f;
 //很坑,尼玛被这个坑了半天,OpenGL与OpenGLES的区别,切记切记
 	glEnable(GL_POINT_SPRITE);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 //
@@ -120,3 +121,4 @@ void         ShutDown(GLContext  *_context)
 {
 	UserData    *_user = (UserData *)_context->userObject;
 }
+ 

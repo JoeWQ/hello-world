@@ -8,6 +8,7 @@
 #include<GL/glew.h>
 #include<stdio.h>
 #include<assert.h>
+__NS_GLK_BEGIN
 GLTexture::GLTexture()
 {
 	_textureId = 0;
@@ -192,3 +193,4 @@ GLCubeMap        *GLCubeMap::createWithFiles(const char **file_list)
 	_cubeMap->initWithFiles(file_list);
 	return  _cubeMap;
 }
+__NS_GLK_END
