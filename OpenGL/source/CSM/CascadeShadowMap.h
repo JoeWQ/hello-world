@@ -10,6 +10,7 @@
 #include<engine/Shape.h>
 #include<engine/GLTexture.h>
 #include<engine/ShadowMap.h>
+#include<engine/event/TouchEventListener.h>
 #include"LightShader.h"
 #include"CameraShader.h"
 class  CascadeShadowMap :public glk::Object
@@ -53,6 +54,12 @@ private:
 	glk::GLTexture      *_sphereTexture;
 	//CSM阴影贴图阵列
 	glk::ShadowMap   *_csmShadowArray;
+	//触屏事件
+	glk::TouchEventListener    *_touchEvent;
+	//与视图矩阵相关的数据
+	glk::GLVector2         _offset;
+	glk::GLVector3         _pitchYawRoll;
+	glk::GLVector3         _rotateVector;
 private:
 	CascadeShadowMap(CascadeShadowMap &);
 	CascadeShadowMap();
@@ -92,6 +99,13 @@ public:
 	  *更新与CSM相关的数据
 	 */
 	void           update(const float deltaTime);
+
+	/*
+	  *触屏事件
+	 */
+	bool           onTouchBegan(const glk::GLVector2 *touchPoint);
+	void           onTouchMoved(const glk::GLVector2 *touchPoint);
+	void           onTouchEnded(const glk::GLVector2  *touchPoint);
 };
 
 #endif

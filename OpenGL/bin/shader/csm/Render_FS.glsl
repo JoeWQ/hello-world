@@ -27,7 +27,7 @@ vec4	computeLayerColor(out float layer)
 	// layer = layer0 + layer1 + layer2 + layer3;
 	// return layer0 * vec4(1.0, 0.5, 0.5, 1.0) + layer1 * vec4(0.5, 1.0, 0.5, 1.0) + 
 	//        layer2 * vec4(0.5, 0.5, 1.0, 1.0) + layer3 * vec4(1.0, 0.5, 1.0, 1.0);
-	vec4 layerColor = vec4(0.5, 0.5, 0.5, 1.0);
+	 vec4 layerColor = vec4(0.5, 0.5, 0.5, 1.0);
 	layer = 3.0;
 	if(gl_FragCoord.z <= u_normalSegments.x)
 	{
@@ -68,8 +68,7 @@ void    main()
 
 	outColor =  texture(u_baseMap,v_fragCoord);
 	vec3    shadowColor =  outColor.rgb * diffuseFactor + vec3(1.0) * specularFartor;
-	// if( shadowFactor < 1.0 )
-	// 	discard;
+
 	shadowColor *= shadowFactor;
 	outColor.rgb = outColor.rgb * vec3(0.2,0.2,0.2) + shadowColor;
 	outColor *= layerColor;

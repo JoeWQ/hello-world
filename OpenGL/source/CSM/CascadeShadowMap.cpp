@@ -5,9 +5,11 @@
   */
 #include"CascadeShadowMap.h"
 #include<engine/GLContext.h>
+#include<engine/event/EventManager.h>
 #include<GL/glew.h>
 #include<math.h>
 #include<limits>
+#include<stdio.h>
 //从光源的角度或者摄像机的角度观察整个场景时的视角
 #define _FOV_ANGLE_   60.0f
 //CSM分割系数
@@ -15,7 +17,7 @@
 //视锥体分段数目
 #define _FRUSTUM_SEGMENT_COUNT_ 4
 //阴影贴图的大小
-#define _LIGHT_MAP_SIZE_  4096.0f
+#define _LIGHT_MAP_SIZE_  1024.0f
 CascadeShadowMap::CascadeShadowMap()
 {
 	_lightShader = nullptr;
@@ -36,6 +38,7 @@ CascadeShadowMap::~CascadeShadowMap()
 
 	_groundTexture->release();
 	_sphereTexture->release();
+	glk::EventManager::getInstance()->removeListener(this);
 }
 
 CascadeShadowMap *CascadeShadowMap::createCascadeShadowMap()
@@ -78,6 +81,13 @@ void  CascadeShadowMap::initCascadeShadowMap()
 	  *计算光空间视锥体分割,以及分层的适口范围
 	 */
 	//updateLightViewFrustum();
+	//注册事件
+	_touchEvent = glk::TouchEventListener::createTouchListener(this, 
+		glk_touch_selector(CascadeShadowMap::onTouchBegan),
+		glk_move_selector(CascadeShadowMap::onTouchMoved),
+		glk_release_selector(CascadeShadowMap::onTouchEnded)
+		);
+	glk::EventManager::getInstance()->addTouchEventListener(_touchEvent,0);
 }
 //计算由远近平面以及光源的视图矩阵决定的包围盒的大小
 void CascadeShadowMap::frustumBoudingboxInLightSpaceView(const float nearZ, const float farZ, glk::GLVector4 &boxMin, glk::GLVector4 &boxMax)
@@ -184,6 +194,25 @@ void		CascadeShadowMap::initCamera(const glk::GLVector3 &eyePosition, const glk:
 	_cameraViewMatrix.identity();
 	_cameraViewMatrix.lookAt(eyePosition, viewPosition, upVector);
 	_cameraViewPorjMatrix = _cameraViewMatrix * _projMatrix;
+	const float *mat = _cameraViewMatrix.pointer();
+	//计算欧拉角以及旋转向量,下面的公式得出的原因是roll-yaw-pitch旋转矩阵相乘
+	//具体请参见 https://www.physicsforums.com/threads/decomposition-of-a-rotation-matrix.623740/
+	const float pitch = atan2f(-mat[2*4+1],mat[2*4+2]);
+	const float yaw = atan2f(mat[2*4+0],glk::GLVector2(-mat[2*4+1],mat[2*4+2]).length());
+	//
+	_rotateVector = glk::GLVector3(mat[3*4+0],mat[3*4+1],mat[3*4+2]);
+	//逆向求旋转之前的向量
+	glk::Matrix matX;
+	matX.rotateX(-pitch*_ANGLE_FACTOR_);
+	glk::Matrix matY;
+	matY.rotateY(-yaw*_ANGLE_FACTOR_);
+	glk::GLVector4 rotateVec4 = glk::GLVector4(_rotateVector.x,_rotateVector.y,_rotateVector.z,0.0f) * matX;
+	rotateVec4 = rotateVec4 * matY;
+	//旋转向量
+	_rotateVector = glk::GLVector3(rotateVec4.x, rotateVec4.y, rotateVec4.z);
+	glk::GLVector3   targetVec = viewPosition - eyePosition;
+	//欧拉角
+	_pitchYawRoll = glk::GLVector3(pitch,yaw,0.0f);
 }
 
 void CascadeShadowMap::initLight(const glk::GLVector3 &lightPosition, const glk::GLVector3 &lightViewPosition, const glk::GLVector3 &upVector)
@@ -192,7 +221,6 @@ void CascadeShadowMap::initLight(const glk::GLVector3 &lightPosition, const glk:
 	auto &winSize = glk::GLContext::getInstance()->getWinSize();
 	_lightViewMatrix.identity();
 	_lightViewMatrix.lookAt(lightPosition, lightViewPosition, upVector);
-
 }
 
 //计算各个平面的视口范围,以及分割的视锥体的光空间正交偏移缩放矩阵
@@ -427,5 +455,28 @@ void CascadeShadowMap::renderLightView()
 
 void CascadeShadowMap::update(const float deltaTime)
 {
+	_cameraViewMatrix.identity();
+	_cameraViewMatrix.translate(_rotateVector.x, _rotateVector.y, _rotateVector.z);
+	_cameraViewMatrix.rotateY(_pitchYawRoll.y*_ANGLE_FACTOR_);
+	_cameraViewMatrix.rotateX(_pitchYawRoll.x*_ANGLE_FACTOR_);
+	_cameraViewPorjMatrix = _cameraViewMatrix *_projMatrix;
+}
 
+bool  CascadeShadowMap::onTouchBegan(const glk::GLVector2 *touchPoint)
+{
+	_offset = *touchPoint;
+	return true;
+}
+
+void CascadeShadowMap::onTouchMoved(const glk::GLVector2 *touchPoint)
+{
+	auto &winSize = glk::GLContext::getInstance()->getWinSize();
+	_pitchYawRoll.x += -(touchPoint->y - _offset.y) / winSize.height*__MATH_PI__*0.6f;
+	_pitchYawRoll.y += (touchPoint->x - _offset.x)/winSize.width*__MATH_PI__ * 0.6f;
+	_offset = *touchPoint;
+}
+
+void CascadeShadowMap::onTouchEnded(const glk::GLVector2 *touchPoint)
+{
+	
 }

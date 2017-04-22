@@ -5,6 +5,7 @@
 //Version 5.0 将所有的有关矩阵的操作纳入到矩阵类中,作为矩阵的成员函数实现
 //Version 6.0 将切线的计算引入到球体,立方体,地面网格的生成算法中
 //Version 7.0 引入了四元数的计算
+//Version8.0 为支持欧拉角而添加的矩阵旋转函数
 #ifndef   __GEOMETRY_H__
 #define  __GEOMETRY_H__
 #include<engine/GLState.h>
@@ -24,7 +25,9 @@ __NS_GLK_BEGIN
 		GLVector2     operator-(GLVector2 &)const;
 		GLVector2     operator/(float)const;
 		GLVector2     operator/(GLVector2 &)const;
+		GLVector2&  operator=(const GLVector2 &src);
 		GLVector2     normalize()const;
+		const float     length()const;
 		float               dot(GLVector2 &other)const;
 	};
 	struct    Size
@@ -57,6 +60,7 @@ __NS_GLK_BEGIN
 		GLVector3   min(const GLVector3 &)const;
 		GLVector3   max(const GLVector3 &)const;
 		float              dot(const GLVector3 &other)const;
+		const float    length()const;
 	};
 	class  Matrix;
 	struct GLVector4
@@ -124,6 +128,12 @@ __NS_GLK_BEGIN
 		void    translate(const float deltaX, const float  deltaY,const float deltaZ);
 		//旋转
 		void    rotate(float  angle, float x, float y, float z);
+		//绕X轴旋转
+		void    rotateX(float pitch);
+		//绕Y轴旋转
+		void    rotateY(float yaw);
+		//绕Z轴旋转
+		void    rotateZ(float roll);
 		//右乘视图矩阵
 		void    lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPosition, const GLVector3  &upVector);
 		//右乘正交投影矩阵

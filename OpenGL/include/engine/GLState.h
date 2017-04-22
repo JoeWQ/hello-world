@@ -54,6 +54,7 @@ enum     _tDrawFlag{
 
 #define    __MATH_PI__        3.1415926535873f
 #define    _RADIUS_FACTOR_ (__MATH_PI__/180.0f)
+#define    _ANGLE_FACTOR_  (180.0f/__MATH_PI__)
 //重力系数
 #define    __GRAVITY_CONSTANT		9.810f
 //引擎的命名空间名字

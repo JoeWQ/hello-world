@@ -1117,6 +1117,13 @@ GLVector2    GLVector2::operator/(GLVector2  &_factor)const
 {
 	return  GLVector2(x/_factor.x,y/_factor.y);
 }
+
+GLVector2& GLVector2::operator=(const GLVector2 &src)
+{
+	x = src.x, y = src.y;
+	return *this;
+}
+
 GLVector2   GLVector2::normalize()const
 {
 	float  _length = sqrt(x*x+y*y);
@@ -1126,6 +1133,11 @@ GLVector2   GLVector2::normalize()const
 float     GLVector2::dot(GLVector2 &other)const
 {
 	return x*other.x + y*other.y;
+}
+
+const float GLVector2::length()const
+{
+	return sqrtf(x*x+y*y);
 }
 /////////////////////////////333333333333333333////////////////////////////////////
 GLVector3   GLVector3::operator*(const Matrix3 &src)const
@@ -1178,6 +1190,10 @@ GLVector3   GLVector3::cross(const GLVector3 &axis)const
 float    GLVector3::dot(const GLVector3 &other)const
 {
 	return x*other.x + y*other.y + z*other.z;
+}
+const float GLVector3::length()const
+{
+	return sqrtf(x*x+y*y+z*z);
 }
 
 GLVector3 GLVector3::min(const GLVector3 &other)const
@@ -1312,6 +1328,50 @@ void    Matrix::translate(const float deltaX, const float  deltaY, const float d
 	m[3][0] += m[3][3] * deltaX;
 	m[3][1] += m[3][3] * deltaY;
 	m[3][2] += m[3][3] * deltaZ;
+}
+
+void    Matrix::rotateX(float pitch)
+{
+	Matrix  matX;
+
+	const float sinX = sinf(pitch*_RADIUS_FACTOR_);
+	const float cosX = cosf(pitch * _RADIUS_FACTOR_);
+
+	matX.m[1][1] = cosX;
+	matX.m[1][2] = sinX;
+	
+	matX.m[2][1] = -sinX;
+	matX.m[2][2] = cosX;
+	this->multiply(matX);
+}
+
+void Matrix::rotateY(float yaw)
+{
+	Matrix matY;
+
+	const float sinY = sinf(yaw*_RADIUS_FACTOR_);
+	const float cosY = cosf(yaw*_RADIUS_FACTOR_);
+
+	matY.m[0][0] = cosY;
+	matY.m[0][2] = -sinY;
+
+	matY.m[2][0] = sinY;
+	matY.m[2][2] = cosY;
+	this->multiply(matY);
+}
+
+void Matrix::rotateZ(float roll)
+{
+	Matrix matZ;
+	const float sinZ = sinf(roll*_RADIUS_FACTOR_);
+	const float cosZ = cosf(roll*_RADIUS_FACTOR_);
+
+	matZ.m[0][0] = cosZ;
+	matZ.m[0][1] = sinZ;
+
+	matZ.m[1][0] = -sinZ;
+	matZ.m[1][1] = cosZ;
+	this->multiply(matZ);
 }
 //Ðý×ª
 void    Matrix::rotate(float  angle, float x, float y, float z)
