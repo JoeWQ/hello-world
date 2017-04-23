@@ -40,6 +40,7 @@ __NS_GLK_BEGIN
 		}
 	};
 	class  Matrix3;
+	struct  GLVector4;
 	struct  GLVector3
 	{
 		float    x, y, z;
@@ -47,7 +48,12 @@ __NS_GLK_BEGIN
 		{
 			x = a, y = b, z = c;
 		}
+		GLVector3(const float xyz)
+		{
+			x = y = z = xyz;
+		}
 		GLVector3() { x = 0, y = 0, z = 0; };
+		GLVector4  xyzw()const;
 		GLVector3   operator*(const Matrix3 &)const;
 		GLVector3   operator*(const GLVector3 &)const;
 		GLVector3   operator*(const float)const;
@@ -71,7 +77,12 @@ __NS_GLK_BEGIN
 			x = a, y = b;
 			z = c, w = d;
 		}
+		GLVector4(const float xyzw)
+		{
+			x = y = z = xyzw;
+		}
 		GLVector4() { x = 0, y = 0, z = 0, w = 0; };
+		GLVector3    xyz() const{ return GLVector3(x, y, z); };
 		GLVector4   operator*(Matrix &)const;
 		GLVector4   operator*(const float )const;
 		GLVector4   operator*(const GLVector4 &)const;
@@ -159,7 +170,7 @@ __NS_GLK_BEGIN
 		//重载 乘法运算符
 		Matrix    operator*(const Matrix   &);
 		//矩阵与向量乘法
-		GLVector4  operator*(GLVector4  &);
+		GLVector4  operator*(const GLVector4  &)const;
 		//矩阵之间的复制
 		Matrix&    operator=(const Matrix  &);
 	};

@@ -1140,6 +1140,10 @@ const float GLVector2::length()const
 	return sqrtf(x*x+y*y);
 }
 /////////////////////////////333333333333333333////////////////////////////////////
+GLVector4   GLVector3::xyzw()const
+{
+	return GLVector4(x,y,z,1.0f);
+}
 GLVector3   GLVector3::operator*(const Matrix3 &src)const
 {
 	float  x, y, z;
@@ -1534,7 +1538,7 @@ Matrix     Matrix::operator*(const Matrix   &srcA)
 	}
 	return tmp;
 }
-GLVector4  Matrix::operator*(GLVector4  &vec)
+GLVector4  Matrix::operator*(const GLVector4  &vec)const
 {
 	float   x, y, z, w;
 	x = vec.x*m[0][0] + vec.y*m[1][0] + vec.z*m[2][0] + vec.w*m[3][0];
