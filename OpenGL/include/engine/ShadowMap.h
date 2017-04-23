@@ -20,6 +20,8 @@ private:
 	bool					_isDepthLayerArray;
 	int                   _numberOfLayer;//如果_isDepthLayerArray为true,此域代表层的数目,否则该域的值始终为0
 	Size                 _shadowMapSize;
+	//是否使用视口变换,在OpenGL4.0中，如果使用了glViewportIndex*系列函数,此标志就可以设置成false了
+	bool                _isViewportChange;
 private:
 	ShadowMap(ShadowMap &);
 	ShadowMap();
@@ -51,6 +53,10 @@ public:
 	void   activeShadowFramebuffer();
 	//恢复原来的缓冲区对象
 	void   restoreFramebuffer();
+	//设置视口变换标志
+	void   setViewportChange(const float b);
+	//是否启用了视口变换
+	bool   isViewportChange()const;
 };
 
 __NS_GLK_END

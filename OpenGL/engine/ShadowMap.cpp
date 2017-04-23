@@ -15,6 +15,7 @@ ShadowMap::ShadowMap()
 	_oldFramebufferId = 0;
 	_isDepthLayerArray = false;
 	_numberOfLayer = 0;
+	_isViewportChange = true;
 }
 
 ShadowMap::~ShadowMap()
@@ -109,9 +110,21 @@ void  ShadowMap::activeShadowFramebuffer()
 {
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,&_oldFramebufferId);
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebufferId);
+	if(_isViewportChange)
+		glViewport(0, 0, _shadowMapSize.width, _shadowMapSize.height);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//const float depthValue = 1.0f;
 	//glClearBufferfv(GL_DEPTH,0,&depthValue);
+}
+
+void ShadowMap::setViewportChange(const float b)
+{
+	_isViewportChange = b;
+}
+
+bool ShadowMap::isViewportChange()const
+{
+	return _isViewportChange;
 }
 
 void ShadowMap::restoreFramebuffer()
