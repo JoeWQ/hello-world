@@ -36,3 +36,5 @@ shared_spurces: https://github.com/nvpro-samples/shared_sources.git
 
 VSL: https://github.com/lighthouse3d/VSL.git
 jpeg: https://github.com/LuaDist/libjpeg.git
+
+OpenCL: https://github.com/bgaster/opencl-book-samples.git

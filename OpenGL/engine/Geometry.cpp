@@ -263,7 +263,7 @@ void esMatrixLookAt ( ESMatrix *result,GLVector3    *eyePosition, GLVector3    *
    axisZ[2] = viewPosition->z - eyePosition->z;
 
    // normalize axisZ
-   length =sqrt( axisZ[0] * axisZ[0] + axisZ[1] * axisZ[1] + axisZ[2] * axisZ[2] );
+   length =sqrtf( axisZ[0] * axisZ[0] + axisZ[1] * axisZ[1] + axisZ[2] * axisZ[2] );
    assert(length>0.0f);
    axisZ[0] /= length;
    axisZ[1] /= length;
@@ -275,7 +275,7 @@ void esMatrixLookAt ( ESMatrix *result,GLVector3    *eyePosition, GLVector3    *
    axisX[2] = up->x * axisZ[1] - up->y * axisZ[0];
 
    // normalize axisX
-   length =sqrt( axisX[0] * axisX[0] + axisX[1] * axisX[1] + axisX[2] * axisX[2] );
+   length =sqrtf( axisX[0] * axisX[0] + axisX[1] * axisX[1] + axisX[2] * axisX[2] );
    assert(length>0.0f);
    axisX[0] /= length;
    axisX[1] /= length;
@@ -287,7 +287,7 @@ void esMatrixLookAt ( ESMatrix *result,GLVector3    *eyePosition, GLVector3    *
    axisY[2] = axisZ[0] * axisX[1] - axisZ[1] * axisX[0];
 
    // normalize axisY
-   length =sqrt( axisY[0] * axisY[0] + axisY[1] * axisY[1] + axisY[2] * axisY[2] );
+   length =sqrtf( axisY[0] * axisY[0] + axisY[1] * axisY[1] + axisY[2] * axisY[2] );
 
    assert(length > 0.0f);
    axisY[0] /= length;
@@ -415,8 +415,8 @@ int  esGenSphere(int numSlices, float radius, float **vertices, float **normals,
 
 	for ( i = 0; i < numParallels + 1; i++ )//Y轴切片,只需要180度即可
 	{
-		const float   _real_radius=radius*sin(angleStep*i);
-		const float   _real_cos=radius*cos(angleStep*i);
+		const float   _real_radius=radius*sinf(angleStep*i);
+		const float   _real_cos=radius*cosf(angleStep*i);
 		for ( j = 0; j < numSlices + 1; j++ )
 		{
 			int vertex = ( i * ( numSlices + 1 ) + j ) * 3;
@@ -437,9 +437,9 @@ int  esGenSphere(int numSlices, float radius, float **vertices, float **normals,
 //切线是球面方程关于x的偏导数
 			if (_tangent)
 			{
-					_tangent[vertex] = cos(j*angleStep);
+					_tangent[vertex] = cosf(j*angleStep);
 					_tangent[vertex + 1] = 0.0f;
-					_tangent[vertex + 2] = sin(j*angleStep);
+					_tangent[vertex + 2] = sinf(j*angleStep);
 			}
 			if ( _texCoord )
 			{
@@ -790,14 +790,14 @@ float       dot(GLVector3  *srcA, GLVector3  *srcB)
 //normalize
 GLVector3    normalize(GLVector3 *src)
 {
-	float     _distance = sqrt(src->x*src->x+src->y*src->y+src->z*src->z);
+	float     _distance = sqrtf(src->x*src->x+src->y*src->y+src->z*src->z);
 	assert(_distance>0);
 
 	return  GLVector3(src->x/_distance,src->y/_distance,src->z/_distance);
 }
 GLVector2   normalize(GLVector2    *src)
 {
-	float    _distance = sqrt(src->x*src->x+src->y*src->y);
+	float    _distance = sqrtf(src->x*src->x+src->y*src->y);
 	assert(_distance>0);
 	return  GLVector2(src->x/_distance,src->y/_distance);
 }
@@ -846,7 +846,7 @@ void      esMatrixNormal(ESMatrix3  *result, ESMatrix   *src)
 //镜像矩阵
 void       esMatrixMirror(ESMatrix   *result, float  x, float  y, float z)
 {
-	float    _mag = sqrt(x*x+y*y+z*z);
+	float    _mag = sqrtf(x*x+y*y+z*z);
 	assert(_mag);
 	x /= _mag;
 	y /= _mag;
@@ -1126,7 +1126,7 @@ GLVector2& GLVector2::operator=(const GLVector2 &src)
 
 GLVector2   GLVector2::normalize()const
 {
-	float  _length = sqrt(x*x+y*y);
+	float  _length = sqrtf(x*x+y*y);
 	assert(_length>=__EPS__);
 	return  GLVector2(x/_length,y/_length);
 }
@@ -1140,7 +1140,12 @@ const float GLVector2::length()const
 	return sqrtf(x*x+y*y);
 }
 /////////////////////////////333333333333333333////////////////////////////////////
-GLVector4   GLVector3::xyzw()const
+GLVector4   GLVector3::xyzw0()const
+{
+	return GLVector4(x,y,z,0.0f);
+}
+
+GLVector4 GLVector3::xyzw1()const
 {
 	return GLVector4(x,y,z,1.0f);
 }
@@ -1179,7 +1184,7 @@ GLVector3   GLVector3::operator/(const GLVector3 &_factor)const
 }
 GLVector3   GLVector3::normalize()const
 {
-	float      _length = sqrt(x*x+y*y+z*z);
+	float      _length = sqrtf(x*x+y*y+z*z);
 	assert(_length>=__EPS__);
 	return    GLVector3(x/_length,y/_length,z/_length);
 }
@@ -1228,7 +1233,7 @@ GLVector4     GLVector4::operator*(Matrix &src)const
 }
 GLVector4    GLVector4::normalize()const
 {
-	float   _length = sqrt(x*x+y*y+z*z+w*w);
+	float   _length = sqrtf(x*x+y*y+z*z+w*w);
 	assert(_length>__EPS__);
 	return  GLVector4(x/_length,y/_length,z/_length,w/_length);
 }
@@ -1332,6 +1337,25 @@ void    Matrix::translate(const float deltaX, const float  deltaY, const float d
 	m[3][0] += m[3][3] * deltaX;
 	m[3][1] += m[3][3] * deltaY;
 	m[3][2] += m[3][3] * deltaZ;
+}
+
+void Matrix::translate(const GLVector3 &deltaXYZ)
+{
+	m[0][0] += m[0][3] * deltaXYZ.x;
+	m[0][1] += m[0][3] * deltaXYZ.y;
+	m[0][2] += m[0][3] * deltaXYZ.z;
+
+	m[1][0] += m[1][3] * deltaXYZ.x;
+	m[1][1] += m[1][3] * deltaXYZ.y;
+	m[1][2] += m[1][3] * deltaXYZ.z;
+
+	m[2][0] += m[2][3] * deltaXYZ.x;
+	m[2][1] += m[2][3] * deltaXYZ.y;
+	m[2][2] += m[2][3] * deltaXYZ.z;
+
+	m[3][0] += m[3][3] * deltaXYZ.x;
+	m[3][1] += m[3][3] * deltaXYZ.y;
+	m[3][2] += m[3][3] * deltaXYZ.z;
 }
 
 void    Matrix::rotateX(float pitch)
@@ -1811,12 +1835,12 @@ Quaternion::Quaternion(float angle, GLVector3 &vec)
 {
 //半角
 	float        _halfAngle = angle*__MATH_PI__/360.0f;
-	float        _sinVector = sin(_halfAngle);
+	float        _sinVector = sinf(_halfAngle);
 //单位化旋转向量
-	float        _vector_length = sqrt(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
+	float        _vector_length = sqrtf(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
 	assert(_vector_length>=__EPS__);
 
-	w = cos(_halfAngle);
+	w = cosf(_halfAngle);
 	x = vec.x*_sinVector / _vector_length;
 	y = vec.y*_sinVector / _vector_length;
 	z = vec.z*_sinVector / _vector_length;
@@ -1839,7 +1863,7 @@ Quaternion::Quaternion(Matrix   &rotate)
 {
 	float        _lamda = rotate.m[0][0] + rotate.m[1][1] + rotate.m[2][2] + 1.0f;
 	assert(_lamda>__EPS__ &&  _lamda<=4.0f);
-	w = 0.5f*sqrt(_lamda );
+	w = 0.5f*sqrtf(_lamda );
 
 	float         w4 = 4.0f*w;
 	x = (rotate.m[1][2]-rotate.m[2][1])/w4;
@@ -1875,7 +1899,7 @@ void      Quaternion::identity()
 
 void       Quaternion::normalize()
 {
-	float         _length = sqrt(w*w+x*x+y*y+z*z);
+	float         _length = sqrtf(w*w+x*x+y*y+z*z);
 	assert(_length>__EPS__);
 
 	w /= _length;
