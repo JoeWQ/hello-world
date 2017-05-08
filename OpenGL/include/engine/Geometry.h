@@ -112,11 +112,11 @@ __NS_GLK_BEGIN
 		Matrix3();
 		inline     const float    *pointer() const { return  (float*)m; };
 		//求逆矩阵
-		Matrix3         reverse();
+		Matrix3         reverse()const;
 		//行列式
-		float               det();
+		float               det()const;
 		//右乘三维列向量
-		GLVector3   operator*(GLVector3 &);
+		GLVector3   operator*(const GLVector3 &)const;
 		Matrix3&     operator=(Matrix3 &);
 	};
 	//四维矩阵,全新的实现
@@ -164,15 +164,15 @@ __NS_GLK_BEGIN
 		//相当于两个矩阵乘法一起进行,因此速度更快
 		void   offset();
 		//从现有的矩阵中推导出法线矩阵
-		Matrix3     normalMatrix();
+		Matrix3     normalMatrix()const;
 		//截断为3维矩阵
-		Matrix3       trunk();
+		Matrix3       trunk()const;
 		//求逆矩阵
-		Matrix             reverse();
+		Matrix             reverse()const;
 		//行列式
-		float                 det();
+		float                 det()const;
 		//重载 乘法运算符
-		Matrix    operator*(const Matrix   &);
+		Matrix    operator*(const Matrix   &)const;
 		//矩阵与向量乘法
 		GLVector4  operator*(const GLVector4  &)const;
 		//矩阵之间的复制
@@ -183,7 +183,7 @@ __NS_GLK_BEGIN
 	struct   ESMatrix3
 	{
 		float    mat3[3][3];
-		ESMatrix3(GLVector3  *vec1, GLVector3  *vec2, GLVector3  *vec3)//用三个向量进行初始化三个矩阵行向量
+		ESMatrix3(const GLVector3  *vec1, const GLVector3  *vec2, const GLVector3  *vec3)//用三个向量进行初始化三个矩阵行向量
 		{
 			mat3[0][0] = vec1->x, mat3[0][1] = vec1->y, mat3[0][2] = vec1->z;
 			mat3[1][0] = vec2->x, mat3[1][1] = vec2->y, mat3[1][2] = vec2->z;

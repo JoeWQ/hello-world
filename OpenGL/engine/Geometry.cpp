@@ -1530,7 +1530,7 @@ void     Matrix::multiply(Matrix &srcA, Matrix &srcB)
 	memcpy(m, &tmp, sizeof(Matrix));
 }
 //运算符重载
-Matrix     Matrix::operator*(const Matrix   &srcA)
+Matrix     Matrix::operator*(const Matrix   &srcA)const
 {
 	Matrix  tmp;
 	int         i;
@@ -1629,7 +1629,7 @@ void    Matrix::perspective(float fovy, float aspect, float nearZ, float farZ)
 	this->frustum(-frustumW, frustumW, -frustumH, frustumH, nearZ, farZ);
 }
 
-Matrix             Matrix::reverse()
+Matrix             Matrix::reverse()const
 {
 	Matrix     tmp;
 	float             _det = this->det();
@@ -1664,7 +1664,7 @@ Matrix             Matrix::reverse()
 	return   tmp;
 }
 //行列式
-float           Matrix::det()
+float           Matrix::det()const
 {
 	GLVector3   row1, row2, row3;
 	float  _det;
@@ -1691,7 +1691,7 @@ float           Matrix::det()
 	return _det;
 }
 
-Matrix3     Matrix::normalMatrix()
+Matrix3     Matrix::normalMatrix()const
 {
 	Matrix3      tmp;
 	float            temp;
@@ -1717,21 +1717,21 @@ Matrix3     Matrix::normalMatrix()
    return  tmp;
 }
 
-Matrix3    Matrix::trunk()
+Matrix3    Matrix::trunk()const
 {
 	Matrix3   tmp;
-#define   _MATRIX_TRUNK_(i,k)   tmp.m[i][k]=m[i][k];
-	_MATRIX_TRUNK_(0, 0)
-	_MATRIX_TRUNK_(0, 1)
-	_MATRIX_TRUNK_(0, 2)
+#define   _MATRIX_TRUNK_(i,k)   tmp.m[i][k]=m[i][k]
+	_MATRIX_TRUNK_(0, 0);
+	_MATRIX_TRUNK_(0, 1);
+	_MATRIX_TRUNK_(0, 2);
 
-	_MATRIX_TRUNK_(1, 0)
-	_MATRIX_TRUNK_(1, 1)
-	_MATRIX_TRUNK_(1, 2)
+	_MATRIX_TRUNK_(1, 0);
+	_MATRIX_TRUNK_(1, 1);
+	_MATRIX_TRUNK_(1, 2);
 
-	_MATRIX_TRUNK_(2, 0)
-	_MATRIX_TRUNK_(2, 1)
-	_MATRIX_TRUNK_(2, 2)
+	_MATRIX_TRUNK_(2, 0);
+	_MATRIX_TRUNK_(2, 1);
+	_MATRIX_TRUNK_(2, 2);
 #undef _MATRIX_TRUNK_
 	return tmp;
 }
@@ -1767,7 +1767,7 @@ Matrix3::Matrix3()
 	m[1][0] = 0.0f, m[1][1] = 1.0f, m[1][2] = 0.0f;
 	m[2][0] = 0.0f, m[2][1] = 0.0f, m[2][2] = 1.0f;
 }
-Matrix3     Matrix3::reverse()
+Matrix3     Matrix3::reverse()const
 {
 	Matrix3    tmp;
 	float     _det = this->det();
@@ -1787,7 +1787,7 @@ Matrix3     Matrix3::reverse()
 	return  tmp;
 }
 
-float     Matrix3::det()
+float     Matrix3::det()const
 {
 	float     _result;
 	_result = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]);
@@ -1796,7 +1796,7 @@ float     Matrix3::det()
 	return _result;
 }
 //右乘三维向量
-GLVector3     Matrix3::operator*(GLVector3 &vec)
+GLVector3     Matrix3::operator*(const GLVector3 &vec)const
 {
 	float x, y, z;
 	x = m[0][0] * vec.x + m[0][1] * vec.y + m[0][2] * vec.z;
