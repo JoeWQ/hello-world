@@ -53,7 +53,8 @@ __NS_GLK_BEGIN
 			x = y = z = xyz;
 		}
 		GLVector3() { x = 0, y = 0, z = 0; };
-		GLVector4  xyzw()const;
+		GLVector4  xyzw0()const;
+		GLVector4  xyzw1()const;
 		GLVector3   operator*(const Matrix3 &)const;
 		GLVector3   operator*(const GLVector3 &)const;
 		GLVector3   operator*(const float)const;
@@ -137,6 +138,8 @@ __NS_GLK_BEGIN
 		void     scale(const float scaleX, const float scaleY, const float  scaleZ);
 		//平移float 
 		void    translate(const float deltaX, const float  deltaY,const float deltaZ);
+		//平移deltaXYZ向量
+		void    translate(const GLVector3 &deltaXYZ);
 		//旋转
 		void    rotate(float  angle, float x, float y, float z);
 		//绕X轴旋转
@@ -157,7 +160,8 @@ __NS_GLK_BEGIN
 		void    multiply(Matrix   &srcA);
 		//self=srcA*srcB
 		void    multiply(Matrix   &srcA, Matrix   &rscB);
-		//偏置矩阵
+		//偏置矩阵,此矩阵是专门为阴影计算提供直接的支持,通常使用光源矩阵之后,需要诚意缩放,偏移矩阵,调用此函数之后
+		//相当于两个矩阵乘法一起进行,因此速度更快
 		void   offset();
 		//从现有的矩阵中推导出法线矩阵
 		Matrix3     normalMatrix();

@@ -31,19 +31,16 @@ ESMatrix::ESMatrix()
 void esScale ( ESMatrix *result, float sx, float sy, float sz )
 {
    result->m[0][0] *= sx;
-   result->m[0][1] *= sx;
-   result->m[0][2] *= sx;
-   result->m[0][3] *= sx;
+   result->m[0][1] *= sy;
+   result->m[0][2] *= sz;
 
-   result->m[1][0] *= sy;
+   result->m[1][0] *= sx;
    result->m[1][1] *= sy;
-   result->m[1][2] *= sy;
-   result->m[1][3] *= sy;
+   result->m[1][2] *= sz;
 
-   result->m[2][0] *= sz;
-   result->m[2][1] *= sz;
+   result->m[2][0] *= sx;
+   result->m[2][1] *= sy;
    result->m[2][2] *= sz;
-   result->m[2][3] *= sz;
 }
 
 void esTranslate ( ESMatrix *result, float tx, float ty, float tz )
@@ -1741,26 +1738,26 @@ Matrix3    Matrix::trunk()
 //Æ«ÖÃ¾ØÕó
 void     Matrix::offset()
 {
-#define    _OFFSET_MATRIX(i,k)  m[i][k]=m[i][k]*0.5f+temp;
+#define    _OFFSET_MATRIX(i,k)  m[i][k]=m[i][k]*0.5f+temp
 	float  temp = m[0][3] * 0.5f;
-	_OFFSET_MATRIX(0, 0)
-	_OFFSET_MATRIX(0, 1)
-	_OFFSET_MATRIX(0, 2)
+	_OFFSET_MATRIX(0, 0);
+	_OFFSET_MATRIX(0, 1);
+	_OFFSET_MATRIX(0, 2);
 
 	temp = m[1][3] * 0.5f;
-	_OFFSET_MATRIX(1, 0)
-	_OFFSET_MATRIX(1, 1)
-	_OFFSET_MATRIX(1, 2)
+	_OFFSET_MATRIX(1, 0);
+	_OFFSET_MATRIX(1, 1);
+	_OFFSET_MATRIX(1, 2);
 
 	temp = m[2][3] * 0.5f;
-	_OFFSET_MATRIX(2, 0)
-	_OFFSET_MATRIX(2, 1)
-	_OFFSET_MATRIX(2, 2)
+	_OFFSET_MATRIX(2, 0);
+	_OFFSET_MATRIX(2, 1);
+	_OFFSET_MATRIX(2, 2);
 
 	temp = m[3][3] * 0.5f;
-	_OFFSET_MATRIX(3,0)
-	_OFFSET_MATRIX(3,1)
-	_OFFSET_MATRIX(3,2)
+	_OFFSET_MATRIX(3, 0);
+	_OFFSET_MATRIX(3, 1);
+	_OFFSET_MATRIX(3, 2);
 #undef _OFFSET_MATRIX
 }
 //////////////////////////////ÈýÎ¬¾ØÕó//////////////////////////
