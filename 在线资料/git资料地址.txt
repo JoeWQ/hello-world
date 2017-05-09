@@ -38,3 +38,10 @@ VSL: https://github.com/lighthouse3d/VSL.git
 jpeg: https://github.com/LuaDist/libjpeg.git
 
 OpenCL: https://github.com/bgaster/opencl-book-samples.git
+
+OpenCL-sublime ²å¼þ:https://github.com/thebaldwin/OpenCL-Syntax.git
+
+Vulkan: https://bitbucket.org/jose_henriques/vulkan_tutorial.git
+             https://github.com/KhronosGroup/Vulkan-Docs.git
+             https://github.com/KhronosGroup/Vulkan-Docs.git
+	https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
