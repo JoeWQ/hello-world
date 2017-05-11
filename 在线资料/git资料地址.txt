@@ -45,3 +45,4 @@ Vulkan: https://bitbucket.org/jose_henriques/vulkan_tutorial.git
              https://github.com/KhronosGroup/Vulkan-Docs.git
              https://github.com/KhronosGroup/Vulkan-Docs.git
 	https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
+             https://github.com/LunarG/VulkanSamples.git
