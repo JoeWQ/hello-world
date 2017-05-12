@@ -41,14 +41,4 @@ OpenCL: https://github.com/bgaster/opencl-book-samples.git
 
 OpenCL-sublime ²å¼þ:https://github.com/thebaldwin/OpenCL-Syntax.git
 
-Vulkan: https://bitbucket.org/jose_henriques/vulkan_tutorial.git
-             https://github.com/KhronosGroup/Vulkan-Docs.git
-             https://github.com/KhronosGroup/Vulkan-Docs.git
-	https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
-             https://github.com/LunarG/VulkanSamples.git
-
-Vulkan SDK  https://vulkan.lunarg.com/
-                      https://www.lunarg.com/vulkan-sdk/
-
-
 Nvidia griphics demo: https://github.com/NVIDIAGameWorks
