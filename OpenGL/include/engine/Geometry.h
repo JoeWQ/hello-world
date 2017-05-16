@@ -5,7 +5,8 @@
 //Version 5.0 将所有的有关矩阵的操作纳入到矩阵类中,作为矩阵的成员函数实现
 //Version 6.0 将切线的计算引入到球体,立方体,地面网格的生成算法中
 //Version 7.0 引入了四元数的计算
-//Version8.0 为支持欧拉角而添加的矩阵旋转函数
+//Version 8.0 为支持欧拉角而添加的矩阵旋转函数
+//Version 9.0 全面支持关于四元数的运算
 #ifndef   __GEOMETRY_H__
 #define  __GEOMETRY_H__
 #include<engine/GLState.h>
@@ -119,6 +120,8 @@ __NS_GLK_BEGIN
 		GLVector3   operator*(const GLVector3 &)const;
 		Matrix3&     operator=(Matrix3 &);
 	};
+
+	class Quaternion;
 	//四维矩阵,全新的实现
 	class Matrix
 	{
@@ -133,7 +136,7 @@ __NS_GLK_BEGIN
 		//加载单位矩阵
 		void      identity();
 		//矩阵之间的快速复制
-		void     copy(Matrix   &);
+		void     copy(const Matrix   &);
 		//缩放
 		void     scale(const float scaleX, const float scaleY, const float  scaleZ);
 		//平移float 
@@ -205,12 +208,13 @@ __NS_GLK_BEGIN
 		float        y;
 		float        z;
 	public:
-		Quaternion(float w, float x, float y, float z);
 		//使用角度+向量初始化四元数
-		//	 Quaternion(float    angle,float      x,float  y,float   z);
-		Quaternion(float    angle, GLVector3  &);
+		Quaternion(const float w, const float x,const float y, const float z);
+		//
+		Quaternion(const float    angle, const GLVector3  &);
 		//使用旋转矩阵初始化向量,注意此必须为旋转矩阵,否则会崩溃
-		Quaternion(Matrix      &);
+		Quaternion(const Matrix      &);
+		//默认创建的是单位四元数
 		Quaternion();
 		//加载单位四元数
 		void                   identity();
@@ -218,18 +222,25 @@ __NS_GLK_BEGIN
 		void                    multiply(Quaternion   &);
 		//单位化
 		void                    normalize();
+		//点乘
+		float                   dot(const Quaternion &other)const;
+		//旋转三维向量
+		GLVector3         rotate(const GLVector3 &src)const;
 		//求逆
-		Quaternion        reverse();
+		Quaternion        reverse()const;
 		//求共轭四元数
-		Quaternion		conjugate();
+		Quaternion		   conjugate();
 		//导出到旋转矩阵
 		Matrix               toRotateMatrix();
+		//另一种导出旋转矩阵的方式,在实践中具体使用哪一个,取决于使用者的爱好
+		void                   toRotateMatrix(Matrix &rotateMatrix)const;
 		//乘法运算符重载
-		Quaternion		operator*(Quaternion	&);
+		Quaternion		operator*(const Quaternion	&)const;
+		GLVector3      operator*(const GLVector3 &)const;
 		//在两个四元数之间进行线性插值
-		static    Quaternion	   lerp(Quaternion  &p, Quaternion	&q, float      lamda);
+		static    Quaternion	   lerp(const Quaternion  &p, const Quaternion	&q, const float      lamda);
 		//在两个四元数之间进行球面线性插值
-		static    Quaternion     slerp(Quaternion	&p, Quaternion		&q, float     lamda);
+		static    Quaternion     slerp(const Quaternion	&p, const Quaternion		&q, const float     lamda);
 	};
 	//
 	int  esGenSphere(int numSlices, float radius, float **vertices, float **normals, float  **tangents,

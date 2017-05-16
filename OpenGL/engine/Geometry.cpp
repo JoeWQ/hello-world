@@ -3,11 +3,12 @@
 //    A utility library for OpenGL ES.  This library provides a
 //    basic common framework for the example applications in the
 //    OpenGL ES 3.0 Programming Guide.
-//Version:1.0 提供了对矩阵的最基本的操作,包括 单位矩阵,旋转矩阵,平移矩阵,投影矩阵,视图矩阵,矩阵乘法
+//Version:1.0 提供了对矩阵的最基本的操作,包括 单位矩阵,旋转矩阵,平移矩阵,缩放矩阵,投影矩阵,视图矩阵,矩阵乘法
 //Version:2.0增加了镜像矩阵,以及3维矩阵的引入,2,3,4维向量的引入,并提供了对向量的基本操作<单位化,点乘,叉乘,长度>的支持
 //Version:3.0 增加了对矩阵直接求逆的支持,以及法线矩阵的推导,行列式的直接支持,向量与矩阵的乘法
 //Version:4.0 增加了对偏置矩阵的支持,可以直接对阴影进行操作
-//Version 5.0 将所有的有关矩阵的操作纳入到矩阵类中,作为矩阵的成员函数实现,在以后的实际开发中,推荐使用新的类函数,因为他们的接口更友好,更方便
+//Version 5.0 将所有的有关矩阵的操作纳入到矩阵类中,作为矩阵的成员函数实现,在以后的实际开发中,
+//推荐使用新的类函数,因为他们的接口更友好,更方便
 //Version 6.0 将切线的计算引入到球体,立方体,地面网格的生成算法中
 //Version 7.0:修正球面的切线的计算,由原来的直接三角函数计算变成求球面的关于x的偏导
 //Version 8.0:引入了对四元数的支持
@@ -1301,7 +1302,7 @@ void     Matrix::identity()
 	m[2][0] = 0.0f, m[2][1] = 0.0f, m[2][2] = 1.0f, m[2][3] = 0.0f;
 	m[3][0] = 0.0f, m[3][1] = 0.0f, m[3][2] = 0.0f, m[3][3] = 1.0f;
 }
-void    Matrix::copy(Matrix  &srcA)
+void    Matrix::copy(const Matrix  &srcA)
 {
 	m[0][0] = srcA.m[0][0], m[0][1] = srcA.m[0][1], m[0][2] = srcA.m[0][2], m[0][3] = srcA.m[0][3];
 	m[1][0] = srcA.m[1][0], m[1][1] = srcA.m[1][1], m[1][2] = srcA.m[1][2], m[1][3] = srcA.m[1][3];
@@ -1814,13 +1815,13 @@ Matrix3&    Matrix3::operator=(Matrix3  &src)
 ///////////////////////////////////////////四元数的实现///////////////////////////////////////
 Quaternion::Quaternion()
 {
-	w = 0.0f;
+	w = 1.0f;
 	x = 0.0f;
 	y = 0.0f;
 	z = 0.0f;
 }
 
-Quaternion::Quaternion(float w, float x, float y, float z)
+Quaternion::Quaternion(const float w,const float x, const float y, const float z)
 {
 	this->w = w;
 	this->x = x;
@@ -1828,7 +1829,7 @@ Quaternion::Quaternion(float w, float x, float y, float z)
 	this->z = z;
 }
 
-Quaternion::Quaternion(float angle, GLVector3 &vec)
+Quaternion::Quaternion(const float angle, const GLVector3 &vec)
 {
 //半角
 	float        _halfAngle = angle*__MATH_PI__/360.0f;
@@ -1843,20 +1844,7 @@ Quaternion::Quaternion(float angle, GLVector3 &vec)
 	z = vec.z*_sinVector / _vector_length;
 }
 
-//Quaternion::Quaternion(float  angle,float   ax,float  ay,float  az)
-//{
-//	float     _halfAngle = angle*__MATH_PI__ / 360.0f;
-//	float     _sinValue = sin(_halfAngle);
-//	float     _length = sqrt(ax*ax+ay*ay+az*az);
-//	assert(_length>=__EPS__);
-//
-//	w = cos(_halfAngle);
-//	x = ax*_sinValue / _length;
-//	y = ay*_sinValue / _length;
-//	z = az*_sinValue / _length;
-//}
-
-Quaternion::Quaternion(Matrix   &rotate)
+Quaternion::Quaternion(const Matrix   &rotate)
 {
 	float        _lamda = rotate.m[0][0] + rotate.m[1][1] + rotate.m[2][2] + 1.0f;
 	assert(_lamda>__EPS__ &&  _lamda<=4.0f);
@@ -1879,7 +1867,7 @@ void      Quaternion::multiply(Quaternion &p)
 	w = aw, x = ax, y = ay, z = az;
 }
 
-Quaternion		Quaternion::operator*(Quaternion   &p)
+Quaternion		Quaternion::operator*(const Quaternion   &p)const
 {
 	float    aw = w*p.w - x*p.x - y*p.y - z*p.z;
 	float    ax = w*p.x + x*p.w + y*p.z - z*p.y;
@@ -1905,6 +1893,34 @@ void       Quaternion::normalize()
 	z /= _length;
 }
 
+void         Quaternion::toRotateMatrix(Matrix &rotateMatrix)const
+{
+	float          xy = this->x * this->y;
+	float          xz = this->x * this->z;
+	float          yz = this->y * this->z;
+	float         ww = this->w * this->w;
+
+	rotateMatrix.m[0][0] = 1.0f - 2 * (x*x + ww);
+	rotateMatrix.m[0][1] = 2.0f * (xy + w*z);
+	rotateMatrix.m[0][2] = 2.0f*(xz - w*y);
+	rotateMatrix.m[0][3] = 0.0f;
+
+	rotateMatrix.m[1][0] = 2.0f*(xy - w*z);
+	rotateMatrix.m[1][1] = 1.0f - 2.0f*(y*y + ww);
+	rotateMatrix.m[1][2] = 2.0f*(yz * w*x);
+	rotateMatrix.m[1][3] = 0.0f;
+
+	rotateMatrix.m[2][0] = 2.0f*(xz + w*y);
+	rotateMatrix.m[2][1] = 2.0f*(yz - w*x);
+	rotateMatrix.m[2][2] = 1.0f - 2.0f*(z*z + ww);
+	rotateMatrix.m[2][3] = 0.0f;
+
+	rotateMatrix.m[3][0] = 0.0f;
+	rotateMatrix.m[3][1] = 0.0f;
+	rotateMatrix.m[3][2] = 0.0f;
+	rotateMatrix.m[3][3] = 0.0f;
+}
+
 Matrix	    Quaternion::toRotateMatrix()
 {
 	Matrix      _rotate;
@@ -1913,17 +1929,17 @@ Matrix	    Quaternion::toRotateMatrix()
 	float          yz = this->y * this->z;
 	float         ww = this->w * this->w;
 
-	_rotate.m[0][0] = 1.0f - 2 * (x*x + ww) ;
+	_rotate.m[0][0] = -1.0f + 2.0f * (x*x + ww) ;//==>1.0f - 2.0f *(y*y+z*z)
 	_rotate.m[0][1] =2.0f * (xy+ w*z) ;
 	_rotate.m[0][2] = 2.0f*(xz - w*y);
 
 	_rotate.m[1][0] = 2.0f*(xy - w*z);
-	_rotate.m[1][1] = 1.0f - 2.0f*(y*y+ww);
+	_rotate.m[1][1] = -1.0f + 2.0f*(y*y+ww);//==>1.0f - 2.0f*(x*x+z*z)
 	_rotate.m[1][2] = 2.0f*(yz * w*x);
 
 	_rotate.m[2][0] = 2.0f*(xz + w*y);
 	_rotate.m[2][1] = 2.0f*(yz - w*x);
-	_rotate.m[2][2] = 1.0f - 2.0f*(z*z+ww) ;
+	_rotate.m[2][2] = -1.0f + 2.0f*(z*z+ww) ;//==>1.0f - 2.0f*(x*x+y*y)
 
 	return _rotate;
 }
@@ -1933,12 +1949,73 @@ Quaternion       Quaternion::conjugate()
 	return   Quaternion(w,-x,-y,-z);
 }
 
-Quaternion      Quaternion::reverse()
+Quaternion      Quaternion::reverse()const
 {
-	float    _length = sqrtf(w*w+x*x+y*y+z*z);
-	assert(_length>=__EPS__);
-	return    Quaternion( w/_length,-x/_length,-y/_length,-z/_length   );
+	//float    _length = sqrtf(w*w+x*x+y*y+z*z);
+	//assert(_length>=__EPS__);
+	return    Quaternion( w,-x,-y,-z   );
 }
+
+float   Quaternion::dot(const Quaternion &other)const
+{
+	return w*other.w + x*other.x + y*other.y + z*other.z;
+}
+//旋转3维向量
+GLVector3 Quaternion::rotate(const GLVector3 &src)const
+{
+	const GLVector3 sinVec(x,y,z);
+	const GLVector3 uv = sinVec.cross(src);
+	const GLVector3 uuv = sinVec.cross(uv);
+
+	return src+ uv *(2.0f *w) + uuv * 2.0f;
+}
+
+GLVector3 Quaternion::operator*(const GLVector3 &src)const
+{
+	const GLVector3 sinVec(x, y, z);
+	const GLVector3 uv = sinVec.cross(src);
+	const GLVector3 uuv = sinVec.cross(uv);
+
+	return src + uv *(2.0f *w) + uuv * 2.0f;
+}
+
 //两个插值函数,以后再实现
 
+Quaternion Quaternion::lerp(const Quaternion &p, const Quaternion &q, const float lamda)
+{	
+	assert(lamda>=0.0f && lamda<=1.0f);
+	const float one_minus_t = 1.0f - lamda;
+	const float w = one_minus_t * p.w + lamda * q.w;
+	const float  x = one_minus_t * p.x + lamda *q.x;
+	const float  y = one_minus_t * p.y + lamda * q.y;
+	const float  z = one_minus_t * p.z + lamda * q.z;
+	const float length = sqrtf(w*w+x*x+y*y+z*z);
+	return Quaternion(w/ length,x/ length,y,z/ length);
+}
+
+Quaternion  Quaternion::slerp(const Quaternion &p,const Quaternion &q, const float lamda)
+{
+	assert(lamda>=0.0f && lamda<=1.0f);
+	//检测两个四元数之间的夹角
+	const float angleOfIntersect = p.dot(q);
+	assert(angleOfIntersect>=0.0f);
+	//如果夹角接近于0,则使用线性插值
+	if (angleOfIntersect >= 1.0f - 0.01f)
+		return lerp(p, q, lamda);
+	//取连个四元数之间的最短路径
+	const float sinValue = sqrtf(1.0f - angleOfIntersect*angleOfIntersect);
+	const float angle = asinf(sinValue);
+
+	const float sin_one_minus_t = sinf((1.0f-lamda)*angle);
+	const float sin_t = sinf(lamda * angle);
+	const float a = sin_one_minus_t / sinValue;
+	const float b = sin_t / sinValue;
+
+	const float w = a* p.w + b * q.w;
+	const float x = a *p.x + b * q.x;
+	const float y = a * p.y + b*q.y;
+	const float z = a *p.z + b*q.z;
+	const float length =sqrtf( w* w + x*x + y*y + z*z);
+	return Quaternion(w/length,x/length,y/length,z/length);
+}
 __NS_GLK_END
