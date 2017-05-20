@@ -1,19 +1,16 @@
-
-//
-//    A utility library for OpenGL ES.  This library provides a
-//    basic common framework for the example applications in the
-//    OpenGL ES 3.0 Programming Guide.
+//Author:xiaohuaxiong
 //Version:1.0 提供了对矩阵的最基本的操作,包括 单位矩阵,旋转矩阵,平移矩阵,缩放矩阵,投影矩阵,视图矩阵,矩阵乘法
 //Version:2.0增加了镜像矩阵,以及3维矩阵的引入,2,3,4维向量的引入,并提供了对向量的基本操作<单位化,点乘,叉乘,长度>的支持
 //Version:3.0 增加了对矩阵直接求逆的支持,以及法线矩阵的推导,行列式的直接支持,向量与矩阵的乘法
 //Version:4.0 增加了对偏置矩阵的支持,可以直接对阴影进行操作
 //Version 5.0 将所有的有关矩阵的操作纳入到矩阵类中,作为矩阵的成员函数实现,在以后的实际开发中,
-//推荐使用新的类函数,因为他们的接口更友好,更方便
+//                    推荐使用新的类函数,因为他们的接口更友好,更方便
 //Version 6.0 将切线的计算引入到球体,立方体,地面网格的生成算法中
 //Version 7.0:修正球面的切线的计算,由原来的直接三角函数计算变成求球面的关于x的偏导
 //Version 8.0:引入了对四元数的支持
 //Version 9.0:修正了关于四元数与矩阵之间的转换间的bug,以及Matrix.scale函数的bug
-///
+//Version 10.0 精简了文件中关于矩阵类的实现,删除了历史遗留的矩阵函数,对以往的工程函数不再提供支持,并将四元数类移植到另一个单独的文件中
+//Version 11.0 引入了空间平面方程类,包围盒,另平截头体类在另一个文件中
 //  Includes
 //
 #include<engine/Geometry.h>
@@ -25,365 +22,6 @@
 #define    __EPS__  0.0001f
 #define    __SIGN(sign)   (-(  ((sign)&0x1)<<1)+1)
 __NS_GLK_BEGIN
-ESMatrix::ESMatrix()
-{
-	esMatrixLoadIdentity(this);
-}
-void esScale ( ESMatrix *result, float sx, float sy, float sz )
-{
-   result->m[0][0] *= sx;
-   result->m[0][1] *= sy;
-   result->m[0][2] *= sz;
-
-   result->m[1][0] *= sx;
-   result->m[1][1] *= sy;
-   result->m[1][2] *= sz;
-
-   result->m[2][0] *= sx;
-   result->m[2][1] *= sy;
-   result->m[2][2] *= sz;
-}
-
-void esTranslate ( ESMatrix *result, float tx, float ty, float tz )
-{
-   //result->m[3][0] += ( result->m[0][0] * tx + result->m[1][0] * ty + result->m[2][0] * tz );
-   //result->m[3][1] += ( result->m[0][1] * tx + result->m[1][1] * ty + result->m[2][1] * tz );
-   //result->m[3][2] += ( result->m[0][2] * tx + result->m[1][2] * ty + result->m[2][2] * tz );
-   //result->m[3][3] += ( result->m[0][3] * tx + result->m[1][3] * ty + result->m[2][3] * tz );
-	ESMatrix	translate;
-	esMatrixLoadIdentity(&translate);
-	translate.m[3][0]=tx;
-	translate.m[3][1]=ty;
-	translate.m[3][2]=tz;
-	esMatrixMultiply(result,result,&translate);
-}
-
-void esRotate ( ESMatrix *result, float angle, float x, float y, float z )
-{
-   float sinAngle, cosAngle;
-   float mag = sqrtf ( x * x + y * y + z * z );
-
-   sinAngle = sinf ( angle * PI / 180.0f );
-   cosAngle = cosf ( angle * PI / 180.0f );
-
-   assert(mag>0.0f);
-      float xx, yy, zz, xy, yz, zx, xs, ys, zs;
-      float oneMinusCos;
-      ESMatrix rotMat;
-
-      x /= mag;
-      y /= mag;
-      z /= mag;
-
-      xx = x * x;
-      yy = y * y;
-      zz = z * z;
-      xy = x * y;
-      yz = y * z;
-      zx = z * x;
-      xs = x * sinAngle;
-      ys = y * sinAngle;
-      zs = z * sinAngle;
-      oneMinusCos = 1.0f - cosAngle;
-
-      rotMat.m[0][0] = ( oneMinusCos * xx ) + cosAngle;
-      rotMat.m[0][1] = ( oneMinusCos * xy ) + zs;
-      rotMat.m[0][2] = ( oneMinusCos * zx ) - ys;
-      rotMat.m[0][3] = 0.0F;
-
-      rotMat.m[1][0] = ( oneMinusCos * xy ) - zs;
-      rotMat.m[1][1] = ( oneMinusCos * yy ) + cosAngle;
-      rotMat.m[1][2] = ( oneMinusCos * yz ) + xs;
-      rotMat.m[1][3] = 0.0F;
-
-      rotMat.m[2][0] = ( oneMinusCos * zx ) + ys;
-      rotMat.m[2][1] = ( oneMinusCos * yz ) - xs;
-      rotMat.m[2][2] = ( oneMinusCos * zz ) + cosAngle;
-      rotMat.m[2][3] = 0.0F;
-
-      rotMat.m[3][0] = 0.0F;
-      rotMat.m[3][1] = 0.0F;
-      rotMat.m[3][2] = 0.0F;
-      rotMat.m[3][3] = 1.0F;
-
-      esMatrixMultiply ( result, result,&rotMat);
-}
-
-void esFrustum ( ESMatrix *result, float left, float right, float bottom, float top, float nearZ, float farZ )
-{
-   float       deltaX = right - left;
-   float       deltaY = top - bottom;
-   float       deltaZ = farZ - nearZ;
-   ESMatrix    frust;
-
-   assert(deltaX>0.0f && deltaY>0.0f && deltaZ>0.0f && nearZ>0.0f);
-
-   frust.m[0][0] = 2.0f * nearZ / deltaX;
-   frust.m[0][1] = frust.m[0][2] = frust.m[0][3] = 0.0f;
-
-   frust.m[1][1] = 2.0f * nearZ / deltaY;
-   frust.m[1][0] = frust.m[1][2] = frust.m[1][3] = 0.0f;
-
-   frust.m[2][0] = ( right + left ) / deltaX;
-   frust.m[2][1] = ( top + bottom ) / deltaY;
-   frust.m[2][2] = - ( nearZ + farZ ) / deltaZ;
-   frust.m[2][3] = -1.0f;
-
-   frust.m[3][2] = -2.0f * nearZ * farZ / deltaZ;
-   frust.m[3][0] = frust.m[3][1] = frust.m[3][3] = 0.0f;
-
-   esMatrixMultiply(result, result, &frust);
-}
-
-
-void esPerspective ( ESMatrix *result, float fovy, float aspect, float nearZ, float farZ )
-{
-   float frustumW, frustumH;
-
-   frustumH = tanf ( fovy / 360.0f * PI ) * nearZ;
-   frustumW = frustumH * aspect;
-
-   esFrustum ( result, -frustumW, frustumW, -frustumH, frustumH, nearZ, farZ );
-}
-
-void esOrtho ( ESMatrix *result, float left, float right, float bottom, float top, float nearZ, float farZ )
-{
-   float       deltaX = right - left;
-   float       deltaY = top - bottom;
-   float       deltaZ = farZ - nearZ;
-   ESMatrix    ortho;
-
-   assert(deltaX>0.0f && deltaY>0.0f && deltaZ>0.0f);
-
-   esMatrixLoadIdentity ( &ortho );
-   ortho.m[0][0] = 2.0f / deltaX;
-   ortho.m[3][0] = - ( right + left ) / deltaX;
-   ortho.m[1][1] = 2.0f / deltaY;
-   ortho.m[3][1] = - ( top + bottom ) / deltaY;
-   ortho.m[2][2] = -2.0f / deltaZ;
-   ortho.m[3][2] = - ( nearZ + farZ ) / deltaZ;
-
-   esMatrixMultiply(result,  result, &ortho);
-}
-
-
-void esMatrixMultiply ( ESMatrix *result, ESMatrix *srcA, ESMatrix *srcB )
-{
-   ESMatrix    tmp;
-   int         i;
-
-   for ( i = 0; i < 4; i++ )
-   {
-      tmp.m[i][0] =  ( srcA->m[i][0] * srcB->m[0][0] ) +
-                     ( srcA->m[i][1] * srcB->m[1][0] ) +
-                     ( srcA->m[i][2] * srcB->m[2][0] ) +
-                     ( srcA->m[i][3] * srcB->m[3][0] ) ;
-
-      tmp.m[i][1] =  ( srcA->m[i][0] * srcB->m[0][1] ) +
-                     ( srcA->m[i][1] * srcB->m[1][1] ) +
-                     ( srcA->m[i][2] * srcB->m[2][1] ) +
-                     ( srcA->m[i][3] * srcB->m[3][1] ) ;
-
-      tmp.m[i][2] =  ( srcA->m[i][0] * srcB->m[0][2] ) +
-                     ( srcA->m[i][1] * srcB->m[1][2] ) +
-                     ( srcA->m[i][2] * srcB->m[2][2] ) +
-                     ( srcA->m[i][3] * srcB->m[3][2] ) ;
-
-      tmp.m[i][3] =  ( srcA->m[i][0] * srcB->m[0][3] ) +
-                     ( srcA->m[i][1] * srcB->m[1][3] ) +
-                     ( srcA->m[i][2] * srcB->m[2][3] ) +
-                     ( srcA->m[i][3] * srcB->m[3][3] ) ;
-   }
-
-   memcpy ( result, &tmp, sizeof ( ESMatrix ) );
-}
-
-
-void esMatrixLoadIdentity ( ESMatrix *result )
-{
-   memset ( result, 0x0, sizeof ( ESMatrix ) );
-   result->m[0][0] = 1.0f;
-   result->m[1][1] = 1.0f;
-   result->m[2][2] = 1.0f;
-   result->m[3][3] = 1.0f;
-}
-//右乘偏置矩阵
-void  esMatrixOffset(ESMatrix    *result)
-{
-	result->m[0][0] = result->m[0][0]*0.5f+0.5f;
-	result->m[0][1] = result->m[0][1] * 0.5f + 0.5f;
-	result->m[0][2] = result->m[0][2] * 0.5f + 0.5f;
-	
-	result->m[1][0] = result->m[1][0] * 0.5f + 0.5f;
-	result->m[1][1] = result->m[1][1] * 0.5f + 0.5f;
-	result->m[1][2] = result->m[1][2] * 0.5f + 0.5f;
-
-	result->m[2][0] = result->m[2][0] * 0.5f + 0.5f;
-	result->m[2][1] = result->m[2][1] * 0.5f + 0.5f;
-	result->m[2][2] = result->m[2][2] * 0.5f + 0.5f;
-
-	result->m[3][0] = result->m[3][0] * 0.5f + 0.5f;
-	result->m[3][1] = result->m[3][1] * 0.5f + 0.5f;
-	result->m[3][2] = result->m[3][2] * 0.5f + 0.5f;
-}
-
-void  esMatrixLoadOffset(ESMatrix  *result)
-{
-	result->m[0][0] = 0.5f;
-	result->m[0][1] = 0.0f;
-	result->m[0][2] = 0.0f;
-	result->m[0][3] = 0.0f;
-
-	result->m[1][0] = 0.0f;
-	result->m[1][1] = 0.5f;
-	result->m[1][2] = 0.0f;
-	result->m[1][3] = 0.0f;
-
-	result->m[2][0] = 0.0f;
-	result->m[2][1] = 0.0f;
-	result->m[2][2] = 0.5f;
-	result->m[2][3] = 0.0f;
-
-	result->m[3][0] = 0.5f;
-	result->m[3][1] = 0.5f;
-	result->m[3][2] = 0.5f;
-	result->m[3][3] = 1.0f;
-}
-
-void esMatrixLookAt ( ESMatrix *result,GLVector3    *eyePosition, GLVector3    *viewPosition,GLVector3    *up )
-{
-   float axisX[3], axisY[3], axisZ[3];
-   float length;
-
-   // axisZ = lookAt - pos
-   axisZ[0] = viewPosition->x - eyePosition->x;
-   axisZ[1] = viewPosition->y - eyePosition->y;
-   axisZ[2] = viewPosition->z - eyePosition->z;
-
-   // normalize axisZ
-   length =sqrtf( axisZ[0] * axisZ[0] + axisZ[1] * axisZ[1] + axisZ[2] * axisZ[2] );
-   assert(length>0.0f);
-   axisZ[0] /= length;
-   axisZ[1] /= length;
-   axisZ[2] /= length;
-
-   // axisX = up X axisZ
-   axisX[0] = up->y * axisZ[2] - up->z * axisZ[1];
-   axisX[1] = up->z * axisZ[0] - up->x * axisZ[2];
-   axisX[2] = up->x * axisZ[1] - up->y * axisZ[0];
-
-   // normalize axisX
-   length =sqrtf( axisX[0] * axisX[0] + axisX[1] * axisX[1] + axisX[2] * axisX[2] );
-   assert(length>0.0f);
-   axisX[0] /= length;
-   axisX[1] /= length;
-   axisX[2] /= length;
-
-   // axisY = axisZ x axisX
-   axisY[0] = axisZ[1] * axisX[2] - axisZ[2] * axisX[1];
-   axisY[1] = axisZ[2] * axisX[0] - axisZ[0] * axisX[2];
-   axisY[2] = axisZ[0] * axisX[1] - axisZ[1] * axisX[0];
-
-   // normalize axisY
-   length =sqrtf( axisY[0] * axisY[0] + axisY[1] * axisY[1] + axisY[2] * axisY[2] );
-
-   assert(length > 0.0f);
-   axisY[0] /= length;
-   axisY[1] /= length;
-   axisY[2] /= length;
-
-   memset ( result, 0x0, sizeof ( ESMatrix ) );
-
-   result->m[0][0] = -axisX[0];
-   result->m[0][1] =  axisY[0];
-   result->m[0][2] = -axisZ[0];
-
-   result->m[1][0] = -axisX[1];
-   result->m[1][1] =  axisY[1];
-   result->m[1][2] = -axisZ[1];
-
-   result->m[2][0] = -axisX[2];
-   result->m[2][1] =  axisY[2];
-   result->m[2][2] = -axisZ[2];
-
-   // translate (-posX, -posY, -posZ)
-   result->m[3][0] =  axisX[0] * eyePosition->x + axisX[1] * eyePosition->y + axisX[2] * eyePosition->z;
-   result->m[3][1] = -axisY[0] * eyePosition->x - axisY[1] * eyePosition->y - axisY[2] * eyePosition->z;
-   result->m[3][2] = axisZ[0] * eyePosition->x + axisZ[1] * eyePosition->y + axisZ[2] * eyePosition->z;
-   result->m[3][3] = 1.0f;
-}
-void esMatrixLookAt(ESMatrix *result ,float posX, float posY, float posZ,
-	                                                                float lookAtX, float lookAtY, float lookAtZ,
-                                                                    float upX, float upY, float upZ)
-{
-	float axisX[3], axisY[3], axisZ[3];
-	float length;
-
-	// axisZ = lookAt - pos
-	axisZ[0] = lookAtX - posX;
-	axisZ[1] = lookAtY - posY;
-	axisZ[2] = lookAtZ - posZ;
-
-	// normalize axisZ
-	length = sqrtf(axisZ[0] * axisZ[0] + axisZ[1] * axisZ[1] + axisZ[2] * axisZ[2]);
-
-	if (length != 0.0f)
-	{
-		axisZ[0] /= length;
-		axisZ[1] /= length;
-		axisZ[2] /= length;
-	}
-
-	// axisX = up X axisZ
-	axisX[0] = upY * axisZ[2] - upZ * axisZ[1];
-	axisX[1] = upZ * axisZ[0] - upX * axisZ[2];
-	axisX[2] = upX * axisZ[1] - upY * axisZ[0];
-
-	// normalize axisX
-	length = sqrtf(axisX[0] * axisX[0] + axisX[1] * axisX[1] + axisX[2] * axisX[2]);
-
-	if (length != 0.0f)
-	{
-		axisX[0] /= length;
-		axisX[1] /= length;
-		axisX[2] /= length;
-	}
-
-	// axisY = axisZ x axisX
-	axisY[0] = axisZ[1] * axisX[2] - axisZ[2] * axisX[1];
-	axisY[1] = axisZ[2] * axisX[0] - axisZ[0] * axisX[2];
-	axisY[2] = axisZ[0] * axisX[1] - axisZ[1] * axisX[0];
-
-	// normalize axisY
-	length = sqrtf(axisY[0] * axisY[0] + axisY[1] * axisY[1] + axisY[2] * axisY[2]);
-
-	if (length != 0.0f)
-	{
-		axisY[0] /= length;
-		axisY[1] /= length;
-		axisY[2] /= length;
-	}
-
-	memset(result, 0x0, sizeof(ESMatrix));
-
-	result->m[0][0] = -axisX[0];
-	result->m[0][1] = axisY[0];
-	result->m[0][2] = -axisZ[0];
-
-	result->m[1][0] = -axisX[1];
-	result->m[1][1] = axisY[1];
-	result->m[1][2] = -axisZ[1];
-
-	result->m[2][0] = -axisX[2];
-	result->m[2][1] = axisY[2];
-	result->m[2][2] = -axisZ[2];
-
-	// translate (-posX, -posY, -posZ)
-	result->m[3][0] = axisX[0] * posX + axisX[1] * posY + axisX[2] * posZ;
-	result->m[3][1] = -axisY[0] * posX - axisY[1] * posY - axisY[2] * posZ;
-	result->m[3][2] = axisZ[0] * posX + axisZ[1] * posY + axisZ[2] * posZ;
-	result->m[3][3] = 1.0f;
-}
 //新引入切线的计算
 int  esGenSphere(int numSlices, float radius, float **vertices, float **normals, float  **tangents,
 	float **texCoords, int **indices ,int  *numberOfVertex)
@@ -785,98 +423,7 @@ float       dot(GLVector3  *srcA, GLVector3  *srcB)
 {
 	return    srcA->x*srcB->x + srcA->y*srcB->y + srcA->z*srcB->z;
 }
-//normalize
-GLVector3    normalize(GLVector3 *src)
-{
-	float     _distance = sqrtf(src->x*src->x+src->y*src->y+src->z*src->z);
-	assert(_distance>0);
 
-	return  GLVector3(src->x/_distance,src->y/_distance,src->z/_distance);
-}
-GLVector2   normalize(GLVector2    *src)
-{
-	float    _distance = sqrtf(src->x*src->x+src->y*src->y);
-	assert(_distance>0);
-	return  GLVector2(src->x/_distance,src->y/_distance);
-}
-//矩阵截断
-void    esMatrixTrunk(ESMatrix3   *dst, ESMatrix  *src)
-{
-	dst->mat3[0][0] = src->m[0][0];
-	dst->mat3[0][1] = src->m[0][1];
-	dst->mat3[0][2] = src->m[0][2];
-
-	dst->mat3[1][0] = src->m[1][0];
-	dst->mat3[1][1] = src->m[1][1];
-	dst->mat3[1][2] = src->m[1][2];
-
-	dst->mat3[2][0] = src->m[2][0];
-	dst->mat3[2][1] = src->m[2][1];
-	dst->mat3[2][2] = src->m[2][2];
-
-}
-void      esMatrixNormal(ESMatrix3  *result, ESMatrix   *src)
-{
-	result->mat3[0][0] = src->m[0][0];
-	result->mat3[0][1] = src->m[0][1];
-	result->mat3[0][2] = src->m[0][2];
-
-	result->mat3[1][0] = src->m[1][0];
-	result->mat3[1][1] = src->m[1][1];
-	result->mat3[1][2] = src->m[1][2];
-
-	result->mat3[2][0] = src->m[2][0];
-	result->mat3[2][1] = src->m[2][1];
-	result->mat3[2][2] = src->m[2][2];
-//求逆矩阵
-	esMatrixReverse(result, result);
-//转置
-	esMatrixTranspose(result, result);
-//单位化,后来证明这是画蛇添足
-	//GLVector3   vec1 =normalize(&GLVector3(result->mat3[0][0],result->mat3[0][1],result->mat3[0][2]));
-	//GLVector3   vec2 = normalize(&GLVector3(result->mat3[1][0],result->mat3[1][1],result->mat3[1][2]));
-	//GLVector3   vec3 = normalize(&GLVector3(result->mat3[2][0],result->mat3[2][1],result->mat3[2][2]));
-
-	//result->mat3[0][0] = vec1.x, result->mat3[0][1] = vec1.y, result->mat3[0][2] = vec1.z;
-	//result->mat3[1][0] = vec2.x, result->mat3[1][1] = vec2.y, result->mat3[1][2] = vec2.z;
-	//result->mat3[2][0] = vec3.x, result->mat3[2][1] = vec2.y, result->mat3[2][2] = vec3.z;
-}
-//镜像矩阵
-void       esMatrixMirror(ESMatrix   *result, float  x, float  y, float z)
-{
-	float    _mag = sqrtf(x*x+y*y+z*z);
-	assert(_mag);
-	x /= _mag;
-	y /= _mag;
-	z /= _mag;
-	float     xy = x*y;
-	float     xz = x*z;
-	float     yz = y*z;
-
-	ESMatrix     mirror;
-
-	mirror.m[0][0] = 1-2*x*x;
-	mirror.m[0][1] = -2 * xy;
-	mirror.m[0][2] = -2 * xz;
-	mirror.m[0][3] = 0.0f;
-
-	mirror.m[1][0] = -2 * xy;
-	mirror.m[1][1] = 1 - 2 * y*y;
-	mirror.m[1][2] = -2 * yz;
-	mirror.m[1][3] = 0.0f;
-
-	mirror.m[2][0] = -2 * xz;
-	mirror.m[2][1] = -2 * yz;
-	mirror.m[2][2] = 1 - 2 * z*z;
-	mirror.m[2][3] = 0.0f;
-
-	mirror.m[3][0] = 0.0f;
-	mirror.m[3][1] = 0.0f;
-	mirror.m[3][2] = 0.0f;
-	mirror.m[3][3] = 1.0f;
-
-	esMatrixMultiply(result, result, &mirror);
-}
 //行列式计算
 float     detFloat(float x1, float y1, float x2, float y2)
 {
@@ -886,16 +433,6 @@ float    detVector2(GLVector2   *a, GLVector2   *b)
 {
 	return a->x*b->y - a->y*b->x;
 }
-//三阶矩阵的行列式
-float    detMatrix3(ESMatrix3   *mat)
-{
-	float     _result ;
-	_result = mat->mat3[0][0] * (mat->mat3[1][1]*mat->mat3[2][2]-mat->mat3[1][2]*mat->mat3[2][1]);
-	_result -= mat->mat3[0][1] * (mat->mat3[1][0]*mat->mat3[2][2]-mat->mat3[1][2]*mat->mat3[2][0]);
-	_result += mat->mat3[0][2] * (mat->mat3[1][0]*mat->mat3[2][1]-mat->mat3[1][1]*mat->mat3[2][0]);
-
-	return _result;
-}
 //
 float   detVector3(GLVector3    *a,GLVector3       *b,GLVector3  *c)
 {
@@ -904,55 +441,6 @@ float   detVector3(GLVector3    *a,GLVector3       *b,GLVector3  *c)
 	_result -= a->y*(b->x*c->z-b->z*c->x);
 	_result += a->z*(b->x*c->y-b->y*c->x);
 	return _result;
-}
-float     detMatrix(ESMatrix    *src)
-{
-	GLVector3   row1, row2, row3;
-	float  _det;
-//0,0
-	row1 = GLVector3(src->m[1][1], src->m[1][2], src->m[1][3]);
-	row2 = GLVector3(src->m[2][1], src->m[2][2], src->m[2][3]);
-	row3 = GLVector3(src->m[3][1], src->m[3][2], src->m[3][3]);
-	_det = src->m[0][0] * detVector3(&row1, &row2, &row3);
-//0,1
-	row1 = GLVector3(src->m[1][0], src->m[1][2], src->m[1][3]);
-	row2 = GLVector3(src->m[2][0], src->m[2][2], src->m[2][3]);
-	row3 = GLVector3(src->m[3][0], src->m[3][2], src->m[3][3]);
-	_det -= src->m[0][1] * detVector3(&row1, &row2, &row3);
-//0,2
-	row1 = GLVector3(src->m[1][0],src->m[1][1],src->m[1][3]);
-	row2 = GLVector3(src->m[2][0],src->m[2][1],src->m[2][3]);
-	row3 = GLVector3(src->m[3][0], src->m[3][1], src->m[3][3]);
-	_det += src->m[0][2] * detVector3(&row1, &row2, &row3);
-//0,3
-	row1 = GLVector3(src->m[1][0],src->m[1][1],src->m[1][2]);
-	row2 = GLVector3(src->m[2][0],src->m[2][1],src->m[2][2]);
-	row3 = GLVector3(src->m[3][0],src->m[3][1],src->m[3][2]);
-	_det -= src->m[0][3] * detVector3(&row1, &row2, &row3);
-	return _det;
-}
-//////////////////////////////////////////////////////////////////////
-void     esMatrixReverse(ESMatrix3 *result, ESMatrix3 *src)
-{
-	ESMatrix3      tmp;
-	ESMatrix3      *p = &tmp;
-
-	float     _det = detMatrix3(src);
-	assert(fabs(_det)>__EPS__);
-	if (result != src)  p = result;
-	p->mat3[0][0] = detFloat(src->mat3[1][1], src->mat3[1][2], src->mat3[2][1], src->mat3[2][2]) / _det;
-	p->mat3[1][0] = -detFloat(src->mat3[1][0], src->mat3[1][2], src->mat3[2][0], src->mat3[2][2]) / _det;
-	p->mat3[2][0] = detFloat(src->mat3[1][0], src->mat3[1][1], src->mat3[2][0], src->mat3[2][1]) / _det;
-
-	p->mat3[0][1] = -detFloat(src->mat3[0][1], src->mat3[0][2], src->mat3[2][1], src->mat3[2][2]) / _det;
-	p->mat3[1][1] = detFloat(src->mat3[0][0], src->mat3[0][2], src->mat3[2][0], src->mat3[2][2]) / _det;
-	p->mat3[2][1] = -detFloat(src->mat3[0][0], src->mat3[0][1], src->mat3[2][0], src->mat3[2][1]) / _det;
-
-	p->mat3[0][2] = detFloat(src->mat3[0][1], src->mat3[0][2], src->mat3[1][1], src->mat3[1][2]) / _det;
-	p->mat3[1][2] = -detFloat(src->mat3[0][0], src->mat3[0][2], src->mat3[1][0], src->mat3[1][2]) / _det;
-	p->mat3[2][2] = detFloat(src->mat3[0][0], src->mat3[0][1], src->mat3[1][0], src->mat3[1][1]) / _det;
-
-	if (result == src)   memcpy(result, p, sizeof(ESMatrix3));
 }
 //四维矩阵的逆
 static   void   __fix__(int  *_index,int  _current)//辅助函数
@@ -965,130 +453,6 @@ static   void   __fix__(int  *_index,int  _current)//辅助函数
 			_index[k++] = i;
 		++i;
 	}
-}
-void     esMatrixReverse(ESMatrix    *result, ESMatrix    *src)
-{
-	ESMatrix     tmp;
-	ESMatrix     *p = &tmp;
-	if (result != src)p = result;
-	float             _det = detMatrix(src);
-	assert(fabs(_det)>__EPS__);
-	GLVector3    row1, row2, row3;
-	int        _index[4];
-	for (int i = 0; i < 4; ++i)
-	{
-		__fix__(_index,i);
-		int     a = _index[0], b = _index[1], c = _index[2];
-//i,0
-		row1 = GLVector3(src->m[a][1],src->m[a][2],src->m[a][3]);
-		row2 = GLVector3(src->m[b][1],src->m[b][2],src->m[b][3]);
-		row3 = GLVector3(src->m[c][1],src->m[c][2],src->m[c][3]);
-		p->m[0][i] = __SIGN(i + 0)*detVector3(&row1,&row2,&row3);
-//i,1
-		row1 = GLVector3(src->m[a][0],src->m[a][2],src->m[a][3]);
-		row2 = GLVector3(src->m[b][0],src->m[b][2],src->m[b][3]);
-		row3 = GLVector3(src->m[c][0],src->m[c][2],src->m[c][3]);
-		p->m[1][i] = __SIGN(i + 1)*detVector3(&row1, &row2, &row3);
-//i,2
-		row1 = GLVector3(src->m[a][0],src->m[a][1],src->m[a][3]);
-		row2 = GLVector3(src->m[b][0],src->m[b][1],src->m[b][3]);
-		row3 = GLVector3(src->m[c][0],src->m[c][1],src->m[c][3]);
-		p->m[2][i] = __SIGN(i + 2)*detVector3(&row1, &row2, &row3);
-//i,3
-		row1 = GLVector3(src->m[a][0],src->m[a][1],src->m[a][2]);
-		row2 = GLVector3(src->m[b][0],src->m[b][1],src->m[b][2]);
-		row3 = GLVector3(src->m[c][0],src->m[c][1],src->m[c][2]);
-		p->m[3][i] = __SIGN(i + 3)*detVector3(&row1, &row2, &row3);
-	}
-	if (result == src) memcpy(result,p,sizeof(ESMatrix));
-}
-//矩阵转置实现
-void      esMatrixTranspose(ESMatrix3 *result, ESMatrix3 *src)
-{
-	ESMatrix3     tmp;
-	ESMatrix3     *p = &tmp;
-	if (result != src) p = result;
-
-	p->mat3[0][0] = src->mat3[0][0];
-	p->mat3[0][1] = src->mat3[1][0];
-	p->mat3[0][2] = src->mat3[2][0];
-
-	p->mat3[1][0] = src->mat3[0][1];
-	p->mat3[1][1] = src->mat3[1][1];
-	p->mat3[1][2] = src->mat3[2][1];
-
-	p->mat3[2][0] = src->mat3[0][2];
-	p->mat3[2][1] = src->mat3[1][2];
-	p->mat3[2][2] = src->mat3[2][2];
-	if (result == src)memcpy(result,p,sizeof(ESMatrix3));
-}
-void   esMatrixTranspose(ESMatrix *result, ESMatrix *src)
-{
-	ESMatrix   tmp;
-	ESMatrix  *p = &tmp;
-	if (result != src) p = result;
-
-	int  i;
-	for (i = 0; i < 4; ++i)
-	{
-		   p->m[i][0] = src->m[0][i];
-		   p->m[i][1] = src->m[1][i];
-		   p->m[i][2] = src->m[2][i];
-		   p->m[i][3] = src->m[3][i];
-	}
-	if (result == src)   memcpy(result,p,sizeof(ESMatrix));
-}
-//三阶矩阵乘法
-void     esMatrixMultiply3(ESMatrix3   *result,ESMatrix3   *srcA,ESMatrix3  *srcB)
-{
-	ESMatrix3    tmp;
-	for (int i = 0; i < 3; ++i)
-	{
-		tmp.mat3[i][0] = srcA->mat3[i][0] * srcB->mat3[0][0] + srcA->mat3[i][1] * srcB->mat3[1][0] + srcA->mat3[i][2] * srcB->mat3[2][0];
-
-		tmp.mat3[i][1] = srcA->mat3[i][0] * srcB->mat3[0][1] + srcA->mat3[i][1] * srcB->mat3[1][1] + srcA->mat3[i][2] * srcB->mat3[2][1];
-
-		tmp.mat3[i][2] = srcA->mat3[i][0] * srcB->mat3[0][2] + srcA->mat3[i][1] * srcB->mat3[1][2] + srcA->mat3[i][2] * srcB->mat3[2][2];
-	}
-	memcpy(result,&tmp,sizeof(ESMatrix3));
-}
-//向量乘法,左乘
-GLVector4     esMatrixMultiplyVector4(GLVector4 *vec, ESMatrix *matrix)
-{
-	float x, y, z, w;
-	x = vec->x*matrix->m[0][0]+vec->y*matrix->m[1][0]+vec->z*matrix->m[2][0]+vec->w*matrix->m[3][0];
-	y = vec->x*matrix->m[0][1] + vec->y*matrix->m[1][1] + vec->z*matrix->m[2][1] + vec->w*matrix->m[3][1];
-	z = vec->x*matrix->m[0][2] + vec->y*matrix->m[1][2] + vec->z*matrix->m[2][2] + vec->w*matrix->m[3][2];
-	w = vec->x*matrix->m[0][3] + vec->y*matrix->m[1][3] + vec->z*matrix->m[2][3] + vec->w*matrix->m[3][3];
-	return GLVector4(x,y,z,w);
-}
-//向量右乘
-GLVector4    esMatrixMultiplyVector4(ESMatrix   *matrix, GLVector4   *vec)
-{
-	float x, y, z, w;
-	x = matrix->m[0][0] * vec->x + matrix->m[0][1] * vec->y + matrix->m[0][2] * vec->z + matrix->m[0][3] * vec->w;
-	y = matrix->m[1][0] * vec->x + matrix->m[1][1] * vec->y + matrix->m[1][2] * vec->z + matrix->m[1][3] * vec->w;
-	z = matrix->m[2][0] * vec->x + matrix->m[2][1] * vec->y + matrix->m[2][2] * vec->z + matrix->m[2][3] * vec->w;
-	w = matrix->m[3][0] * vec->x + matrix->m[3][1] * vec->y + matrix->m[3][2] * vec->z + matrix->m[3][3] * vec->w;
-	return GLVector4(x,y,z,w);
-}
-
-GLVector3      esMatrixMultiplyVector3(ESMatrix3   *matrix, GLVector3   *vec)
-{
-	float x, y, z;
-	x = matrix->mat3[0][0] * vec->x + matrix->mat3[0][1] * vec->y + matrix->mat3[0][2] * vec->z;
-	y = matrix->mat3[1][0] * vec->x + matrix->mat3[1][1] * vec->y + matrix->mat3[1][2] * vec->z;
-	z = matrix->mat3[2][0] * vec->x + matrix->mat3[2][1] * vec->y + matrix->mat3[2][2] * vec->z;
-	return GLVector3(x,y,z);
-}
-
-GLVector3      esMatrixMultiplyVector3( GLVector3   *vec, ESMatrix3   *matrix)
-{
-	float x, y, z;
-	x = vec->x*matrix->mat3[0][0] + vec->y*matrix->mat3[1][0] + vec->z*matrix->mat3[2][0];
-	y = vec->x*matrix->mat3[0][1] + vec->y*matrix->mat3[1][1] + vec->z*matrix->mat3[2][1];
-	z = vec->x*matrix->mat3[0][2] + vec->y*matrix->mat3[1][2] + vec->z*matrix->mat3[2][2];
-	return GLVector3(x,y,z);
 }
 /////////////////////////////二维,三维,四维向量右乘矩阵//////////////////////////////////////
 GLVector2    GLVector2::operator*(float  _factor)const
@@ -1449,7 +813,7 @@ void    Matrix::lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPo
 	GLVector3    U =upVector.cross(N).normalize() ;
 	assert(U.x*U.x+U.y*U.y+U.z*U.z>__EPS__);
 	GLVector3    V = N.cross(U);
-	memset(result, 0x0, sizeof(ESMatrix));
+	memset(result, 0x0, sizeof(Matrix));
 	result->m[0][0] = U.x;
 	result->m[1][0] = U.y;
 	result->m[2][0] = U.z;
@@ -1502,7 +866,7 @@ void    Matrix::multiply(Matrix &srcA)
 //二次矩阵乘法
 void     Matrix::multiply(Matrix &srcA, Matrix &srcB)
 {
-	ESMatrix    tmp;
+	Matrix    tmp;
 	int         i;
 
 	for (i = 0; i < 4; i++)
@@ -1812,210 +1176,102 @@ Matrix3&    Matrix3::operator=(Matrix3  &src)
 		memcpy(m,src.m,sizeof(Matrix3));
 	return src;
 }
-///////////////////////////////////////////四元数的实现///////////////////////////////////////
-Quaternion::Quaternion()
+///////////////////////////////////平面方程////////////////////////////////
+Plane::Plane(const GLVector3 &normal, const float distance)
 {
-	w = 1.0f;
-	x = 0.0f;
-	y = 0.0f;
-	z = 0.0f;
+	const float length = normal.length();
+	assert(length>__EPS__);
+	_normal = GLVector3(normal.x/length,normal.y/length,normal.z/length);
+	_distance = distance / length;
 }
 
-Quaternion::Quaternion(const float w,const float x, const float y, const float z)
+Plane::Plane()
 {
-	this->w = w;
-	this->x = x;
-	this->y = y;
-	this->z = z;
+
 }
 
-Quaternion::Quaternion(const float angle, const GLVector3 &vec)
+const GLVector3 &Plane::getNormal()const
 {
-//半角
-	float        _halfAngle = angle*__MATH_PI__/360.0f;
-	float        _sinVector = sinf(_halfAngle);
-//单位化旋转向量
-	float        _vector_length = sqrtf(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
-	assert(_vector_length>=__EPS__);
-
-	w = cosf(_halfAngle);
-	x = vec.x*_sinVector / _vector_length;
-	y = vec.y*_sinVector / _vector_length;
-	z = vec.z*_sinVector / _vector_length;
+	return _normal;
 }
 
-Quaternion::Quaternion(const Matrix   &rotate)
+float Plane::getDistance()const
 {
-	float        _lamda = rotate.m[0][0] + rotate.m[1][1] + rotate.m[2][2] + 1.0f;
-	assert(_lamda>__EPS__ &&  _lamda<=4.0f);
-	w = 0.5f*sqrtf(_lamda );
-
-	float         w4 = 4.0f*w;
-	x = (rotate.m[1][2]-rotate.m[2][1])/w4;
-	y = (rotate.m[2][0]-rotate.m[0][2])/w4;
-	z = (rotate.m[0][1]-rotate.m[1][0])/w4;
-//进一步验证生成的数据的合法性,所得到的向量必须是单位向量
-	assert(fabs(x*x+y*y+z*z-1.0f)<=__EPS__);
+	return _distance;
 }
 
-void      Quaternion::multiply(Quaternion &p)
+void Plane::init(const GLVector3 &normal, const float distance)
 {
-	float    aw = w*p.w - x*p.x - y*p.y - z*p.z;
-	float    ax = w*p.x + x*p.w+y*p.z - z*p.y;
-	float    ay = w*p.y-x*p.z+y*p.w+z*p.x;
-	float    az = w*p.z+x*p.y-y*p.x+z*p.w;
-	w = aw, x = ax, y = ay, z = az;
+	const float length = normal.length();
+	assert(length > __EPS__);
+	_normal = GLVector3(normal.x / length, normal.y / length, normal.z / length);
+	_distance = distance / length;
 }
 
-Quaternion		Quaternion::operator*(const Quaternion   &p)const
+float Plane::distance(const GLVector3 &p3d)const
 {
-	float    aw = w*p.w - x*p.x - y*p.y - z*p.z;
-	float    ax = w*p.x + x*p.w + y*p.z - z*p.y;
-	float    ay = w*p.y - x*p.z + y*p.w + z*p.x;
-	float    az = w*p.z + x*p.y - y*p.x + z*p.w;
-
-	return    Quaternion(aw,ax,ay,az);
+	return _normal.dot(p3d) - _distance;
 }
-void      Quaternion::identity()
+//////////////////////包围盒/////////////////////
+AABB::AABB(const GLVector3 *p3dCoord)
 {
-	w = 1.0f;
-	x = y = z = 0.0f;
+	_maxBox = *p3dCoord;
+	_minBox = *p3dCoord;
+	for (int i = 1; i < 8; ++i)
+	{
+		_maxBox = _maxBox.max(p3dCoord[i]);
+		_minBox = _minBox.min(p3dCoord[i]);
+	}
 }
 
-void       Quaternion::normalize()
+AABB::AABB(const GLVector4 *p4dCoord)
 {
-	float         _length = sqrtf(w*w+x*x+y*y+z*z);
-	assert(_length>__EPS__);
-
-	w /= _length;
-	x /= _length;
-	y /= _length;
-	z /= _length;
+	_maxBox = p4dCoord->xyz();
+	_minBox = p4dCoord->xyz();
+	for (int i = 1; i < 8; ++i)
+	{
+		_maxBox = _maxBox.max(p4dCoord[i].xyz());
+		_minBox = _minBox.min(p4dCoord[i].xyz());
+	}
 }
 
-void         Quaternion::toRotateMatrix(Matrix &rotateMatrix)const
+AABB::AABB(const GLVector3 &minBox, const GLVector3 &maxBox)
 {
-	float          xy = this->x * this->y;
-	float          xz = this->x * this->z;
-	float          yz = this->y * this->z;
-	float         ww = this->w * this->w;
-
-	rotateMatrix.m[0][0] = 1.0f - 2 * (x*x + ww);
-	rotateMatrix.m[0][1] = 2.0f * (xy + w*z);
-	rotateMatrix.m[0][2] = 2.0f*(xz - w*y);
-	rotateMatrix.m[0][3] = 0.0f;
-
-	rotateMatrix.m[1][0] = 2.0f*(xy - w*z);
-	rotateMatrix.m[1][1] = 1.0f - 2.0f*(y*y + ww);
-	rotateMatrix.m[1][2] = 2.0f*(yz * w*x);
-	rotateMatrix.m[1][3] = 0.0f;
-
-	rotateMatrix.m[2][0] = 2.0f*(xz + w*y);
-	rotateMatrix.m[2][1] = 2.0f*(yz - w*x);
-	rotateMatrix.m[2][2] = 1.0f - 2.0f*(z*z + ww);
-	rotateMatrix.m[2][3] = 0.0f;
-
-	rotateMatrix.m[3][0] = 0.0f;
-	rotateMatrix.m[3][1] = 0.0f;
-	rotateMatrix.m[3][2] = 0.0f;
-	rotateMatrix.m[3][3] = 0.0f;
+	_minBox = minBox;
+	_maxBox = maxBox;
 }
 
-Matrix	    Quaternion::toRotateMatrix()
+AABB::AABB(const GLVector4 &minBox, const GLVector4 &maxBox)
 {
-	Matrix      _rotate;
-	float          xy = this->x * this->y;
-	float          xz = this->x * this->z;
-	float          yz = this->y * this->z;
-	float         ww = this->w * this->w;
-
-	_rotate.m[0][0] = -1.0f + 2.0f * (x*x + ww) ;//==>1.0f - 2.0f *(y*y+z*z)
-	_rotate.m[0][1] =2.0f * (xy+ w*z) ;
-	_rotate.m[0][2] = 2.0f*(xz - w*y);
-
-	_rotate.m[1][0] = 2.0f*(xy - w*z);
-	_rotate.m[1][1] = -1.0f + 2.0f*(y*y+ww);//==>1.0f - 2.0f*(x*x+z*z)
-	_rotate.m[1][2] = 2.0f*(yz * w*x);
-
-	_rotate.m[2][0] = 2.0f*(xz + w*y);
-	_rotate.m[2][1] = 2.0f*(yz - w*x);
-	_rotate.m[2][2] = -1.0f + 2.0f*(z*z+ww) ;//==>1.0f - 2.0f*(x*x+y*y)
-
-	return _rotate;
+	_minBox = minBox.xyz();
+	_maxBox = maxBox.xyz();
 }
 
-Quaternion       Quaternion::conjugate()
+AABB::AABB()
 {
-	return   Quaternion(w,-x,-y,-z);
+
 }
 
-Quaternion      Quaternion::reverse()const
+void AABB::init(const GLVector3 *p3dCoord)
 {
-	//float    _length = sqrtf(w*w+x*x+y*y+z*z);
-	//assert(_length>=__EPS__);
-	return    Quaternion( w,-x,-y,-z   );
+	_maxBox = *p3dCoord;
+	_minBox = *p3dCoord;
+	for (int i = 1; i < 8; ++i)
+	{
+		_maxBox = _maxBox.max(p3dCoord[i]);
+		_minBox = _minBox.min(p3dCoord[i]);
+	}
 }
 
-float   Quaternion::dot(const Quaternion &other)const
+void AABB::init(const GLVector4 *p4dCoord)
 {
-	return w*other.w + x*other.x + y*other.y + z*other.z;
-}
-//旋转3维向量
-GLVector3 Quaternion::rotate(const GLVector3 &src)const
-{
-	const GLVector3 sinVec(x,y,z);
-	const GLVector3 uv = sinVec.cross(src);
-	const GLVector3 uuv = sinVec.cross(uv);
-
-	return src+ uv *(2.0f *w) + uuv * 2.0f;
+	_maxBox = p4dCoord->xyz();
+	_minBox = p4dCoord->xyz();
+	for (int i = 1; i < 8; ++i)
+	{
+		_maxBox = _maxBox.max(p4dCoord[i].xyz());
+		_minBox = _minBox.min(p4dCoord[i].xyz());
+	}
 }
 
-GLVector3 Quaternion::operator*(const GLVector3 &src)const
-{
-	const GLVector3 sinVec(x, y, z);
-	const GLVector3 uv = sinVec.cross(src);
-	const GLVector3 uuv = sinVec.cross(uv);
-
-	return src + uv *(2.0f *w) + uuv * 2.0f;
-}
-
-//两个插值函数,以后再实现
-
-Quaternion Quaternion::lerp(const Quaternion &p, const Quaternion &q, const float lamda)
-{	
-	assert(lamda>=0.0f && lamda<=1.0f);
-	const float one_minus_t = 1.0f - lamda;
-	const float w = one_minus_t * p.w + lamda * q.w;
-	const float  x = one_minus_t * p.x + lamda *q.x;
-	const float  y = one_minus_t * p.y + lamda * q.y;
-	const float  z = one_minus_t * p.z + lamda * q.z;
-	const float length = sqrtf(w*w+x*x+y*y+z*z);
-	return Quaternion(w/ length,x/ length,y,z/ length);
-}
-
-Quaternion  Quaternion::slerp(const Quaternion &p,const Quaternion &q, const float lamda)
-{
-	assert(lamda>=0.0f && lamda<=1.0f);
-	//检测两个四元数之间的夹角
-	const float angleOfIntersect = p.dot(q);
-	assert(angleOfIntersect>=0.0f);
-	//如果夹角接近于0,则使用线性插值
-	if (angleOfIntersect >= 1.0f - 0.01f)
-		return lerp(p, q, lamda);
-	//取连个四元数之间的最短路径
-	const float sinValue = sqrtf(1.0f - angleOfIntersect*angleOfIntersect);
-	const float angle = asinf(sinValue);
-
-	const float sin_one_minus_t = sinf((1.0f-lamda)*angle);
-	const float sin_t = sinf(lamda * angle);
-	const float a = sin_one_minus_t / sinValue;
-	const float b = sin_t / sinValue;
-
-	const float w = a* p.w + b * q.w;
-	const float x = a *p.x + b * q.x;
-	const float y = a * p.y + b*q.y;
-	const float z = a *p.z + b*q.z;
-	const float length =sqrtf( w* w + x*x + y*y + z*z);
-	return Quaternion(w/length,x/length,y/length,z/length);
-}
 __NS_GLK_END
