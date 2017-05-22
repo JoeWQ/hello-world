@@ -459,15 +459,15 @@ GLVector2    GLVector2::operator*(float  _factor)const
 {
 	return   GLVector2(x*_factor,y*_factor);
 }
-GLVector2   GLVector2::operator*(GLVector2  &_mfactor)const
+GLVector2   GLVector2::operator*(const GLVector2  &_mfactor)const
 {
 	return  GLVector2(x*_mfactor.x,y*_mfactor.y);
 }
-GLVector2   GLVector2::operator+(GLVector2  &_factor)const
+GLVector2   GLVector2::operator+(const GLVector2  &_factor)const
 {
 	return  GLVector2(x+_factor.x,y+_factor.y);
 }
-GLVector2   GLVector2::operator-(GLVector2  &_factor)const
+GLVector2   GLVector2::operator-(const GLVector2  &_factor)const
 {
 	return  GLVector2(x-_factor.x,y-_factor.y);
 }
@@ -475,7 +475,7 @@ GLVector2   GLVector2::operator/(float _factor)const
 {
 	return  GLVector2(x/_factor,y/_factor);
 }
-GLVector2    GLVector2::operator/(GLVector2  &_factor)const
+GLVector2    GLVector2::operator/(const GLVector2  &_factor)const
 {
 	return  GLVector2(x/_factor.x,y/_factor.y);
 }
@@ -492,7 +492,7 @@ GLVector2   GLVector2::normalize()const
 	assert(_length>=__EPS__);
 	return  GLVector2(x/_length,y/_length);
 }
-float     GLVector2::dot(GLVector2 &other)const
+float     GLVector2::dot(const GLVector2 &other)const
 {
 	return x*other.x + y*other.y;
 }
@@ -584,7 +584,7 @@ GLVector3 GLVector3::max(const GLVector3 &other)const
 }
 
 /////////////////////////4444444444444444///////////////////////////////////////
-GLVector4     GLVector4::operator*(Matrix &src)const
+GLVector4     GLVector4::operator*(const Matrix &src)const
 {
 	float  nx,ny, nz, nw;
 	nx = this->x*src.m[0][0] + this->y*src.m[1][0] + this->z*src.m[2][0] + this->w*src.m[3][0];
@@ -599,7 +599,7 @@ GLVector4    GLVector4::normalize()const
 	assert(_length>__EPS__);
 	return  GLVector4(x/_length,y/_length,z/_length,w/_length);
 }
-float    GLVector4::dot(GLVector4 &other)const
+float    GLVector4::dot(const GLVector4 &other)const
 {
 	return x*other.x + y*other.y + z*other.z + w*other.w;
 }
@@ -833,7 +833,7 @@ void    Matrix::lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPo
 	this->multiply(tmp);
 }
 //æÿ’Û≥À∑®
-void    Matrix::multiply(Matrix &srcA)
+void    Matrix::multiply(const Matrix &srcA)
 {
 	Matrix     tmp;
 	int         i;
@@ -867,32 +867,35 @@ void    Matrix::multiply(Matrix &srcA)
 void     Matrix::multiply(Matrix &srcA, Matrix &srcB)
 {
 	Matrix    tmp;
+	Matrix    *p = &tmp;
+	if (this != &srcA && this != &srcB)
+		p = this;
 	int         i;
 
 	for (i = 0; i < 4; i++)
 	{
-		tmp.m[i][0] = (srcA.m[i][0] * srcB.m[0][0]) +
+		p->m[i][0] = (srcA.m[i][0] * srcB.m[0][0]) +
 			(srcA.m[i][1] * srcB.m[1][0]) +
 			(srcA.m[i][2] * srcB.m[2][0]) +
 			(srcA.m[i][3] * srcB.m[3][0]);
 
-		tmp.m[i][1] = (srcA.m[i][0] * srcB.m[0][1]) +
+		p->m[i][1] = (srcA.m[i][0] * srcB.m[0][1]) +
 			(srcA.m[i][1] * srcB.m[1][1]) +
 			(srcA.m[i][2] * srcB.m[2][1]) +
 			(srcA.m[i][3] * srcB.m[3][1]);
 
-		tmp.m[i][2] = (srcA.m[i][0] * srcB.m[0][2]) +
+		p->m[i][2] = (srcA.m[i][0] * srcB.m[0][2]) +
 			(srcA.m[i][1] * srcB.m[1][2]) +
 			(srcA.m[i][2] * srcB.m[2][2]) +
 			(srcA.m[i][3] * srcB.m[3][2]);
 
-		tmp.m[i][3] = (srcA.m[i][0] * srcB.m[0][3]) +
+		p->m[i][3] = (srcA.m[i][0] * srcB.m[0][3]) +
 			(srcA.m[i][1] * srcB.m[1][3]) +
 			(srcA.m[i][2] * srcB.m[2][3]) +
 			(srcA.m[i][3] * srcB.m[3][3]);
 	}
-
-	memcpy(m, &tmp, sizeof(Matrix));
+	if( p != this)
+		memcpy(m, p, sizeof(Matrix));
 }
 //‘ÀÀ„∑˚÷ÿ‘ÿ
 Matrix     Matrix::operator*(const Matrix   &srcA)const

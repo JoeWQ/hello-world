@@ -8,7 +8,7 @@
 //Version 8.0 为支持欧拉角而添加的矩阵旋转函数
 //Version 9.0 全面支持关于四元数的运算
 //Version 10.0 删除了历史遗留的类,并将四元数的实现置于一个单独的文件中
-//Version 11.0  引入了对平面方程,包围盒的支持,此两个功能是支持模型/场景可视性判断的基础
+//Version 11.0  引入了平面方程/包围盒类,此两个类是支持模型/场景可视性判断的基础
 #ifndef   __GEOMETRY_H__
 #define  __GEOMETRY_H__
 #include<engine/GLState.h>
@@ -23,15 +23,15 @@ __NS_GLK_BEGIN
 		}
 		GLVector2() { x = 0, y = 0; };
 		GLVector2     operator*(float)const;
-		GLVector2     operator*(GLVector2 &)const;
-		GLVector2     operator+(GLVector2 &)const;
-		GLVector2     operator-(GLVector2 &)const;
+		GLVector2     operator*(const GLVector2 &)const;
+		GLVector2     operator+(const GLVector2 &)const;
+		GLVector2     operator-(const GLVector2 &)const;
 		GLVector2     operator/(float)const;
-		GLVector2     operator/(GLVector2 &)const;
+		GLVector2     operator/(const GLVector2 &)const;
 		GLVector2&  operator=(const GLVector2 &src);
 		GLVector2     normalize()const;
 		const float     length()const;
-		float               dot(GLVector2 &other)const;
+		float               dot(const GLVector2 &other)const;
 	};
 	struct    Size
 	{
@@ -87,7 +87,7 @@ __NS_GLK_BEGIN
 		}
 		GLVector4() { x = 0, y = 0, z = 0, w = 0; };
 		GLVector3    xyz() const{ return GLVector3(x, y, z); };
-		GLVector4   operator*(Matrix &)const;
+		GLVector4   operator*(const Matrix &)const;
 		GLVector4   operator*(const float )const;
 		GLVector4   operator*(const GLVector4 &)const;
 		GLVector4   operator-(const GLVector4 &)const;
@@ -97,7 +97,7 @@ __NS_GLK_BEGIN
 		GLVector4   min(const GLVector4 &)const;
 		GLVector4   max(const GLVector4 &)const;
 		GLVector4   normalize()const;
-		float              dot(GLVector4 &other)const;
+		float              dot(const GLVector4 &other)const;
 	};
 	//平面方程式,形式为 A*x+B*y+C*z-d=0
 	class Plane
@@ -197,12 +197,12 @@ __NS_GLK_BEGIN
 		void    perspective(float fovy, float aspect, float nearZ, float farZ);
 		//一般投影矩阵
 		void    frustum(float left, float right, float bottom, float top, float nearZ, float farZ);
-		//矩阵乘法,self=self*srcA
-		void    multiply(Matrix   &srcA);
-		//self=srcA*srcB
+		//矩阵乘法,this=this*srcA
+		void    multiply(const Matrix   &srcA);
+		//this=srcA*srcB
 		void    multiply(Matrix   &srcA, Matrix   &rscB);
-		//偏置矩阵,此矩阵是专门为阴影计算提供直接的支持,通常使用光源矩阵之后,需要诚意缩放,偏移矩阵,调用此函数之后
-		//相当于两个矩阵乘法一起进行,因此速度更快
+		//偏置矩阵,此矩阵是专门为阴影计算提供直接的支持,通常使用光源矩阵之后,需要乘以缩放,偏移矩阵,调用此函数
+		//相当于两个矩阵乘法一起进行,并且没有矩阵数据的复制,因此更直接,且计算速度更快
 		void   offset();
 		//从现有的矩阵中推导出法线矩阵
 		Matrix3     normalMatrix()const;
