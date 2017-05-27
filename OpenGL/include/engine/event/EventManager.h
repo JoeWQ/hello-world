@@ -9,36 +9,16 @@
 #include "engine/Object.h"
 #include "engine/Geometry.h"
 #include "engine/event/KeyCode.h"
+#include "engine/event/Mouse.h"
+#include "engine/event/Touch.h"
 #include "engine/event/TouchEventListener.h"
 #include "engine/event/KeyEventListener.h"
+#include "engine/event/MouseEventListener.h"
 #include<vector>
 #include<map>
 void _static_mousePressCallback(int, int, int, int);
 void  _static_mouseMotionCallback(int, int);
 __NS_GLK_BEGIN
-//定义鼠标状态
-enum MouseType
-{
-	MouseType_None = 0,//无效的按键
-	MouseType_Left = 1,//左键
-	MouseType_Right = 2,//邮件
-};
-//鼠标的状态
-enum MouseState
-{
-	MouseState_None=0,//无效的动作
-	MouseState_Pressed=1,//鼠标被按下
-	MouseState_Moved=2,//鼠标被拖动
-	MouseState_Released = 3,//鼠标被释放
-};
-//键盘按键的状态
-enum KeyState
-{
-	KeyState_None=0,//无效的键盘状态类型
-	KeyState_Pressed=1,//键盘被按下
-	KeyState_Released=2,//键盘按键被释放
-};
-
 class EventManager
 {
 	friend void _static_mousePressCallback(int, int, int, int);
@@ -55,18 +35,25 @@ private:
 	//键盘事件集合
 	std::vector<KeyEventListener*>               _keyEventArrays;
 	std::map<KeyEventListener*, int>            _keyEventPriority;
+	//鼠标事件集合
+	std::vector<MouseEventListener *>          _mouseEventArrays;
+	std::map<MouseEventListener*, int>        _mouseEventPriority;
 	//是否正处触屏于事件派发之中
 	bool                   _isInTouchEventDispatch;
 	//是否正处于键盘事件派发中
 	bool                   _isInKeyEventDispatch;
+	//是否正处于鼠标事件派发中
+	bool                   _isInMouseEventDispatch;
 private:
 
 	EventManager();
 	EventManager(EventManager &);
 	static EventManager   _static_eventManager;
 //friend
-	//派发鼠标
-	void        dispatchMouseEvent(MouseType mouseType,MouseState mouseState,const GLVector2 &mousePoint);
+	//派发触屏事件
+	void        dispatchTouchEvent(TouchState  touchState,const GLVector2 *touchPoint);
+	//派发鼠标事件
+	void        dispatchMouseEvent(MouseType mouseType,MouseState mouseState,const GLVector2 *mousePoint);
 	//派发键盘事件
 	void        dispatchKeyEvent(KeyCodeType keyCode,KeyCodeState keyState);
 public:
@@ -82,7 +69,7 @@ public:
 	//键盘事件侦听器添加
 	void        addKeyEventListener(KeyEventListener *keyEvent,int priority);
 	//鼠标事件侦听器添加
-	void        addMouseEventListener();
+	void        addMouseEventListener(MouseEventListener *mouseEvent,int priority);
 };
 
 __NS_GLK_END

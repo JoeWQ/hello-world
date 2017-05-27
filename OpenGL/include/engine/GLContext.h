@@ -76,8 +76,6 @@ __NS_GLK_BEGIN
 	//设置全局投影矩阵
 	void                  setProjMatrix(Matrix   &);
 	Matrix            &getProjMatrix();
-	//返回单位顶点缓冲区对象,主要在延迟着色,SSAO中使用
-	unsigned        loadBufferIdentity();
 	void                setGlobleFlag(unsigned  flag){ _globleFlag = flag; };
 	unsigned        getGlobleFlag(){ return _globleFlag; };
 private:

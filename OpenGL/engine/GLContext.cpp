@@ -11,8 +11,8 @@
   #include<sys/time.h>
 #endif
 //#include<GL/freeglut.h>
-#include<engine/GLCacheManager.h>
-#include<engine/event/EventManager.h>
+//#include<engine/GLCacheManager.h>
+//#include<engine/event/EventManager.h>
 
 __NS_GLK_BEGIN
 GLContext          GLContext::_singleGLContext;
@@ -116,10 +116,5 @@ static       unsigned       _static_last_seed = 0;
    Matrix        &GLContext::getProjMatrix()
    {
 	   return _projMatrix;
-   }
-
-   unsigned    GLContext::loadBufferIdentity()
-   {
-	   return  GLCacheManager::getInstance()->loadBufferIdentity();
    }
 	__NS_GLK_END

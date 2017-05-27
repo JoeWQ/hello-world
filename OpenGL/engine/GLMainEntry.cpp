@@ -185,14 +185,21 @@ static void _static_mousePressCallback(int button, int buttonState, int x, int y
 	//鼠标的左键按下
 	MouseType mouseType = MouseType_None;
 	MouseState mouseState = MouseState_None;
+	TouchState  touchState = TouchState_None;
 	switch (button)
 	{
 	case GLUT_LEFT_BUTTON:
 		mouseType = MouseType_Left;
 		if (buttonState == GLUT_DOWN)
+		{
 			mouseState = MouseState_Pressed;
-		else if(buttonState == GLUT_UP)
+			touchState = TouchState_Pressed;
+		}
+		else if (buttonState == GLUT_UP)
+		{
 			mouseState = MouseState_Released;
+			touchState = TouchState_Released;
+		}
 		break;
 	case GLUT_RIGHT_BUTTON:			
 		mouseType = MouseType_Right;
@@ -203,14 +210,18 @@ static void _static_mousePressCallback(int button, int buttonState, int x, int y
 		break;
 	}
 	if (mouseType == MouseType_Left)
-		glk::EventManager::getInstance()->dispatchMouseEvent(mouseType,mouseState,mouseClickPosition);
+		glk::EventManager::getInstance()->dispatchTouchEvent(touchState, &mouseClickPosition);
+	glk::EventManager::getInstance()->dispatchMouseEvent(mouseType, mouseState, &mouseClickPosition);
 	__static_mouseButtonType = mouseType;
 }
 //
 static void _static_mouseMotionCallback(int x,int y)
 {
 	glk::GLVector2 mouseMotionPosition(x,glk::GLContext::getInstance()->getWinSize().height-y);
-	glk::EventManager::getInstance()->dispatchMouseEvent(__static_mouseButtonType, MouseState_Moved, mouseMotionPosition);
+	//
+	if (__static_mouseButtonType == MouseType_Left)
+		glk::EventManager::getInstance()->dispatchTouchEvent(TouchState_Moved,&mouseMotionPosition);
+	glk::EventManager::getInstance()->dispatchMouseEvent(__static_mouseButtonType, MouseState_Moved, &mouseMotionPosition);
 }
 #endif
 
