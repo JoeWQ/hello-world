@@ -29,8 +29,6 @@ __NS_GLK_BEGIN
 	void(*init)(GLContext *);//    初始化函数
 	void(*finalize)(GLContext *);//程序关闭时回调
 
-	void         dispatchEvent();
-
 	int          lastTickCount;//上次获取的开机毫秒数
 	//非windows系统使用
 	#ifndef  _WIN32

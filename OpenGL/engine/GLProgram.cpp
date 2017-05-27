@@ -59,7 +59,7 @@ GLProgram               *GLProgram::createWithFile(const   char    *vertex_file_
 	__now_compile_file_name = frame_file_name;
 	_glProgram->initWithFile(vertex_file_name, frame_file_name);
 #ifdef __ENABLE_PROGRAM_CACHE__
-	_glProgram->retain();
+	//_glProgram->retain();
 	GLCacheManager::getInstance()->inserGLProgram(key, _glProgram);
 	__now_compile_file_name = NULL;
 #endif
@@ -136,15 +136,11 @@ GLProgram      *GLProgram::createWithFile(const char *vertex_file, const char *g
 	key.append(geometry_file).append(frame_file);
 	_glProgram= GLCacheManager::getInstance()->findGLProgram(key);
 	if (_glProgram)
-	{
-		_glProgram->retain();
 		return _glProgram;
-	}
 #endif
 	_glProgram = new           GLProgram();
 	_glProgram->initWithFile(vertex_file, geometry_file, frame_file);
 #ifdef __ENABLE_PROGRAM_CACHE__
-	_glProgram->retain();
 	GLCacheManager::getInstance()->inserGLProgram(key, _glProgram);
 #endif
 	return   _glProgram;

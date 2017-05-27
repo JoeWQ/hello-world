@@ -42,12 +42,6 @@ static       unsigned       _static_last_seed = 0;
  //          displayMode=GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL;
            winTitle="OpenGL-Sprite";
  }
-
- void    GLContext::dispatchEvent()
- {
-	 EventManager::getInstance()->dispatchMouseEvent();
-	 EventManager::getInstance()->dispatchKeyEvent();
- }
 //
   void    GLContext::registerUpdateFunc(void  (*_update)(GLContext *,float ))
  {

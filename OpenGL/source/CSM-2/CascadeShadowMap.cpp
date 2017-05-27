@@ -17,7 +17,7 @@
 //视锥体分段数目
 #define _FRUSTUM_SEGMENT_COUNT_ 4
 //阴影贴图的大小
-#define _LIGHT_MAP_SIZE_  1024.0f
+#define _LIGHT_MAP_SIZE_  2048
 CascadeShadowMap::CascadeShadowMap()
 {
 	_lightShader = nullptr;
@@ -38,7 +38,11 @@ CascadeShadowMap::~CascadeShadowMap()
 
 	_groundTexture->release();
 	_sphereTexture->release();
-	glk::EventManager::getInstance()->removeListener(this);
+	_csmShadowArray->release();
+	glk::EventManager::getInstance()->removeListener(_touchEvent);
+	_touchEvent->release();
+	glk::EventManager::getInstance()->removeListener(_keyEvent);
+	_keyEvent->release();
 }
 
 CascadeShadowMap *CascadeShadowMap::createCascadeShadowMap()
@@ -71,6 +75,8 @@ void  CascadeShadowMap::initCascadeShadowMap()
 
 	_groundTexture = glk::GLTexture::createWithFile("tga/map/ground.tga");
 	_sphereTexture = glk::GLTexture::createWithFile("tga/Earth512x256.tga");
+	_groundTexture->retain();
+	_sphereTexture->retain();
 	//CSM Shadow Array
 	_csmShadowArray = glk::ShadowMap::createWithMapLayer(glk::Size(_LIGHT_MAP_SIZE_,_LIGHT_MAP_SIZE_),_FRUSTUM_SEGMENT_COUNT_);
 	/*
@@ -88,6 +94,10 @@ void  CascadeShadowMap::initCascadeShadowMap()
 		glk_release_selector(CascadeShadowMap::onTouchEnded)
 		);
 	glk::EventManager::getInstance()->addTouchEventListener(_touchEvent,0);
+	//注册键盘监听事件
+	_keyEvent = glk::KeyEventListener::createKeyEventListener(this, glk_key_press_selector(CascadeShadowMap::onKeyPressed), 
+		glk_key_release_selector(CascadeShadowMap::onKeyReleased));
+	glk::EventManager::getInstance()->addKeyEventListener(_keyEvent, 0);
 }
 //计算由远近平面以及光源的视图矩阵决定的包围盒的大小
 void CascadeShadowMap::frustumBoudingboxInLightSpaceView(const float nearZ, const float farZ, glk::GLVector4 &boxMin, glk::GLVector4 &boxMax)
@@ -148,7 +158,7 @@ void    CascadeShadowMap::buildCropMatrix(const glk::GLVector3 &maxCorner, const
 	const float scaleZ = 1.0f / (maxCorner.z - minCorner.z);
 
 	cropMatrix.identity();
-	cropMatrix.translate(-(maxCorner.x+minCorner.x)*0.5f,-(maxCorner.y+minCorner.y)*0.5f,-minCorner.z);
+	cropMatrix.translate(-(maxCorner.x+minCorner.x)*0.5f,-(maxCorner.y+minCorner.y)*0.5f,-(minCorner.z+maxCorner.z)*0.5f);
 	cropMatrix.scale(scaleX,scaleY,scaleZ);
 }
 
@@ -184,7 +194,7 @@ void    CascadeShadowMap::calculateCropMatrix(const glk::GLVector3 &maxCorner, c
 		clipMinCorner = clipMinCorner.min(clipVertex);
 		clipMaxCorner = clipMaxCorner.max(clipVertex);
 	}
-	clipMinCorner.z = 0.0f;
+	//clipMinCorner.z = 0.0f;
 	//
 	buildCropMatrix(clipMaxCorner.xyz(), clipMinCorner.xyz(),cropMatrix);
 }
@@ -243,8 +253,9 @@ void CascadeShadowMap::updateLightViewFrustum()
 		//计算裁剪矩阵
 		calculateCropMatrix(maxCorner.xyz(), minCorner.xyz(), _cropMatrix[i]);
 		_cropTextureMatrix[i] = _lightViewProjMatrix * _cropMatrix[i];
-		_cropTextureMatrix[i].scale(0.5f,0.5f,0.5f);
-		_cropTextureMatrix[i].translate(0.5f, 0.5f, 0.5f);
+		_cropTextureMatrix[i].offset();
+		//_cropTextureMatrix[i].scale(0.5f,0.5f,0.5f);
+		//_cropTextureMatrix[i].translate(0.5f, 0.5f, 0.5f);
 		nearZ = _farSegemtns[i];
 	}
 }
@@ -364,6 +375,14 @@ void CascadeShadowMap::renderLightView()
 
 void CascadeShadowMap::update(const float deltaTime)
 {
+	//计算视图矩阵
+	_translateVec.x = 15.0f * _velocityVec.x ;
+	_translateVec.z = 15.0f * _velocityVec.z ;
+	//还原成世界坐标系下的坐标
+	glk::GLVector4   originVec = glk::GLVector4(-_translateVec.x, 0.0f, -_translateVec.z, 0.0f) * _cameraViewMatrix.reverse();
+	_rotateVector.x += originVec.x*deltaTime;
+	_rotateVector.y += originVec.y * deltaTime;
+	_rotateVector.z += originVec.z * deltaTime;
 	_cameraViewMatrix.identity();
 	_cameraViewMatrix.translate(_rotateVector.x, _rotateVector.y, _rotateVector.z);
 	_cameraViewMatrix.rotateY(_pitchYawRoll.y*_ANGLE_FACTOR_);
@@ -388,4 +407,29 @@ void CascadeShadowMap::onTouchMoved(const glk::GLVector2 *touchPoint)
 void CascadeShadowMap::onTouchEnded(const glk::GLVector2 *touchPoint)
 {
 	_offset = *touchPoint;
+}
+
+bool CascadeShadowMap::onKeyPressed(const glk::KeyCodeType keyCode)
+{
+	if (keyCode == glk::KeyCodeType::KeyCode_W)
+		_velocityVec.z = -1.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_S)
+		_velocityVec.z = 1.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_A)
+		_velocityVec.x = -1.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_D)
+		_velocityVec.x = 1.0f;
+	return true;
+}
+
+void CascadeShadowMap::onKeyReleased(const glk::KeyCodeType keyCode)
+{
+	if (keyCode == glk::KeyCodeType::KeyCode_W)
+		_velocityVec.z = 0.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_S)
+		_velocityVec.z = 0.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_A)
+		_velocityVec.x = 0.0f;
+	else if (keyCode == glk::KeyCodeType::KeyCode_D)
+		_velocityVec.x = 0.0f;
 }

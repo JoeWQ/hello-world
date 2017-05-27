@@ -5,12 +5,15 @@
  */
 #ifndef __TOUCH_EVENT_LISTENER_H__
 #define __TOUCH_EVENT_LISTENER_H__
-#include<engine/Object.h>
-#include<engine/Types.h>
-#include<engine/Geometry.h>
+#include "engine/Object.h"
+#include "engine/Types.h"
+#include "engine/Geometry.h"
+#include "engine/event/EventListener.h"
 __NS_GLK_BEGIN
-class TouchEventListener :public Object
+class EventManager;
+class TouchEventListener :public EventListener
 {
+	friend class EventManager;
 private:
 	//是否吞噬事件，当其标志为true时，低于其优先级的事件将接收不到触屏事件
 	bool       _isSwallowEvent;
@@ -27,6 +30,11 @@ private:
 	TouchEventListener(TouchEventListener &);
 	void   initWithTarget(Object *eventTarget);
 	void   initWithTarget(Object *eventTarget, GLKTouchCallback touchBegin, GLKTouchMotionCallback touchMoved, GLKTouchReleaseCallback touchRelease);
+
+	//派发事件
+	bool    onTouchBegin(const GLVector2 *touchPoint);
+	void    onTouchMoved(const GLVector2 *touchPoint);
+	void    onTouchEnded(const GLVector2 *touchPoint);
 public:
 	~TouchEventListener();
 	static TouchEventListener *createTouchListener(Object *eventTarget);
@@ -39,10 +47,6 @@ public:
 	bool    isRespondTouch()const;
 	//获取事件派发者的地址
 	Object *getEventTarget()const;
-	//派发事件
-	bool    onTouchBegin(const GLVector2 *touchPoint);
-	void    onTouchMoved(const GLVector2 *touchPoint);
-	void    onTouchEnded(const GLVector2 *touchPoint);
 	//设置
 	void    registerTouchCallback(GLKTouchCallback touchBegin);
 	void    registerMotionCallback(GLKTouchMotionCallback touchMoved);

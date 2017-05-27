@@ -47,16 +47,13 @@ GLTexture     *GLTexture::createWithFile(const char *_file_name)
 	std::string   _key(_file_name);
 	_texture = GLCacheManager::getInstance()->findGLTexture(_key);
 	if (_texture)
-	{
-		_texture->retain();
 		return  _texture;
-	}
 #endif
 	_texture=new   GLTexture();
 	_texture->initWithFile(_file_name);
 #ifdef __ENABLE_TEXTURE_CACHE__
+//	_texture->retain();
 	GLCacheManager::getInstance()->insertGLTexture(_key,_texture);
-	_texture->retain();
 #endif
 	return  _texture;
 }

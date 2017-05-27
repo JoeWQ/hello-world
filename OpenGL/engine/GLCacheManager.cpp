@@ -110,6 +110,7 @@ GLCacheManager::~GLCacheManager()
 	_glTextureCache.clear();
 	if (_bufferIdentity)
 		glDeleteBuffers(1, &_bufferIdentity);
+	_glEmbedProgramSrc.clear();
 }
 GLCacheManager    *GLCacheManager::getInstance()
 {

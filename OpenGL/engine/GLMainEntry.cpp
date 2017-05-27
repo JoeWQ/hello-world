@@ -26,8 +26,10 @@
 #include<sys/time.h>
 #endif
 #include<stdio.h>
-#include<engine/GLCacheManager.h>
-#include<engine/event//EventManager.h>
+#include "engine/GLCacheManager.h"
+#include "engine/event//EventManager.h"
+#include "engine/event/KeyCode.h"
+#include<map>
 ///////////////////////////////////////////////////////////////////
 //declare function
 void   Init(glk::GLContext   *);
@@ -36,6 +38,26 @@ void   Update(glk::GLContext *, float);
 void   ShutDown(glk::GLContext *);
 //////////////////////////////////////////////////////////////////
 __NS_GLK_BEGIN
+//glut中的键盘按键编码与引擎中的按键编码之间的转换
+static  std::map<int, KeyCodeType> _staticKeyCodeMap;
+
+static void   _staicKeyCodeTranslate()
+{
+	_staticKeyCodeMap['w'] = KeyCode_W;
+	_staticKeyCodeMap['W'] = KeyCode_W;
+	_staticKeyCodeMap['s'] = KeyCode_S;
+	_staticKeyCodeMap['S'] = KeyCode_S;
+	_staticKeyCodeMap['a'] = KeyCode_A;
+	_staticKeyCodeMap['A'] = KeyCode_A;
+	_staticKeyCodeMap['d'] = KeyCode_D;
+	_staticKeyCodeMap['D'] = KeyCode_D;
+	_staticKeyCodeMap[GLUT_KEY_CTRL_L+256] = KeyCode_CTRL;
+	_staticKeyCodeMap[GLUT_KEY_CTRL_R+256] = KeyCode_CTRL;
+	_staticKeyCodeMap[GLUT_KEY_SHIFT_L+256] = KeyCode_SHIFT;
+	_staticKeyCodeMap[GLUT_KEY_SHIFT_R+256] = KeyCode_SHIFT;
+	_staticKeyCodeMap[' '] = KeyCode_SPACE;
+}
+
 //callback for event window size changed
 static     void          __onChangeSize(int w, int h)
 {
@@ -70,8 +92,6 @@ static   void         __OnUpdate__(int   _tag)
 		gettimeofday(&val, NULL);
 		_newTickCount = (val.tv_sec - _context->baseTickCount) * 1000 + val.tv_usec / 1000;
 #endif
-		//派发事件
-		_context->dispatchEvent();
 		if (_context->update)
 		{
 #ifdef _WINDOWS_
@@ -115,10 +135,45 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 #else
 //键盘处理事件
-void  _static_keyCallback()
+static void  _static_keyPressCallback(unsigned char keyCode,int x,int y)
 {
-
+	//目前暂时不支持组合按键,此功能以后将会添加
+	//int modify = glutGetModifiers();
+	std::map<int, KeyCodeType>::iterator it = _staticKeyCodeMap.find(keyCode);
+	if (it == _staticKeyCodeMap.end())
+		return;
+	KeyCodeType keyType = _staticKeyCodeMap[keyCode];
+	EventManager::getInstance()->dispatchKeyEvent(keyType,KeyCodeState_Pressed);
 }
+static void _static_keySpecialPressCallback(int keyCode, int x, int y)
+{
+	std::map<int, KeyCodeType>::iterator it = _staticKeyCodeMap.find(keyCode+256);
+	if (it == _staticKeyCodeMap.end())
+		return;
+	KeyCodeType keyType = _staticKeyCodeMap[keyCode+256];
+	EventManager::getInstance()->dispatchKeyEvent(keyType,KeyCodeState_Pressed);
+}
+
+static void _static_keyReleaseCallback(unsigned char keyCode, int x, int y)
+{
+	//目前暂时不支持组合按键,此功能以后将会添加
+	//int modify = glutGetModifiers();
+	std::map<int, KeyCodeType>::iterator it = _staticKeyCodeMap.find(keyCode);
+	if (it == _staticKeyCodeMap.end())
+		return;
+	KeyCodeType keyType = _staticKeyCodeMap[keyCode];
+	EventManager::getInstance()->dispatchKeyEvent(keyType, KeyCodeState_Released);
+}
+
+static void _static_keySpecialReleaseCallback(int keyCode, int x, int y)
+{
+	std::map<int, KeyCodeType>::iterator it = _staticKeyCodeMap.find(keyCode+256);
+	if (it == _staticKeyCodeMap.end())
+		return;
+	KeyCodeType keyType = _staticKeyCodeMap[keyCode+256];
+	EventManager::getInstance()->dispatchKeyEvent(keyType, KeyCodeState_Released);
+}
+
 static glk::MouseType __static_mouseButtonType;
 //鼠按下释放事件标事件
 static void _static_mousePressCallback(int button, int buttonState, int x, int y)
@@ -128,38 +183,34 @@ static void _static_mousePressCallback(int button, int buttonState, int x, int y
 	__static_mouseButtonType = glk::MouseType::MouseType_None;
 	glk::GLVector2  mouseClickPosition(x, winSize.height - y);
 	//鼠标的左键按下
+	MouseType mouseType = MouseType_None;
+	MouseState mouseState = MouseState_None;
 	switch (button)
 	{
 	case GLUT_LEFT_BUTTON:
-		
+		mouseType = MouseType_Left;
 		if (buttonState == GLUT_DOWN)
-		{
-			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Left, glk::MouseState::MouseState_Pressed, mouseClickPosition);
-		}
+			mouseState = MouseState_Pressed;
 		else if(buttonState == GLUT_UP)
-		{
-			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Left, glk::MouseState::MouseState_Released, mouseClickPosition);
-		}
-		__static_mouseButtonType = glk::MouseType::MouseType_Left;
+			mouseState = MouseState_Released;
 		break;
-	case GLUT_RIGHT_BUTTON:
+	case GLUT_RIGHT_BUTTON:			
+		mouseType = MouseType_Right;
 		if (buttonState == GLUT_DOWN)
-		{
-			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Right, glk::MouseState::MouseState_Pressed, mouseClickPosition);
-		}
+			mouseState = MouseState_Pressed;
 		else if (buttonState == GLUT_UP)
-		{
-			glk::EventManager::getInstance()->addMouseEvent(glk::MouseType::MouseType_Right,glk::MouseState::MouseState_Pressed, mouseClickPosition);
-		}
-		__static_mouseButtonType = glk::MouseType_Right;
+			mouseState = MouseState_Released;
 		break;
 	}
+	if (mouseType != MouseType_None)
+		glk::EventManager::getInstance()->dispatchMouseEvent(mouseType,mouseState,mouseClickPosition);
+	__static_mouseButtonType = mouseType;
 }
 //
 static void _static_mouseMotionCallback(int x,int y)
 {
 	glk::GLVector2 mouseMotionPosition(x,glk::GLContext::getInstance()->getWinSize().height-y);
-	glk::EventManager::getInstance()->addMouseEvent(__static_mouseButtonType, glk::MouseState_Moved, mouseMotionPosition);
+	glk::EventManager::getInstance()->dispatchMouseEvent(__static_mouseButtonType, MouseState_Moved, mouseMotionPosition);
 }
 #endif
 
@@ -180,6 +231,8 @@ void      GLMainEntrySetting(glk::GLContext    *_context)
 	_context->registerUpdateFunc(Update);
 	_context->registerDrawFunc(Draw);
 	_context->registerShutDownFunc(ShutDown);
+	//按键转换函数
+	_staicKeyCodeTranslate();
 }
 
 __NS_GLK_END
@@ -221,6 +274,11 @@ int      main(int argc, char* argv[])
 	//鼠标按下释放事件
 	glutMouseFunc(glk::_static_mousePressCallback);
 	glutMotionFunc(glk::_static_mouseMotionCallback);
+	//键盘事件
+	glutKeyboardFunc(glk::_static_keyPressCallback);
+	glutKeyboardUpFunc(glk::_static_keyReleaseCallback);
+	glutSpecialFunc(glk::_static_keySpecialPressCallback);
+	glutSpecialUpFunc(glk::_static_keySpecialReleaseCallback);
 #endif
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
@@ -255,6 +313,8 @@ int      main(int argc, char* argv[])
 		       _context->finalize(_context);
 	if (_context->userObject)//释放申请的内存
 		      free(_context->userObject);
+	glk::GLCacheManager::getInstance()->~GLCacheManager();
+	glk::EventManager::getInstance()->~EventManager();
 #ifdef __USE_GLFW_MM__
 	glfwTerminate();
 	return 0;

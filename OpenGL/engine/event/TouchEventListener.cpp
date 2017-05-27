@@ -8,7 +8,7 @@
 #include<stdio.h>
 __NS_GLK_BEGIN
 
-TouchEventListener::TouchEventListener()
+TouchEventListener::TouchEventListener() :EventListener(EventType_Touch)
 {
 	_isSwallowEvent = false;
 	_isInteractTouch = false;
