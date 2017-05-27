@@ -8,113 +8,113 @@
 #ifdef  _WIN32
 #include<windows.h>
 #else
-  #include<sys/time.h>
+#include<sys/time.h>
 #endif
-//#include<GL/freeglut.h>
-//#include<engine/GLCacheManager.h>
-//#include<engine/event/EventManager.h>
+  //#include<GL/freeglut.h>
+  //#include<engine/GLCacheManager.h>
+  //#include<engine/event/EventManager.h>
 
 __NS_GLK_BEGIN
 GLContext          GLContext::_singleGLContext;
 static       unsigned       _static_last_seed = 0;
- GLContext          *GLContext::getInstance()
+GLContext          *GLContext::getInstance()
 {
-          return    &_singleGLContext;
- }
- //
- GLContext::GLContext()
+	return    &_singleGLContext;
+}
+//
+GLContext::GLContext()
 {
-           this->userObject=NULL;
-           this->update=NULL;
-           this->draw=NULL;
-           this->init=NULL;
-           this->finalize=NULL;
+	this->userObject = NULL;
+	this->update = NULL;
+	this->draw = NULL;
+	this->init = NULL;
+	this->finalize = NULL;
 #ifdef  _WIN32
-		   lastTickCount=GetTickCount();
+	lastTickCount = GetTickCount();
 #else
-           struct     timeval      tv;
-           gettimeofday(&tv,NULL);
-		   baseTickCount=tv.tv_sec;
-		   lastTickCount = 0;
+	struct     timeval      tv;
+	gettimeofday(&tv, NULL);
+	baseTickCount = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	lastTickCount = 0;
 #endif
-           winSize.width=960;
-           winSize.height=640;
- //          displayMode=GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL;
-           winTitle="OpenGL-Sprite";
- }
+	winSize.width = 960;
+	winSize.height = 640;
+	//          displayMode=GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL;
+	winTitle = "OpenGL-Sprite";
+}
 //
-  void    GLContext::registerUpdateFunc(void  (*_update)(GLContext *,float ))
- {
-           this->update=_update;
-  }
+void    GLContext::registerUpdateFunc(void(*_update)(GLContext *, float))
+{
+	this->update = _update;
+}
 //
-  void    GLContext::registerDrawFunc(void (*_draw)(GLContext *))
- {
-           this->draw=_draw;
-  }
+void    GLContext::registerDrawFunc(void(*_draw)(GLContext *))
+{
+	this->draw = _draw;
+}
 //
-  void    GLContext::registerInitFunc(void  (*_init)(GLContext *))
- {
-           this->init=_init;
-  }
+void    GLContext::registerInitFunc(void(*_init)(GLContext *))
+{
+	this->init = _init;
+}
 //
-  void   GLContext::registerShutDownFunc(void  (*_finalize)(GLContext *))
- {
-          this->finalize=_finalize;
-  }
+void   GLContext::registerShutDownFunc(void(*_finalize)(GLContext *))
+{
+	this->finalize = _finalize;
+}
 //
-  void    GLContext::setWinSize(glk::Size  &_size)
- {
-          this->winSize=_size;
-  }
- //
-  void    GLContext::setWinPosition(glk::GLVector2 &_position)
-  {
-	      this->winPosition = _position;
-  }
- //
-   const Size     &GLContext::getWinSize()
-  {
-          return   this->winSize;
-   }
- //
-   void       GLContext::setDisplayMode(int  flag)
-  {
-           this->displayMode=flag;
-   }
+void    GLContext::setWinSize(glk::Size  &_size)
+{
+	this->winSize = _size;
+}
 //
-   int          GLContext::getDisplayMode()
-  {
-            return     this->displayMode;
-   }
- //
-   void       GLContext::setWindowTitle(char  *_title)
-  {
-            this->winTitle=_title;
-   }
+void    GLContext::setWinPosition(glk::GLVector2 &_position)
+{
+	this->winPosition = _position;
+}
 //
-   char       *GLContext::getWindowTitle()
-   {
-	        return  this->winTitle;
-   }
+const Size     &GLContext::getWinSize()const
+{
+	return   this->winSize;
+}
+//
+void       GLContext::setDisplayMode(int  flag)
+{
+	this->displayMode = flag;
+}
+//
+int          GLContext::getDisplayMode()
+{
+	return     this->displayMode;
+}
+//
+void       GLContext::setWindowTitle(char  *_title)
+{
+	this->winTitle = _title;
+}
+//
+const  char       *GLContext::getWindowTitle()const
+{
+	return  this->winTitle;
+}
 
-   void          GLContext::setNearFarPlane(GLVector2 &near_far)
-   {
-	   _near_far_plane = near_far;
-   }
+void          GLContext::setNearFarPlane(GLVector2 &near_far)
+{
+	_near_far_plane = near_far;
+}
 
-   GLVector2     &GLContext::getNearFarPlane()
-   {
-	   return _near_far_plane;
-   }
+GLVector2     &GLContext::getNearFarPlane()
+{
+	return _near_far_plane;
+}
 
-   void        GLContext::setProjMatrix(Matrix   &projMatrix)
-   {
-	   _projMatrix = projMatrix;
-   }
+void        GLContext::setProjMatrix(Matrix   &projMatrix)
+{
+	_projMatrix = projMatrix;
+}
 
-   Matrix        &GLContext::getProjMatrix()
-   {
-	   return _projMatrix;
-   }
-	__NS_GLK_END
+Matrix        &GLContext::getProjMatrix()
+{
+	return _projMatrix;
+}
+__NS_GLK_END
