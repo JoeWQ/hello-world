@@ -202,7 +202,7 @@ static void _static_mousePressCallback(int button, int buttonState, int x, int y
 			mouseState = MouseState_Released;
 		break;
 	}
-	if (mouseType != MouseType_None)
+	if (mouseType == MouseType_Left)
 		glk::EventManager::getInstance()->dispatchMouseEvent(mouseType,mouseState,mouseClickPosition);
 	__static_mouseButtonType = mouseType;
 }

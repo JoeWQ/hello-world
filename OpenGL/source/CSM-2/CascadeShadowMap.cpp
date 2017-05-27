@@ -194,7 +194,7 @@ void    CascadeShadowMap::calculateCropMatrix(const glk::GLVector3 &maxCorner, c
 		clipMinCorner = clipMinCorner.min(clipVertex);
 		clipMaxCorner = clipMaxCorner.max(clipVertex);
 	}
-	//clipMinCorner.z = 0.0f;
+	clipMinCorner.z = 0.0f;
 	//
 	buildCropMatrix(clipMaxCorner.xyz(), clipMinCorner.xyz(),cropMatrix);
 }
