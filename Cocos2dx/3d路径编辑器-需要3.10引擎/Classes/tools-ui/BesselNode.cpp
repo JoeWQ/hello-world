@@ -401,23 +401,11 @@ BesselNode::~BesselNode()
 	 const float angleOfZOffset = atan2f(dxyzCoeffcient.y, sqrtf(dxyzCoeffcient.x*dxyzCoeffcient.x+dxyzCoeffcient.z+dxyzCoeffcient.z)) ;
 	 //绕X轴的旋转分量,Y-Z平面向量与Z轴的夹角b
 	 //const float angleOfXOffset = atan2f(fabs(dxyzCoeffcient.z),fabs(dxyzCoeffcient.y));
-#ifdef __USE_INVERSE_POLICY__
-	 //Cocos2d中的四元数乘法并是完全严格按照数学分析上的定义标准计算的,
-	 //在这种形势下,四元数的乘法可以代表角度的旋转顺序从右向左进行变换
-	 //const Quaternion     rotateOfY(cocos2d::Vec3(0.0f,1.0f,0.0f),angleOfYOffset);
-	 const cocos2d::Quaternion     rotateOfZ(cocos2d::Vec3(0.0f,0.0f,1.0f),angleOfZOffset);
-	 const cocos2d::Quaternion     rotateOfZInverse = rotateOfZ.getInversed();
-	 //使用四元数rotateOfZ的逆旋转向量
-	 const cocos2d::Vec3   axisY = rotateOfZInverse * cocos2d::Vec3(0.0f,1.0f,0.0f);
-	 const cocos2d::Quaternion     rotateOfYAxis(axisY,angleOfYOffset);
-	 cocos2d::Quaternion rotateQuaternion = rotateOfZ * rotateOfYAxis;// *cocos2d::Quaternion(cocos2d::Vec3(1.0f, 0.0f, 0.0f), angleOfXOffset);
-#else
-	#ifndef _Y_ORDER_FIRSRT_
+
 	 cocos2d::Quaternion  rotateQuaternion = cocos2d::Quaternion(Vec3(0.0f, 1.0f, 0.0f), angleOfYOffset) * cocos2d::Quaternion(Vec3(0.0f, 0.0f, 1.0f), angleOfZOffset);
-	#else
-	 cocos2d::Quaternion  rotateQuaternion = cocos2d::Quaternion(Vec3(0.0f,0.0f,1.0f),angleOfZOffset)*cocos2d::Quaternion(Vec3(0.0f,1.0f,0.0f),angleOfYOffset);
-	#endif
-#endif
 
 	 _target->setRotationQuat(rotateQuaternion);
+
+	 dxyzCoeffcient = dxyzCoeffcient.getNormalized();
+
  }

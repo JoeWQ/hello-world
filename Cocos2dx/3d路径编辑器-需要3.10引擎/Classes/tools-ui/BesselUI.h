@@ -129,5 +129,9 @@ public:
 	  *写入到文件中
 	 */
 	void         writeRecordToFile();
+	/*
+	  *从文件Visual_Path.xml中加载原来已经有的数据,如果出现杂乱的数据,则直接删除原来的文件
+	 */
+	void         loadVisualXml();
 };
 #endif

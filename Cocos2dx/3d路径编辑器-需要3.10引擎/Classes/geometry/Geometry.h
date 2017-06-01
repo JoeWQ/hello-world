@@ -78,6 +78,7 @@ public:
 	friend    class   Matrix;
 	friend    struct GLVector3;
 	Matrix3();
+	Matrix3(const Matrix3 &src);
 	inline     float    *pointer(){ return  (float*)m; };
 	//ÇóÄæ¾ØÕó
 	Matrix3         reverse();

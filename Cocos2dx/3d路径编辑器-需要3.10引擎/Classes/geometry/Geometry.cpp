@@ -973,6 +973,10 @@ void     Matrix::offset()
 #undef _OFFSET_MATRIX
 }
 //////////////////////////////三维矩阵//////////////////////////
+Matrix3::Matrix3(const Matrix3 &src)
+{
+	memcpy(this,&src,sizeof(Matrix3));
+}
 //行列式计算
 static float     detFloat(float x1, float y1, float x2, float y2)
 {

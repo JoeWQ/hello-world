@@ -4,6 +4,7 @@
   *@Author:xiaoxiong
  */
 #include"BesselUI.h"
+#include "XMLParser.h"
 #include<fstream>
 //#include "extensions/cocos-ext.h"
 //#include "ui/CocosGUI.h"
@@ -81,6 +82,8 @@ void  BesselUI::initBesselLayer()
 	this->drawAxisMesh();
 	this->addChild(_camera);
 	this->setCameraMask(2);
+	//load visual xml
+	loadVisualXml();
 	/*
 	*Setting Layer
 	*/
@@ -254,12 +257,29 @@ void   BesselUI::drawAxisMesh()
 	const float startZ = winSize.height/2.0f;
 	const float  finalZ = -winSize.height / 1.1566f;
 	const float  zlengthUnit = (finalZ - startZ)/meshSize;
+	const float  ylengthUnit = winSize.height / meshSize;
 	const float  halfWidth = winSize.width / 2.0f;
 	const float  halfHeight = winSize.height / 2.0f;
+	//下方网格
 	for (int i = 0; i < meshSize+1; ++i)
-		_axisNode->drawLine(Vec3(i*stepX- halfWidth,-halfHeight +20.0f,startZ),Vec3(i*stepX-halfWidth,-halfHeight+20.0f,finalZ),Color4F(1.0f,0.6f,0.6f,1.0f));
+		_axisNode->drawLine(Vec3(i*stepX- halfWidth,-halfHeight ,startZ),Vec3(i*stepX-halfWidth,-halfHeight,finalZ),Color4F(1.0f,0.6f,0.6f,1.0f));
 	for (int j = 0; j < meshSize+1; ++j)
-		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight+20.0f,startZ+j*zlengthUnit),Vec3(halfWidth,-halfHeight+20.0f,startZ+j*zlengthUnit),Color4F(0.6f,1.0f,0.6f,1.0f));
+		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,-halfHeight,startZ+j*zlengthUnit),Color4F(0.6f,1.0f,0.6f,1.0f));
+	//上方的网格
+	for (int i = 0; i < meshSize + 1; ++i)
+		_axisNode->drawLine(Vec3(i*stepX-halfWidth,halfHeight,startZ),Vec3(i*stepX-halfWidth,halfHeight,finalZ),Color4F(1.0f,1.0f,0.0f,1.0f));
+	for (int j = 0; j < meshSize + 1; ++j)
+		_axisNode->drawLine(Vec3(-halfWidth,halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,halfHeight,startZ+j*zlengthUnit),Color4F(1.0f,0.0f,1.0f,1.0f));
+	//左侧网格
+	for (int i = 0; i < meshSize + 1; ++i)
+		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(-halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(1.0f,0.8f,0.2f,1.0f));
+	for (int j = 0; j < meshSize + 1; ++j)
+		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(-halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.2f,1.0f,0.8f,1.0f));
+	//右侧的网格
+	for (int i = 0; i < meshSize + 1; ++i)
+		_axisNode->drawLine(Vec3(halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(0.782,0.387,0.664,1.0f));
+	for (int j = 0; j < meshSize + 1; ++j)
+		_axisNode->drawLine(Vec3(halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.664f,0.387f,0.782f,1.0f));
 }
 
 void    BesselUI::loadSettingLayer()
@@ -289,6 +309,7 @@ void    BesselUI::loadSettingLayer()
 	const float buttonWidth = 48.0f;
 	const float buttonStartX = 24.0f + (layerWidth - 4.0f * buttonWidth)/2.0f;
 	const float buttonHeight = layerHeight - buttonWidth *1.5f;
+	char buffer[64];
 	for (int j = 0; j < 4; ++j)
 	{
 		cocos2d::ui::RadioButton* radioButton = cocos2d::ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
@@ -298,7 +319,6 @@ void    BesselUI::loadSettingLayer()
 		buttonGroup->addRadioButton(radioButton);
 		_settingLayer->addChild(radioButton,4);
 		//label name,关于控制点数目的说明
-		char buffer[64];
 		sprintf(buffer,"%d",3+j);
 		Label    *labelName = Label::createWithSystemFont(buffer, "Arial", 14);
 		labelName->setPosition(Vec2(buttonStartX+buttonWidth*j,buttonHeight+buttonWidth/1.5f));
@@ -308,7 +328,8 @@ void    BesselUI::loadSettingLayer()
 		_settingLayer->addChild(labelName, 4);
 	}
 	//记录当前的已经保存的数据的数目
-	Label      *_saveLabel = Label::createWithSystemFont("finished: 0", "Arial", 16);
+	sprintf(buffer, "finished: %d", _besselSetSize);
+	Label      *_saveLabel = Label::createWithSystemFont(buffer, "Arial", 16);
 	_saveLabel->setAnchorPoint(Vec2());
 	_saveLabel->setTag(_TAG_LABEL_TOTAL_RECORD_);
 	_saveLabel->setPosition(Vec2(4.0f,4.0f));
@@ -339,7 +360,7 @@ void    BesselUI::loadSettingLayer()
 	//保存到文件中
 	cocos2d::ui::Button *buttonSaveFile = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
 	buttonSaveFile->setTag(_TAG_BUTTON_SAVE_TO_FILE_);
-	buttonSaveFile->setEnabled(false);
+	buttonSaveFile->setEnabled(_besselSetSize);
 	buttonSaveFile->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_SaveToFile,this));
 	labelName = Label::createWithSystemFont("Save to File", "Arial", 14);
 	labelName->setPosition(Vec2(50.0f, 15.0f));
@@ -532,4 +553,77 @@ void   BesselUI::writeRecordToFile()
 	std::ofstream    targetStream("./Visual_Path.xml",std::ios::out | std::ios::binary);
 	targetStream.write(recordSet.c_str(), recordSet.size());
 	targetStream.close();
+}
+
+void BesselUI::loadVisualXml()
+{
+	const std::string filename = "./Visual_Path.xml";
+	std::ifstream  targetStream(filename,std::ios::binary);
+	//如果文件打开失败
+	if (!targetStream.is_open())
+	{
+		return;
+	}
+	targetStream.close();
+	auto   &winSize = cocos2d::Director::getInstance()->getWinSize();
+	const  float halfWidth = winSize.width / 2.0f;
+	const  float halfHeight = winSize.height / 2.0f;
+	const  float   zPositive = winSize.height / 1.1566f;
+	//Z轴的总长度
+	const float    nearPlane = 0.1f;
+	const float    farPlane = zPositive + winSize.height / 2.0f + 400;
+	const  float   zAxis = farPlane - nearPlane;
+	int      visualId = 0;
+
+	//否则读取所有的文件
+	custom::XMLParser* doc = custom::XMLParser::create();
+	ValueMap valueMap = doc->parseXML(filename);
+	Value& temp = valueMap["FishPath"];
+	//为了程序健壮,必须加上的错误处理代码
+	if (temp.getType() != cocos2d::Value::Type::MAP)
+		return;
+	Value& TPS = temp.asValueMap()["Path"];
+	if (TPS.getType() == cocos2d::Value::Type::VECTOR)
+	{
+		for (Value& _v : TPS.asValueVector())
+		{
+			ValueMap v = _v.asValueMap();
+			std::vector<Vec3>   container;
+			container.reserve(6);
+			for (Value &_vv : v["Position"].asValueVector())
+			{
+				ValueMap &vv = _vv.asValueMap();
+				const float x = vv["x"].asFloat() - 0.5f;
+				const float y = vv["y"].asFloat() - 0.5f;
+				const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+				//还原数据
+				container.push_back(Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z));
+			}
+			BesselSet   _controlPointSet(container);
+			_controlPointSet.setId(visualId);
+			_besselSetData.push_back(_controlPointSet);
+			++visualId;
+		}
+	}
+	else if(temp.getType() == cocos2d::Value::Type::MAP)
+	{
+		ValueMap  &secondaryMap = TPS.asValueMap();
+		std::vector<Vec3>   container;
+		container.reserve(6);
+		for (Value& _v : secondaryMap["Position"].asValueVector())
+		{
+			ValueMap v = _v.asValueMap();
+			ValueMap &vv = _v.asValueMap();
+			const float x = vv["x"].asFloat() - 0.5f;
+			const float y = vv["y"].asFloat() - 0.5f;
+			const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+			//还原数据
+			container.push_back(Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z));
+		}
+		BesselSet   _controlPointSet(container);
+		_controlPointSet.setId(visualId);
+		_besselSetData.push_back(_controlPointSet);
+		++visualId;
+	}
+	_besselSetSize = _besselSetData.size();
 }
