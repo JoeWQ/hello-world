@@ -4,6 +4,7 @@
   *@author:xiaoxiong
  */
 #include"BesselNode.h"
+#include "geometry/Geometry.h"
 USING_NS_CC;
 
 /*
@@ -395,17 +396,35 @@ BesselNode::~BesselNode()
 		 const    float otherCoeff = j* powf(one_minus_t, expCoeffcient - j)*powf(timeRate, j - 1);
 		 dxyzCoeffcient += CoeffcientVertex[j] * (halfCoeff + otherCoeff) * _besselPoints.at(j);
 	 }
-	 //计算相关的旋转分量,X-Z平面向量与X轴的夹角
-	 const float angleOfYOffset = atan2f(dxyzCoeffcient.x,  dxyzCoeffcient.z) - M_PI_2;
-	 //绕Z轴的旋转分量,X-Y平面向量与X轴的夹角
-	 const float angleOfZOffset = atan2f(dxyzCoeffcient.y, sqrtf(dxyzCoeffcient.x*dxyzCoeffcient.x+dxyzCoeffcient.z+dxyzCoeffcient.z)) ;
+	// //计算相关的旋转分量,X-Z平面向量与X轴的夹角
+	// const float angleOfYOffset = atan2f(dxyzCoeffcient.x,  dxyzCoeffcient.z) - M_PI_2;
+	// //绕Z轴的旋转分量,X-Y平面向量与X轴的夹角
+	// const float dddd = dxyzCoeffcient.x*dxyzCoeffcient.x + dxyzCoeffcient.z * dxyzCoeffcient.z;
+	// assert(dddd>=0.0f);
+	//// printf("%f   ", dddd);
+	// const float angleOfZOffset = atan2f(dxyzCoeffcient.y, sqrtf(dxyzCoeffcient.x*dxyzCoeffcient.x+dxyzCoeffcient.z *dxyzCoeffcient.z)) ;
 	 //绕X轴的旋转分量,Y-Z平面向量与Z轴的夹角b
 	 //const float angleOfXOffset = atan2f(fabs(dxyzCoeffcient.z),fabs(dxyzCoeffcient.y));
 
-	 cocos2d::Quaternion  rotateQuaternion = cocos2d::Quaternion(Vec3(0.0f, 1.0f, 0.0f), angleOfYOffset) * cocos2d::Quaternion(Vec3(0.0f, 0.0f, 1.0f), angleOfZOffset);
+	// cocos2d::Quaternion  rotateQuaternion = cocos2d::Quaternion(Vec3(0.0f, 1.0f, 0.0f), angleOfYOffset) * cocos2d::Quaternion(Vec3(0.0f, 0.0f, 1.0f), angleOfZOffset);
 
-	 _target->setRotationQuat(rotateQuaternion);
+	 //_target->setRotationQuat(rotateQuaternion);
 
+	 const Vec3 xaxis(1.0f,0.0f,0.0f);
 	 dxyzCoeffcient = dxyzCoeffcient.getNormalized();
-
+	 const float dotValue = dxyzCoeffcient.dot(xaxis);
+	 const float angleZ = acosf(dotValue);
+	 Vec3    newVec(xaxis);
+	 newVec.cross(dxyzCoeffcient);
+	
+	 //GLVector2  xyVec(dxyzCoeffcient.x,dxyzCoeffcient.y);
+	 //const float ydotValue = xyVec.dot(GLVector2(1.0f,0.0f));
+	 //const float angleY = atan2f(dxyzCoeffcient.y, dxyzCoeffcient.x);
+	 cocos2d::Quaternion rotateAngle;
+	 //if (angleZ >M_PI_2 )
+		// rotateAngle = cocos2d::Quaternion(newVec, angleZ) * cocos2d::Quaternion(Vec3(1.0f,0.0f,0.0f),M_PI);
+	 //else 
+	 const float angleOfXOffset = atan2f(dxyzCoeffcient.z, dxyzCoeffcient.y);
+	 rotateAngle = cocos2d::Quaternion(newVec, angleZ);// *cocos2d::Quaternion(Vec3(1.0f, 0.0f, 0.0f), angleOfXOffset);
+	 _target->setRotationQuat(rotateAngle);
  }

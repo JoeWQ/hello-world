@@ -26,7 +26,7 @@
   *考虑到贝塞尔曲线具有刚体平移的性质,最后在保存数据的时候，我们会将他的数据做一次变换
   *但不会改变贝塞尔曲线的形状
   */
-class BesselUI :public cocos2d::Layer
+class BesselUI :public cocos2d::Layer,public cocos2d::ui::EditBoxDelegate
 {
 private:
 	//与贝塞尔曲线的参数设置有关的组件
@@ -45,6 +45,10 @@ private:
 	  *3d场景下的摄像机
 	 */
 	cocos2d::Camera   *_camera;
+	/*
+	  *文本输入框
+	 */
+	cocos2d::ui::EditBox     *_editBox;
 	/*
 	  *与摄像机相关的参数,摄像机可以拉伸的最远,最近距离
 	  *此数据域作用于视图矩阵之上
@@ -65,6 +69,11 @@ private:
 	 */
 	std::vector<BesselSet>     _besselSetData;
 	int                                      _besselSetSize;
+	/*
+	  *当前正在编辑的路径id,如果为-1则表示正在编辑新建的,否则为编辑已经存在的队列中的某个
+	 */
+	int                                      _currentEditPathIndex;
+	//
 	cocos2d::EventListenerKeyboard   *_keyboardListener;
 	cocos2d::EventListenerTouchOneByOne    *_touchListener;
 private:
@@ -133,5 +142,16 @@ public:
 	  *从文件Visual_Path.xml中加载原来已经有的数据,如果出现杂乱的数据,则直接删除原来的文件
 	 */
 	void         loadVisualXml();
+	/*
+	  *文本输入框回调函数实现
+	 */
+	 //当编辑框获得焦点时将被调用
+	virtual void editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox);
+	//当编辑框失去焦点后将被调用
+	virtual void editBoxEditingDidEnd(cocos2d::ui::EditBox* editBox);
+	//当编辑框内容发生改变将被调用
+	virtual void editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text);
+	//当编辑框的结束操作被调用
+	virtual void editBoxReturn(cocos2d::ui::EditBox* editBox);
 };
 #endif

@@ -10,7 +10,9 @@
 //#include "ui/CocosGUI.h"
 //#include"geometry/Geometry.h"
 //记录当前的已经完成的贝塞尔曲线控制点的配置的数目
-#define  _TAG_LABEL_TOTAL_RECORD_    0x16
+#define  _TAG_LABEL_TOTAL_RECORD_                    0x15
+//新建一条路径
+#define  _TAG_NEW_PATH_                                           0x16
 //删除上一条记录
 #define  _TAG_BUTTON_REMOVE_LAST_RECORD_ 0x17
 //保存当前记录
@@ -46,6 +48,7 @@ BesselUI::BesselUI()
 	_keyMask = 0;
 	_besselSetData.reserve(128);
 	_besselSetSize = 0;
+	_currentEditPathIndex = -1;
 	//透视距离
 	_maxZeye = 0.0f;
 	_minZeye = 0.0f;
@@ -254,32 +257,80 @@ void   BesselUI::drawAxisMesh()
 	const  int   meshSize = 24;
 	const float stepX = winSize.width / meshSize;
 
+	const float zeye = winSize.height / 1.1566f;
 	const float startZ = winSize.height/2.0f;
 	const float  finalZ = -winSize.height / 1.1566f;
 	const float  zlengthUnit = (finalZ - startZ)/meshSize;
 	const float  ylengthUnit = winSize.height / meshSize;
 	const float  halfWidth = winSize.width / 2.0f;
 	const float  halfHeight = winSize.height / 2.0f;
+	//计算视锥体最近与最远处的八个坐标
+	const float nearZ = startZ;
+	const float farZ = zeye + winSize.height/2.0f + 400.0f;
+	//屏幕的横纵比
+	const float screenFactor = winSize.width/winSize.height;
+	const float tanOfValue = tanf(CC_DEGREES_TO_RADIANS(60.0f/2.0f));
+	const float nearHeight = tanOfValue * nearZ;
+	const float nearWidth = screenFactor * nearHeight;
+	const float farHeight = tanOfValue * farZ;
+	const float farWidth = screenFactor * farHeight;
+	//近远平面的中心坐标
+	const Vec3 nearCenter(0.0f,0.0f,-nearZ);
+	const Vec3 farCenter(0.0f,0.0f,-farZ);
+	//方向向量
+	const Vec3 forwardVec(0.0f,0.0f,-1.0f);
+	const Vec3 xVec(1.0f,0.0f,0.0f);
+	const Vec3 yVec(0.0f,1.0f,0.0f);
+	//8个视锥体世界坐标点
+	 Vec3 frustumCoord[8] = {
+		nearCenter - xVec * nearWidth -  yVec * nearHeight,nearCenter + xVec * nearWidth - yVec * nearHeight,//(bottom left,bottom right)
+		nearCenter  -xVec * nearWidth + yVec * nearHeight,nearCenter + xVec * nearWidth + yVec * nearHeight,//(top left,top right)
+		farCenter    - xVec * farWidth    - yVec *farHeight,farCenter + xVec* farWidth- yVec * farHeight,//far bottom left
+		farCenter    -xVec  * farWidth   +yVec  * farHeight,farCenter + xVec *farWidth + yVec * farHeight,//far top left/right
+	};
+	 //在原来的基础上,将视锥体的Z坐标累加上zeye
+	 for (int i = 0; i < 8; ++i)
+		 frustumCoord[i].z += zeye;
 	//下方网格
-	for (int i = 0; i < meshSize+1; ++i)
-		_axisNode->drawLine(Vec3(i*stepX- halfWidth,-halfHeight ,startZ),Vec3(i*stepX-halfWidth,-halfHeight,finalZ),Color4F(1.0f,0.6f,0.6f,1.0f));
-	for (int j = 0; j < meshSize+1; ++j)
-		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,-halfHeight,startZ+j*zlengthUnit),Color4F(0.6f,1.0f,0.6f,1.0f));
+	 const Vec3 farStepBottomZ = (frustumCoord[5] - frustumCoord[4])/meshSize;
+	 const Vec3 nearStepBottomZ =( frustumCoord[1] - frustumCoord[0])/meshSize;
+	 for (int i = 0; i < meshSize + 1; ++i)
+		 _axisNode->drawLine(frustumCoord[0] + nearStepBottomZ * i, frustumCoord[4]+farStepBottomZ*i, Color4F(1.0f, 0.6f, 0.6f, 1.0f));
+		//_axisNode->drawLine(Vec3(i*stepX- halfWidth,-halfHeight ,startZ),Vec3(i*stepX-halfWidth,-halfHeight,finalZ),Color4F(1.0f,0.6f,0.6f,1.0f));
+	 const Vec3 leftStepBottom = (frustumCoord[4] - frustumCoord[0])/meshSize;
+	 const Vec3 rightStepBottom = (frustumCoord[5]- frustumCoord[1])/meshSize;
+	 for (int j = 0; j < meshSize + 1; ++j)
+		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[1]+rightStepBottom*j,Color4F(0.6f,1.0f,0.6f,1.0f));
+		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,-halfHeight,startZ+j*zlengthUnit),Color4F(0.6f,1.0f,0.6f,1.0f));
 	//上方的网格
-	for (int i = 0; i < meshSize + 1; ++i)
-		_axisNode->drawLine(Vec3(i*stepX-halfWidth,halfHeight,startZ),Vec3(i*stepX-halfWidth,halfHeight,finalZ),Color4F(1.0f,1.0f,0.0f,1.0f));
-	for (int j = 0; j < meshSize + 1; ++j)
-		_axisNode->drawLine(Vec3(-halfWidth,halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,halfHeight,startZ+j*zlengthUnit),Color4F(1.0f,0.0f,1.0f,1.0f));
+	 const Vec3 nearStepTopZ = (frustumCoord[3] - frustumCoord[2])/meshSize;
+	 const Vec3 farStepTopZ = (frustumCoord[7] - frustumCoord[6])/meshSize;
+	 for (int i = 0; i < meshSize + 1; ++i)
+		 _axisNode->drawLine(frustumCoord[2]+nearStepTopZ*i, frustumCoord[6]+farStepTopZ*i,Color4F(1.0f,1.0f,0.0f,1.0f));
+		//_axisNode->drawLine(Vec3(i*stepX-halfWidth,halfHeight,startZ),Vec3(i*stepX-halfWidth,halfHeight,finalZ),Color4F(1.0f,1.0f,0.0f,1.0f));
+	 const Vec3 leftStepTop = (frustumCoord[6] - frustumCoord[2])/meshSize;
+	 const Vec3 rightStepTop = (frustumCoord[7]- frustumCoord[3])/meshSize;
+	 for (int j = 0; j < meshSize + 1; ++j)
+		 _axisNode->drawLine(frustumCoord[2]+leftStepTop*j, frustumCoord[3]+rightStepTop*j,Color4F(1.0f,0.0f,1.0f,1.0f));
+		//_axisNode->drawLine(Vec3(-halfWidth,halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,halfHeight,startZ+j*zlengthUnit),Color4F(1.0f,0.0f,1.0f,1.0f));
 	//左侧网格
-	for (int i = 0; i < meshSize + 1; ++i)
-		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(-halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(1.0f,0.8f,0.2f,1.0f));
-	for (int j = 0; j < meshSize + 1; ++j)
-		_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(-halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.2f,1.0f,0.8f,1.0f));
+	 const Vec3 leftStepNear =( frustumCoord[2]- frustumCoord[0])/meshSize;
+	 const Vec3 leftStepFar = (frustumCoord[6]- frustumCoord[4])/meshSize;
+	 for (int i = 0; i < meshSize + 1; ++i)
+		 _axisNode->drawLine(frustumCoord[0]+leftStepNear*i, frustumCoord[4]+leftStepFar*i,Color4F(1.0f,0.8f,0.2f,1.0f));
+		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(-halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(1.0f,0.8f,0.2f,1.0f));
+	 for (int j = 0; j < meshSize + 1; ++j)
+		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[2]+leftStepTop*j,Color4F(0.2f,1.0f,0.8f,1.0f));
+		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(-halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.2f,1.0f,0.8f,1.0f));
 	//右侧的网格
-	for (int i = 0; i < meshSize + 1; ++i)
-		_axisNode->drawLine(Vec3(halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(0.782,0.387,0.664,1.0f));
-	for (int j = 0; j < meshSize + 1; ++j)
-		_axisNode->drawLine(Vec3(halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.664f,0.387f,0.782f,1.0f));
+	 const Vec3 rightStepNear = (frustumCoord[3] - frustumCoord[1])/meshSize;
+	 const Vec3 rightStepFar = (frustumCoord[7] - frustumCoord[5])/meshSize;
+	 for (int i = 0; i < meshSize + 1; ++i)
+		 _axisNode->drawLine(frustumCoord[1]+rightStepNear*i, frustumCoord[5]+rightStepFar*i,Color4F(0.782, 0.387, 0.664, 1.0f));
+	 // _axisNode->drawLine(Vec3(halfWidth, -halfHeight + i*ylengthUnit, startZ), Vec3(halfWidth, -halfHeight + i*ylengthUnit, finalZ), Color4F(0.782, 0.387, 0.664, 1.0f));
+	 for (int j = 0; j < meshSize + 1; ++j)
+		_axisNode->drawLine(frustumCoord[1]+ rightStepBottom*j, frustumCoord[3]+rightStepTop*j,Color4F(0.664f, 0.387f, 0.782f, 1.0f)) ;
+	 // _axisNode->drawLine(Vec3(halfWidth, -halfHeight, startZ + zlengthUnit*j), Vec3(halfWidth, halfHeight, startZ + zlengthUnit*j), Color4F(0.664f, 0.387f, 0.782f, 1.0f));
 }
 
 void    BesselUI::loadSettingLayer()
@@ -626,4 +677,24 @@ void BesselUI::loadVisualXml()
 		++visualId;
 	}
 	_besselSetSize = _besselSetData.size();
+}
+
+void BesselUI::editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox)
+{
+
+}
+
+void BesselUI::editBoxEditingDidEnd(cocos2d::ui::EditBox* editBox)
+{
+
+}
+
+void BesselUI::editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text)
+{
+
+}
+
+void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
+{
+
 }
