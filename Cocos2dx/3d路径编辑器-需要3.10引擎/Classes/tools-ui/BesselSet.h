@@ -7,8 +7,10 @@
 #ifndef __BESSEL_SET_H__
 #define __BESSEL_SET_H__
 #include "cocos2d.h"
+class BesselUI;
 class BesselSet
 {
+	friend class BesselUI;
 	std::vector<cocos2d::Vec3>   _pointsSet;
 	int                                             _realSize;
 	int                                             _curveId;

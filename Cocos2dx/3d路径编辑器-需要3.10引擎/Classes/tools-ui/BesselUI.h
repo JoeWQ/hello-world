@@ -115,6 +115,10 @@ public:
 	 */
 	void           onButtonClick_SpreadOrHide(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
 	/*
+	*新建一条路径
+	*/
+	void          onButtonCLick_New(cocos2d::Ref *sender,cocos2d::ui::Widget::TouchEventType type);
+	/*
 	  *控制贝塞尔曲线的控制点数目的组按钮事件
 	 */
 	void          onChangeRadioButtonSelect(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type);
@@ -153,5 +157,8 @@ public:
 	virtual void editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text);
 	//当编辑框的结束操作被调用
 	virtual void editBoxReturn(cocos2d::ui::EditBox* editBox);
+	/*
+	  *从某一个贝塞尔曲线点容器中载入以前设置的数据,场景矩阵不会发生变化
+	*/
 };
 #endif

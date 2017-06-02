@@ -147,6 +147,56 @@ BesselNode::~BesselNode()
 	 _besselPointSize = pointCount;
  }
 
+ void   BesselNode::initBesselNodeWithPoints(const std::vector<cocos2d::Vec3> &points)
+ {
+	 //判断是否需要重新创建节点
+	 const int originSize = _besselContainer.size();
+	 if (points.size() > originSize)
+	 {
+		 for (int i = originSize; i < points.size(); ++i)
+		 {
+			 BesselPoint    *other = BesselPoint::createBesselPoint(i);
+			 other->setZOrder(i);
+			 other->setCameraMask(2);
+			 this->addChild(other);
+			 _besselContainer.push_back(other);
+		 }
+	 }
+	 //设置相关的数据
+	 for (int i = 0; i < points.size(); ++i)
+	 {
+		 BesselPoint *other = _besselContainer.at(i);
+		 other->setVisible(true);
+		 other->setPosition3D(points.at(i));
+	 }
+	 _besselPointSize = points.size();
+	 //如果原来的数据已经大于point.size,则隐藏掉多余的节点
+	 for (int i = points.size(); i < originSize; ++i)
+	 {
+		 _besselContainer.at(i)->setVisible(false);
+	 }
+ }
+
+ void    BesselNode::restoreBesselNodePosition()
+ {
+	 //检测容器中存留的点的数目,并同时初始化点的坐标
+	 const cocos2d::Size &winSize = Director::getInstance()->getWinSize();
+	 int  i = 0;
+	 //第一阶段，可视化判定
+	 const   float  stepX = winSize.width / (_besselPointSize+ 1);
+	 //float    disturbFactor[8] = { 1.0f,1.5f,1.5f,1.5f ,1.5f,1.5f,1.5f};
+	 const   float  halfWidth = winSize.width / 2.0f;
+	 const   float  halfHeight = winSize.height / 2.0f;
+	 const   float  disturbFactor[2] = { 1.0f,1.5f };
+	 for (i = 0; i < _besselPointSize; ++i)
+	 {
+		 BesselPoint		*other = _besselContainer.at(i);
+		 other->setVisible(true);
+		 //等分屏幕空间
+		 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != _besselPointSize - 1] / 2.0f - halfHeight, 0.0f));
+	 }
+ }
+
  void    BesselNode::setRotateMatrix(const cocos2d::Mat4 &rotateMatrix)
  {
 	 _rotateMatrix = rotateMatrix;

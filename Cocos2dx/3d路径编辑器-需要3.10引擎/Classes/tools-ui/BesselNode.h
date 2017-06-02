@@ -134,6 +134,14 @@ public:
 	  */
 	//输入函数为去先浏览完毕之后的后调函数
 	void   previewCurive(std::function<void  (float )> actionFinishedCallback);
+	/*
+	  *使用给定的一系列控制点来初始化节点数据,必要的时候需要重新创建节点
+	  */
+	void   initBesselNodeWithPoints(const std::vector<cocos2d::Vec3>  &points);
+	/*
+	  *恢复当前节点的位置
+	 */
+	void   restoreBesselNodePosition();
 };
 
 #endif

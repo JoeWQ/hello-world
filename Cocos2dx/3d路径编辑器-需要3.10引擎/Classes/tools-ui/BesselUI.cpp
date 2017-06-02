@@ -21,6 +21,10 @@
 #define  _TAG_BUTTON_SAVE_TO_FILE_                      0x19
 //曲线预览
 #define  _TAG_BUTTON_PREVIEW_                                 0x20
+//组策略tag
+#define _TAG_RADIO_BUTTON_GROUP_                        0x21
+//组按钮的起始tag
+#define _TAG_RADIO_BUTTON_										   3
 USING_NS_CC;
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -355,6 +359,7 @@ void    BesselUI::loadSettingLayer()
 	_settingLayer->addChild(directButton,2);
 	//控制贝塞尔曲线控制点数目的UIRadioButton
 	cocos2d::ui::RadioButtonGroup     *buttonGroup = cocos2d::ui::RadioButtonGroup::create();
+	buttonGroup->setTag(_TAG_RADIO_BUTTON_GROUP_);
 	_settingLayer->addChild(buttonGroup,3);
 	//目前支持的贝塞尔曲线控制点的数目为3,4,5,6
 	const float buttonWidth = 48.0f;
@@ -384,17 +389,28 @@ void    BesselUI::loadSettingLayer()
 	_saveLabel->setAnchorPoint(Vec2());
 	_saveLabel->setTag(_TAG_LABEL_TOTAL_RECORD_);
 	_saveLabel->setPosition(Vec2(4.0f,4.0f));
-	_saveLabel->setColor(Color3B(255,0,0));
+	_saveLabel->setColor(Color3B(255,255,220));
 	_settingLayer->addChild(_saveLabel,5);
 	//删除上一条
 	const  float     buttonX = layerWidth/2.0f;
-	const  float		buttonSeqHeight = 64.0f;//按钮序列的高度都设置为48.0f像素
-	const  float     buttonY = (layerHeight - buttonStartX - 24.0f - buttonSeqHeight);
+	const  float		buttonSeqHeight = 56.0f;//按钮序列的高度都设置为48.0f像素
+    float     buttonY = (layerHeight - buttonStartX - 24.0f - buttonSeqHeight);
+	//新建一条路径
+	cocos2d::ui::Button *buttonNew = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
+	buttonNew->setTag(_TAG_NEW_PATH_);
+	buttonNew->setPosition(Vec2(buttonX,buttonY));
+	buttonNew->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonCLick_New,this));
+	Label   *name = Label::createWithSystemFont("New", "Arial", 14);
+	name->setPosition(Vec2(50,15));
+	buttonNew->addChild(name);
+	_settingLayer->addChild(buttonNew, 5);
+	buttonY -= buttonSeqHeight;
+	//
 	cocos2d::ui::Button      *buttonRemove = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png","tools-ui/direct-button/backtotoppressed.png");
 	buttonRemove->setTag(_TAG_BUTTON_REMOVE_LAST_RECORD_);
 	Label       *labelName = Label::createWithSystemFont("Remove Record","Arial",14);
 	buttonRemove->addChild(labelName);
-	buttonRemove->setEnabled(false);
+	buttonRemove->setEnabled(_besselSetSize);
 	labelName->setPosition(Vec2(50.0f,15.0f));
 	buttonRemove->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_RemoveLast,this));
 	buttonRemove->setPosition(Vec2(buttonX,buttonY));
@@ -427,6 +443,18 @@ void    BesselUI::loadSettingLayer()
 	buttonPreview->addChild(labelName);
 	buttonPreview->setPosition(Vec2(buttonX,buttonY - 3.0f * buttonSeqHeight));
 	_settingLayer->addChild(buttonPreview, 9);
+	//编辑框
+	ui::Scale9Sprite *textBg = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_editBox = cocos2d::ui::EditBox::create(cocos2d::Size(48,32),textBg);
+	_editBox->setFont("Arial",16);
+	_editBox->setFontColor(Color4B(255,32,255,255));
+	_editBox->setPlaceHolder("input");
+	_editBox->setPlaceholderFontColor(Color4B::GRAY);
+	_editBox->setMaxLength(3);
+	_editBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
+	_editBox->setDelegate(this);
+	_editBox->setPosition(Vec2(layerWidth - 42,32));
+	_settingLayer->addChild(_editBox,10);
 
 	this->addChild(_settingLayer,2);
 }
@@ -480,6 +508,27 @@ void      BesselUI::onChangeRadioButtonSelect(cocos2d::ui::RadioButton* radioBut
 	}
 }
 
+void BesselUI::onButtonCLick_New(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType type)
+{
+	cocos2d::ui::Button *button = (cocos2d::ui::Button *)sender;
+	if (type == cocos2d::ui::Widget::TouchEventType::ENDED)
+	{
+		if (_currentEditPathIndex != -1)
+		{
+			_currentEditPathIndex = -1;
+			//将场景设置为正常状态
+			cocos2d::Quaternion qua;
+			Mat4       mat;
+			_besselNode->setRotationQuat(qua);
+			_besselNode->setRotateMatrix(mat);
+			_besselNode->restoreBesselNodePosition();
+			//坐标轴恢复
+			_axisNode->setRotationQuat(qua);
+			_editBox->setText("");
+		}
+	}
+}
+
 void    BesselUI::onButtonClick_RemoveLast(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
 {
 	cocos2d::ui::Button      *buttonRemove = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_REMOVE_LAST_RECORD_);
@@ -514,13 +563,22 @@ void    BesselUI::onButtonClick_SaveRecord(cocos2d::Ref *pSender, cocos2d::ui::W
 		buttonRemove->setEnabled(true);
 		BesselSet		besselSet;
 		_besselNode->getBesselPoints(besselSet);
-		//设置id
-		besselSet.setId(_besselSetSize);
-		if (_besselSetSize < _besselSetData.size())
-			_besselSetData.at(_besselSetSize)=besselSet;
+		//检测是否是修改中间的部分
+		if (_currentEditPathIndex != -1)
+		{
+			besselSet.setId(_currentEditPathIndex);
+			_besselSetData[_currentEditPathIndex] = besselSet;
+		}
 		else
-			_besselSetData.push_back(besselSet);
-		_besselSetSize += 1;
+		{
+			//设置id
+			besselSet.setId(_besselSetSize);
+			if (_besselSetSize < _besselSetData.size())
+				_besselSetData.at(_besselSetSize) = besselSet;
+			else
+				_besselSetData.push_back(besselSet);
+			_besselSetSize += 1;
+		}
 		//通知UI变化
 		Label     *_totalSaveLabel = (Label *)_settingLayer->getChildByTag(_TAG_LABEL_TOTAL_RECORD_);
 		char buffer[64];
@@ -696,5 +754,16 @@ void BesselUI::editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::stri
 
 void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
 {
-
+	const char *text = editBox->getText();
+	//转换成int
+	const int number = atoi(text);
+	if (number<=0 || number > _besselSetSize || number-1== _currentEditPathIndex)
+		return;
+	_currentEditPathIndex = number-1;
+	//切换当前正在编辑的贝塞尔曲线
+	_besselNode->initBesselNodeWithPoints(_besselSetData.at(_currentEditPathIndex)._pointsSet);
+	//设置组按钮的相关按钮指示
+	cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_settingLayer->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
+	cocos2d::ui::RadioButton *radioButton=(cocos2d::ui::RadioButton*)group->getChildByTag(_besselSetData.at(_currentEditPathIndex)._pointsSet.size());
+	group->setSelectedButton(radioButton);
 }
