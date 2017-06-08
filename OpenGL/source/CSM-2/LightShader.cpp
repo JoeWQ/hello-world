@@ -30,6 +30,7 @@ LightShader *LightShader::createShaderWithSource(const char *vsFile, const char 
 void LightShader::loadShaderSource(const char *vsFile, const char *gsFile, const char *fsFile)
 {
 	_lightProgram = glk::GLProgram::createWithFile(vsFile, gsFile, fsFile);
+	_lightProgram->retain();
 	_mvpMatrixLoc = _lightProgram->getUniformLocation("g_MVPMatrix");
 	_cropMatrixLoc = _lightProgram->getUniformLocation("g_CropMatrix");
 }

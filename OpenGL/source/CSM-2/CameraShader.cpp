@@ -31,6 +31,7 @@ CameraShader::~CameraShader()
 bool    CameraShader::loadShaderSource(const char *vsFile, const char *fsFile)
 {
 	_renderProgram = glk::GLProgram::createWithFile(vsFile, fsFile);
+	_renderProgram->retain();
 	_modelMatrixLoc = _renderProgram->getUniformLocation("g_MMatrix");
 	_viewProjMatrixLoc = _renderProgram->getUniformLocation("g_ViewProjMatrix");
 	_normalMatrixLoc= _renderProgram->getUniformLocation("g_NormalMatrix");
