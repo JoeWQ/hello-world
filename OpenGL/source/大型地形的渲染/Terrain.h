@@ -23,6 +23,12 @@ private:
 	glk::Matrix             _viewMatrix;
 	//投影矩阵
 	glk::Matrix             _projMatrix;
+	//视图投影矩阵
+	glk::Matrix             _viewProjMatrix;
+	//光线的方向,必须单位化
+	glk::GLVector3       _lightDirection;
+	//光线的颜色
+	glk::GLVector4       _lightColor;
 	//关于投影矩阵的旋转向量和平移向量
 	glk::GLVector3       _rotateVec;
 	glk::GLVector3       _translateVec;
@@ -35,12 +41,18 @@ private:
 	//索引缓冲区对象
 	unsigned              _terrainIndexId;
 	//地形的高度场数据
-	float                     _heightField;
+	float                     *_heightField;
 	//地形的宽度(高度和宽度相等)
 	int                       _terrainSize;
+	//记录地形的最大最小边界值
+	glk::GLVector3  _boundaryMin;
+	glk::GLVector3  _boundaryMax;
 private:
 	Terrain();
 	Terrain(Terrain &);
+	/*
+	  *加载二进制文件
+	*/
 	void                     initWithFile(const std::string &filename);
 public:
 	~Terrain();
@@ -48,6 +60,18 @@ public:
 	static Terrain   *createTerrainWithFile(const std::string  &filename);
 	//使用图片文件加载地形
 	static Terrain   *createTerrainWithTexture(glk::GLTexture *hightTexture);
+	/*
+	  *给定地图的位置,获取其高程值
+	 */
+	inline  float        getHeightValue(int x,int z)const;
+	/*
+	  *给定一个地图坐标,获取其平滑的高程值
+	 */
+	 float         getHeightValueSmooth(float x,float z)const;
+	/*
+	  *给定地图坐标,计算其在内存中的实际索引
+	*/
+	inline int            getRealIndex(int x,int z)const;
 	/*
 	  *初始化视图投影矩阵数据
 	 */

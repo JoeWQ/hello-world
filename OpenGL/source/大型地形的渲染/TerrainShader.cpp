@@ -13,6 +13,8 @@ TerrainShader::TerrainShader()
 	_normalMatrixLoc = -1;
 	_eyePositionLoc = -1;
 	_colorLoc = -1;
+	_lightColorLoc = -1;
+	_lightDirectionLoc = -1;
 	_terrainProgram = nullptr;
 }
 
@@ -30,6 +32,8 @@ void TerrainShader::initWithFile(const char *vsFile, const char *fsFile)
 	_normalMatrixLoc = _terrainProgram->getUniformLocation("g_normalMatrix");
 	_eyePositionLoc = _terrainProgram->getUniformLocation("g_eyePosition");
 	_colorLoc = _terrainProgram->getUniformLocation("g_color");
+	_lightColorLoc = _terrainProgram->getUniformLocation("g_lightColor");
+	_lightDirectionLoc = _terrainProgram->getUniformLocation("g_lightDirection");
 }
 
 TerrainShader  *TerrainShader::createTerrainShader(const char *vsFile, const char *fsFile)
@@ -76,6 +80,22 @@ void TerrainShader::setTerrainColor(const glk::GLVector4 &color)
 	if (_colorLoc >= 0)
 	{
 		glUniform4fv(_colorLoc, 1, &color.x);
+	}
+}
+
+void  TerrainShader::setLightColor(const glk::GLVector4 &lightColor)
+{
+	if (_lightColorLoc >= 0)
+	{
+		glUniform4fv(_lightColorLoc, 1, &lightColor.x);
+	}
+}
+
+void TerrainShader::setLightDirection(const glk::GLVector3 &lightDirection)
+{
+	if (_lightDirectionLoc >= 0)
+	{
+		glUniform4fv(_lightDirectionLoc, 1,&lightDirection.x);
 	}
 }
 

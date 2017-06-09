@@ -20,6 +20,10 @@ class TerrainShader
 	int                         _eyePositionLoc;
 	//颜色
 	int                         _colorLoc;
+	//光线的颜色
+	int                         _lightColorLoc;
+	//光线的方向
+	int                         _lightDirectionLoc;
 private:
 	TerrainShader();
 	TerrainShader(TerrainShader &);
@@ -44,6 +48,14 @@ public:
 	  *设置观察者的位置
 	 */
 	void   setEyePosition(const glk::GLVector3 &eyePosition);
+	/*
+	  *设置光线的方向
+	*/
+	void   setLightDirection(const glk::GLVector3 &lightDirection);
+	/*
+	  *设置光线的颜色
+	 */
+	void   setLightColor(const glk::GLVector4 &lightColor);
 	/*
 	  *设置地形的基本颜色
 	 */
