@@ -6,18 +6,18 @@
 //Version 5.0(2016-12-9 20:34:11):引入了高斯函数以及Phillips函数(这两个函数主要在海平面系统中使用)
 &2016-4-30
 */
-#ifndef  __ENTRY_H__
-#define __ENTYY_H__
+#ifndef  __GLCONTEXT_H__
+#define __GLCONTEXT_H__
 #include<engine/Geometry.h>
-void         __OnDraw__();
-void         __OnUpdate__(int);
+void         _static_OnDraw();
+void         _static_OnUpdate(int);
 int           main(int, char  **);
 __NS_GLK_BEGIN
 //OpenGL下下文渲染环境,以及继承了一些用处比较频繁的函数
 struct   GLContext
 {
-	friend         void         __OnDraw__();
-	friend         void         __OnUpdate__(int);
+	friend         void         _static_OnDraw();
+	friend         void         _static_OnUpdate(int);
 	friend         int           main(int, char  **);
 	//用户私有数据
 	void      *userObject;
@@ -68,7 +68,7 @@ public:
 	//设置窗口缓冲区的类型
 	void      setDisplayMode(int flag);
 	int        getDisplayMode();
-	void      setWindowTitle(char   *);
+	//void      setWindowTitle(char   *);
 	void       setWinPosition(GLVector2 &);
 	//设置近平面元平面的距离
 	void           setNearFarPlane(GLVector2   &);
@@ -78,8 +78,8 @@ public:
 	Matrix            &getProjMatrix();
 	void                setGlobleFlag(unsigned  flag) { _globleFlag = flag; };
 	unsigned        getGlobleFlag()const { return _globleFlag; };
-private:
-	const char     *getWindowTitle()const;
+//private:
+	//const char     *getWindowTitle()const;
 };
 //注册将设定好的参数注册进窗口程序,注意这里不能调用OpenGL函数
 __NS_GLK_END

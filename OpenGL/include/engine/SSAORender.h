@@ -5,10 +5,12 @@
  */
 #ifndef  __SSAO_RENDER_H__
 #define __SSAO_RENDER_H__
-#include<engine/GLObject.h>
+#include<engine/Object.h>
 #include<engine/Geometry.h>
 #include<engine/GLProgram.h>
-class    SSAORender :public  GLObject
+
+__NS_GLK_BEGIN
+class    SSAORender :public  Object
 {
 	GLProgram         *_glProgram;
 	unsigned               _mvpMatrixLoc;
@@ -36,4 +38,6 @@ public:
 public:
 	unsigned   loadSSAOTexture(Matrix  &projMatrix, unsigned    _positionTextureId, unsigned   _normalTextureId);
 };
+
+__NS_GLK_END
 #endif

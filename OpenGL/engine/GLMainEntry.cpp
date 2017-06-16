@@ -59,7 +59,7 @@ static void   _staicKeyCodeTranslate()
 }
 
 //callback for event window size changed
-static     void          __onChangeSize(int w, int h)
+static     void          _static_onChangeSize(int w, int h)
 {
 	         glViewport(0, 0, w, h);
 }
@@ -68,7 +68,7 @@ static     void          __onChangeSize(int w, int h)
 // This is the first opportunity to do any OpenGL related tasks.
 
 //draw screen,default frame/second is 30
-static    void         __OnDraw__()
+static    void         _static_OnDraw()
 {
 	glk::GLContext    *_context = glk::GLContext::getInstance();
 	if (_context->draw)
@@ -81,7 +81,7 @@ static    void         __OnDraw__()
 #endif
 	}
 }
-static   void         __OnUpdate__(int   _tag)
+static   void         _static_OnUpdate(int   _tag)
 {
 		glk::GLContext		*_context = glk::GLContext::getInstance();
 		int                     _newTickCount = 0;
@@ -122,7 +122,7 @@ static   void         __OnUpdate__(int   _tag)
 #ifdef __USE_GLFW_MM__
 
 #else
-		glutTimerFunc(_delayTime, __OnUpdate__, 0);
+		glutTimerFunc(_delayTime, _static_OnUpdate, 0);
 #endif
 }
 
@@ -280,8 +280,8 @@ int      main(int argc, char* argv[])
 	glutInitWindowSize((int)_context->winSize.width,(int)_context->winSize.height);
 	glutInitWindowPosition((int)_context->winPosition.x,(int)_context->winPosition.y);
 	glutCreateWindow(_context->winTitle);
-	glutReshapeFunc(glk::__onChangeSize);
-	glutDisplayFunc(glk::__OnDraw__);
+	glutReshapeFunc(glk::_static_onChangeSize);
+	glutDisplayFunc(glk::_static_OnDraw);
 	//鼠标按下释放事件
 	glutMouseFunc(glk::_static_mousePressCallback);
 	glutMotionFunc(glk::_static_mouseMotionCallback);
@@ -316,7 +316,7 @@ int      main(int argc, char* argv[])
 		glfwSwapBuffers(window);
 	}
 #else
-	glutTimerFunc(34, glk::__OnUpdate__, 0);
+	glutTimerFunc(34, glk::_static_OnUpdate, 0);
 
 	glutMainLoop();
 #endif

@@ -11,9 +11,9 @@ in     vec3     v_normal;
 void     main()
 {
 	vec3    normal = normalize(v_normal);
-	float   factor =  dot(g_lightDirection,v_normal);
 	vec3    reflectVec = normalize(g_eyePosition - v_position);
-	float   lightFactor = max(0.0,dot(reflectVec,normal))
-	outColor = g_color + pow(lightFactor,16.0) * g_lightColor;
-	outColor.a *= 0.5 + 0.5 *factor;
+	float   factor =  dot(reflectVec,normal);
+	//float   lightFactor = max(0.0,dot(reflectVec,normal));
+	outColor = g_color ;//+ pow(lightFactor,16.0) * g_lightColor.rgb;
+	outColor.a = 0.5 + 0.5 *factor;
 }

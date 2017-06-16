@@ -78,17 +78,17 @@ void      GLProgram::enableObject()
 	glUseProgram(_object);
 }
 
-void      GLProgram::perform()
+void      GLProgram::perform()const
 {
 	glUseProgram(_object);
 }
 
-void      GLProgram::disable()
+void      GLProgram::disable()const
 {
 	glUseProgram(0);
 }
 //disable
-void     GLProgram::disableObject()
+void     GLProgram::disableObject()const
 {
 	glUseProgram(0);
 }
@@ -98,11 +98,11 @@ void     GLProgram::disableObject()
 //	return     _object;
 //}
 //
-GLuint      GLProgram::getUniformLocation(const   char  *_name)
+GLuint      GLProgram::getUniformLocation(const   char  *_name)const
 {
 	return     glGetUniformLocation(_object, _name);
 }
-GLuint       GLProgram::getAttribLocation(const char *_name)
+GLuint       GLProgram::getAttribLocation(const char *_name)const
 {
 	return   glGetAttribLocation(_object, _name);
 }
@@ -389,12 +389,12 @@ void       ComputeShader::dispatch(int dispatch_x_size, int dispatch_y_size, int
 //	glUseProgram(_object);
 //}
 
-int         ComputeShader::getUniformLocation(const char *name)
+int         ComputeShader::getUniformLocation(const char *name)const
 {
 	return  glGetUniformLocation(_object, name);
 }
 
-unsigned ComputeShader::getObject()
+unsigned ComputeShader::getObject()const
 {
 	return _object;
 }

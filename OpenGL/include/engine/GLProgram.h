@@ -47,16 +47,16 @@ public:
 	   void          feedbackVaryingsWith(const  char *_varyings[], int   count, int   _attr_type);
  //使用程序对象
 	   void          enableObject();
-	   void          perform();
-	   void          disable();
+	   void          perform()const;
+	   void          disable()const;
 //禁止程序对象
-	   void          disableObject();
+	   void          disableObject()const;
  //获取程序对象,此函数接口只负责返回数据,但不负责保护
 	   unsigned      getProgram(){ return     _object; };
 //获取统一变量位置
-	   unsigned      getUniformLocation(const  char  *);
+	   unsigned      getUniformLocation(const  char  *)const;
 //获取属性变量的位置
-	   unsigned      getAttribLocation(const char *);
+	   unsigned      getAttribLocation(const char *)const;
 };
 //只有OpenGL中才能使用
 #ifdef  __OPENGL_VERSION__
@@ -79,9 +79,9 @@ public:
 ////启用着色器
 //	void                     perform();
 //获取着色器对象
-	unsigned             getObject();
+	unsigned             getObject()const;
 //获取统一变量的位置
-	int                       getUniformLocation(const char *name);
+	int                       getUniformLocation(const char *name)const;
 };
 #endif
 //从文件中读取字符串

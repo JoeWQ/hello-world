@@ -185,7 +185,7 @@ void sample_caustic(float xi, float zi, float &u, float &v)
 	u = 0; v = 0;
 	for (int i = 0; i < numrays; i++)
 	{
-//以Y轴为中心,底部半径为1,的圆柱体的上边沿均分一个圆,并以各个点与远点的连线作为入射光线,求折射光线
+//以Y轴为中心,底部半径为1,的圆柱体的上边沿均分一个圆,并以各个点与原点的连线作为入射光线,求折射光线
 		float alpha = 6.28*i / numrays;
 		float rad = i / numrays;
 		float xf = rad*cos(alpha) / 1.7;
@@ -381,7 +381,7 @@ else
 
 glMatrixMode(GL_PROJECTION);
 glLoadIdentity();
-gluPerspective(45,1.3,1,50000);
+gluPerspective(45,1.3,1,500);
 
 pyaw+=rotspeed*elapsed*((GetAsyncKeyState(VK_RIGHT)!=0)-(GetAsyncKeyState(VK_LEFT)!=0));
 zoom+=elapsed*speed*(GetAsyncKeyState(VK_DOWN)!=0)-(GetAsyncKeyState(VK_UP)!=0);

@@ -24,6 +24,10 @@ class TerrainShader
 	int                         _lightColorLoc;
 	//光线的方向
 	int                         _lightDirectionLoc;
+	//顶点的位置
+	int                         _positionLoc;
+	//顶点的法线
+	int                         _normalLoc;
 private:
 	TerrainShader();
 	TerrainShader(TerrainShader &);
@@ -60,6 +64,14 @@ public:
 	  *设置地形的基本颜色
 	 */
 	void   setTerrainColor(const glk::GLVector4 &color);
+	/*
+	  *顶点的位置
+	 */
+	int     getPositionLoc()const;
+	/*
+	  *法线的位置
+	 */
+	int     getNormalLoc()const;
 	/*
 	  *使用Shader
 	 */

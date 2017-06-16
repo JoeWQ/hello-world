@@ -8,7 +8,7 @@
 #include<engine/GLObject.h>
 #include<engine/Geometry.h>
 #include<engine/GLProgram.h>
-struct       NormalBlur:public  GLObject
+struct       NormalBlur:public  Object
 {
 	GLProgram      *_glProgram;
 	unsigned            _framebufferId;

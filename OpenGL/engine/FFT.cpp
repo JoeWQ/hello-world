@@ -3,10 +3,17 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
-#include "paulslib.h"
-int    FFT(int,int,double *,double *);
-int    FFT2D(COMPLEX **, int,int,int);
-int    DFT(int,int,double *,double *);
+#include "engine/FFT.h"
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+int    FFT(int,int,float *,float *);
+int    FFT2D(Complex **, int,int,int);
+int    DFT(int,int,float *,float *);
 int    Powerof2(int,int *,int *);
 
 /*-------------------------------------------------------------------------
@@ -33,10 +40,10 @@ int    Powerof2(int,int *,int *);
                   ---
                   k=0
 */
-int FFT(int dir,int m,double *x,double *y)
+int FFT(int dir,int m,float *x,float *y)
 {
    long nn,i,i1,j,k,i2,l,l1,l2;
-   double c1,c2,tx,ty,t1,t2,u1,u2,z;
+   float c1,c2,tx,ty,t1,t2,u1,u2,z;
 
    /* Calculate the number of points 
    nn = 1;
@@ -97,8 +104,8 @@ int FFT(int dir,int m,double *x,double *y)
    /* Scaling for forward transform */
    if (dir == 1) {
       for (i=0;i<nn;i++) {
-         x[i] /= (double)nn;
-         y[i] /= (double)nn;
+         x[i] /= (float)nn;
+         y[i] /= (float)nn;
       }
    }
 
@@ -112,16 +119,16 @@ int FFT(int dir,int m,double *x,double *y)
    Return false if there are memory problems or
       the dimensions are not powers of 2
 */
-//int FFT2D(COMPLEX **c,int nx,int ny,int dir)
-int FFT2D(COMPLEX c[][64],int nx,int ny,int dir)
+//int FFT2D(Complex **c,int nx,int ny,int dir)
+int FFT2D(Complex c[][64],int nx,int ny,int dir)
 {
    int i,j;
    int m,twopm;
-   double *real,*imag;
+   float *real,*imag;
 
    /* Transform the rows */
-   real = (double *)malloc(nx * sizeof(double));
-   imag = (double *)malloc(nx * sizeof(double));
+   real = (float *)malloc(nx * sizeof(float));
+   imag = (float *)malloc(nx * sizeof(float));
    if (real == NULL || imag == NULL)
       return(FALSE);
    if (!Powerof2(nx,&m,&twopm) || twopm != nx)
@@ -141,8 +148,8 @@ int FFT2D(COMPLEX c[][64],int nx,int ny,int dir)
    free(imag);
 
    /* Transform the columns */
-   real = (double *)malloc(ny * sizeof(double));
-   imag = (double *)malloc(ny * sizeof(double));
+   real = (float *)malloc(ny * sizeof(float));
+   imag = (float *)malloc(ny * sizeof(float));
    if (real == NULL || imag == NULL)
       return(FALSE);
    if (!Powerof2(ny,&m,&twopm) || twopm != ny)
@@ -167,22 +174,22 @@ int FFT2D(COMPLEX c[][64],int nx,int ny,int dir)
 /*-------------------------------------------------------------------------
         Direct fourier transform
 */
-int DFT(int dir,int m,double *x1,double *y1)
+int DFT(int dir,int m,float *x1,float *y1)
 {
    long i,k;
-   double arg;
-   double cosarg,sinarg;
-	double *x2=NULL,*y2=NULL;
+   float arg;
+   float cosarg,sinarg;
+	float *x2=NULL,*y2=NULL;
 
-	x2 =(double *) malloc(m*sizeof(double));
-   y2 = (double *)malloc(m*sizeof(double));
+	x2 =(float *) malloc(m*sizeof(float));
+   y2 = (float *)malloc(m*sizeof(float));
 	if (x2 == NULL || y2 == NULL)
 		return(FALSE);
 
    for (i=0;i<m;i++) {
       x2[i] = 0;
       y2[i] = 0;
-      arg = - dir * 2.0 * 3.141592654 * (double)i / (double)m;
+      arg = - dir * 2.0 * 3.141592654 * (float)i / (float)m;
       for (k=0;k<m;k++) {
          cosarg = cos(k * arg);
          sinarg = sin(k * arg);
@@ -194,8 +201,8 @@ int DFT(int dir,int m,double *x1,double *y1)
    /* Copy the data back */
    if (dir == 1) {
       for (i=0;i<m;i++) {
-         x1[i] = x2[i] / (double)m;
-         y1[i] = y2[i] / (double)m;
+         x1[i] = x2[i] / (float)m;
+         y1[i] = y2[i] / (float)m;
       }
    } else {
       for (i=0;i<m;i++) {

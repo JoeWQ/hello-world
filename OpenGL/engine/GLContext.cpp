@@ -88,15 +88,15 @@ int          GLContext::getDisplayMode()
 	return     this->displayMode;
 }
 //
-void       GLContext::setWindowTitle(char  *_title)
-{
-	this->winTitle = _title;
-}
-//
-const  char       *GLContext::getWindowTitle()const
-{
-	return  this->winTitle;
-}
+//void       GLContext::setWindowTitle(char  *_title)
+//{
+//	this->winTitle = _title;
+//}
+////
+//const  char       *GLContext::getWindowTitle()const
+//{
+//	return  this->winTitle;
+//}
 
 void          GLContext::setNearFarPlane(GLVector2 &near_far)
 {

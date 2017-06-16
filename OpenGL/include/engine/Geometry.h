@@ -159,6 +159,7 @@ __NS_GLK_BEGIN
 
 	class Quaternion;
 	class Frustum;
+	class Camera;
 	//四维矩阵,全新的实现
 	class Matrix
 	{
@@ -168,6 +169,7 @@ __NS_GLK_BEGIN
 		friend   struct    GLVector4;
 		friend   class      Quaternion;
 		friend   class      Frustum;
+		friend   class      Camera;
 		Matrix();
 		//返回指向矩阵内容的指针,浮点型指针
 		inline    const float     *pointer() const { return (float*)m; };

@@ -6,7 +6,8 @@
 #include<GL/glew.h>
 #include<assert.h>
 #include<engine/GLContext.h>
-#include"SSAORender.h"
+#include"engine/SSAORender.h"
+__NS_GLK_BEGIN
 SSAORender::SSAORender()
 {
 	_glProgram = NULL;
@@ -131,3 +132,5 @@ unsigned    SSAORender::loadSSAOTexture(Matrix &projMatrix, unsigned _positionTe
 	glBindFramebuffer(GL_FRAMEBUFFER, _default_framebufferId);
 	return  _ssaoTextureId;
 }
+
+__NS_GLK_END

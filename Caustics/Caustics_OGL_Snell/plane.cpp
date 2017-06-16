@@ -89,7 +89,7 @@ double fres;
 double t;
 fres=vec*n;
 pres=r;
-if ((fres)!=0)
+if (fres!=0)
 	{
 	t=-(n*r + d)/fres;
 	pres=r+vec*t;

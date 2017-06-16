@@ -10,7 +10,8 @@
 #include "engine/GLState.h"
 #include "engine/Object.h"
 #include "engine/GLTexture.h"
-#include "engine/event/EventManager.h"
+#include "engine/event/KeyEventListener.h"
+#include "engine/event/TouchEventListener.h"
 #include "TerrainShader.h"
 #include<string>
 class Terrain :public glk::Object
@@ -25,10 +26,18 @@ private:
 	glk::Matrix             _projMatrix;
 	//视图投影矩阵
 	glk::Matrix             _viewProjMatrix;
+	//视图矩阵的三个方向轴,此为一个demo,并没有系统化的去设计视图矩阵类,最近项目比较忙,以后有空闲时间
+	//我会单独去设计Camera类,以下5个数据连在一起构成了整个视图矩阵
+	glk::GLVector3       _xAxis, _yAxis, _zAxis;
+	//眼睛的位置
+	glk::GLVector3       _eyePosition;
+	glk::GLVector3       _targetPosition;
 	//光线的方向,必须单位化
 	glk::GLVector3       _lightDirection;
 	//光线的颜色
 	glk::GLVector4       _lightColor;
+	//地形的基本颜色
+	glk::GLVector4       _terrainColor;
 	//关于投影矩阵的旋转向量和平移向量
 	glk::GLVector3       _rotateVec;
 	glk::GLVector3       _translateVec;
@@ -36,6 +45,10 @@ private:
 	glk::KeyEventListener      *_keyListener;
 	//触屏事件,以后添加
 	glk::TouchEventListener  *_touchListener;
+	//键盘掩码
+	int                                        _keyMask;
+	//触屏偏移量
+	glk::GLVector2                   _touchOffset;
 	//顶点缓冲区对象
 	unsigned              _terrainVertexId;
 	//索引缓冲区对象
@@ -54,6 +67,10 @@ private:
 	  *加载二进制文件
 	*/
 	void                     initWithFile(const std::string &filename);
+	/*
+	  *设置有关光线等的参数
+	*/
+	void                     initLightParam();
 public:
 	~Terrain();
 	//使用给定地形文件计算
@@ -81,5 +98,18 @@ public:
 	//渲染
 	void                     render();
 	//键盘事件,触屏事件
+	bool                     onKeyPressed(const glk::KeyCodeType keyCode);
+	//键盘释放
+	void                     onKeyReleased(const glk::KeyCodeType keyCode);
+	//触屏开始
+	bool                     onTouchBegan(const glk::GLVector2 *touchPoint);
+	//触屏移动
+	void                     onTouchMoved(const glk::GLVector2 *touchPoint);
+	//结束
+	void                     onTouchEnded(const glk::GLVector2 *touchPoint);
+	/*
+	  *合成视图矩阵,使用_xAxis,_yAxis,_zAxis
+	*/
+	void                     buildViewMatrix();
 };
 #endif
