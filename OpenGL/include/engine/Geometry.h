@@ -138,7 +138,10 @@ __NS_GLK_BEGIN
 		void   init(const GLVector3 *);
 		void   init(const GLVector4 *);
 	};
-	//三阶矩阵,因为使用的地方非常少,所以作者就没有实现完所有有关三阶矩阵的操作
+	//三阶矩阵,在引擎中被设计成轻量级的矩阵,通常此对象由四阶矩阵导出,有的地方使用此类作为单独的旋转矩阵使用
+	//与四阶矩阵不同,三阶矩阵的所有函数调用不会产生级联效果,
+	//也就是调用一个影响矩阵内容的操作不会对原来的造成影响,而是会产生一个全新的矩阵,
+	//原来的内容会丢失,所以如果需要使用级联矩阵操作,请使用矩阵乘法
 	class     Matrix3
 	{
 	private:
@@ -150,10 +153,17 @@ __NS_GLK_BEGIN
 		inline     const float    *pointer() const { return  (float*)m; };
 		//求逆矩阵
 		Matrix3         reverse()const;
+		//旋转矩阵旋转矩阵
+		void                rotate(float angle,const GLVector3 &axis);
+		void                rotate(float angle,float x,float y,float z);
+		//缩放矩阵
+		void                scale(float x,float y,float z);
+		void                scale(const GLVector3 &scaleFactor);
 		//行列式
 		float               det()const;
 		//右乘三维列向量
 		GLVector3   operator*(const GLVector3 &)const;
+		Matrix3        operator*(const Matrix3 &src)const;
 		Matrix3&     operator=(Matrix3 &);
 	};
 
@@ -185,6 +195,7 @@ __NS_GLK_BEGIN
 		void    translate(const GLVector3 &deltaXYZ);
 		//旋转
 		void    rotate(float  angle, float x, float y, float z);
+		void    rotate(float angle,const GLVector3 &axis);
 		//绕X轴旋转
 		void    rotateX(float pitch);
 		//绕Y轴旋转

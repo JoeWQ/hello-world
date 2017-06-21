@@ -805,6 +805,45 @@ void    Matrix::rotate(float  angle, float x, float y, float z)
 
 	this->multiply(tmp);
 }
+void Matrix::rotate(float angle, const GLVector3 &axis)
+{
+	float sinAngle, cosAngle;
+	GLVector3 newAxis = axis.normalize();
+
+	sinAngle = sinf(angle * PI / 180.0f);
+	cosAngle = cosf(angle * PI / 180.0f);
+
+	float xx, yy, zz, xy, yz, zx, xs, ys, zs;
+	float oneMinusCos;
+	Matrix tmp;
+
+	xx = newAxis.x * newAxis.x;  yy = newAxis.y * newAxis.y;   zz = newAxis.z * newAxis.z;
+	xy = newAxis.x * newAxis.y;  yz = newAxis.y * newAxis.z;    zx = newAxis.z * newAxis.x;
+
+	xs = newAxis.x * sinAngle;  ys = newAxis.y * sinAngle;   zs = newAxis.z * sinAngle;   oneMinusCos = 1.0f - cosAngle;
+
+	tmp.m[0][0] = (oneMinusCos * xx) + cosAngle;
+	tmp.m[0][1] = (oneMinusCos * xy) + zs;
+	tmp.m[0][2] = (oneMinusCos * zx) - ys;
+	tmp.m[0][3] = 0.0F;
+
+	tmp.m[1][0] = (oneMinusCos * xy) - zs;
+	tmp.m[1][1] = (oneMinusCos * yy) + cosAngle;
+	tmp.m[1][2] = (oneMinusCos * yz) + xs;
+	tmp.m[1][3] = 0.0F;
+
+	tmp.m[2][0] = (oneMinusCos * zx) + ys;
+	tmp.m[2][1] = (oneMinusCos * yz) - xs;
+	tmp.m[2][2] = (oneMinusCos * zz) + cosAngle;
+	tmp.m[2][3] = 0.0F;
+
+	tmp.m[3][0] = 0.0F;
+	tmp.m[3][1] = 0.0F;
+	tmp.m[3][2] = 0.0F;
+	tmp.m[3][3] = 1.0F;
+
+	this->multiply(tmp);
+}
 //ÊÓÍ¼Í¶Ó°¾ØÕó
 void    Matrix::lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPosition, const GLVector3  &upVector)
 {
@@ -1155,6 +1194,91 @@ Matrix3     Matrix3::reverse()const
 	return  tmp;
 }
 
+void     Matrix3::rotate(float angle, float x, float y, float z)
+{
+	float mag = sqrtf(x * x + y * y + z * z);
+
+	const float sinAngle = sinf(angle * PI / 180.0f);
+	const float cosAngle = cosf(angle * PI / 180.0f);
+
+	assert(mag > 0.0f);
+	float xx, yy, zz, xy, yz, zx, xs, ys, zs;
+	float oneMinusCos;
+
+	x /= mag; y /= mag;  z /= mag;
+	xx = x * x;  yy = y * y;   zz = z * z;
+	xy = x * y;  yz = y * z;    zx = z * x;
+
+	xs = x * sinAngle;  ys = y * sinAngle;   zs = z * sinAngle;   oneMinusCos = 1.0f - cosAngle;
+
+	m[0][0] = (oneMinusCos * xx) + cosAngle;
+	m[0][1] = (oneMinusCos * xy) + zs;
+	m[0][2] = (oneMinusCos * zx) - ys;
+
+	m[1][0] = (oneMinusCos * xy) - zs;
+	m[1][1] = (oneMinusCos * yy) + cosAngle;
+	m[1][2] = (oneMinusCos * yz) + xs;
+
+	m[2][0] = (oneMinusCos * zx) + ys;
+	m[2][1] = (oneMinusCos * yz) - xs;
+	m[2][2] = (oneMinusCos * zz) + cosAngle;
+}
+
+void    Matrix3::rotate(float angle, const GLVector3 &axis)
+{
+	GLVector3 newAxis = axis.normalize();
+	float xx, yy, zz, xy, yz, zx, xs, ys, zs;
+	float oneMinusCos;
+	const float sinAngle = sinf(angle * PI / 180.0f);
+	const float cosAngle = cosf(angle * PI / 180.0f);
+	xx = newAxis.x * newAxis.x;  yy = newAxis.y * newAxis.y;   zz = newAxis.z * newAxis.z;
+	xy = newAxis.x * newAxis.y;  yz = newAxis.y * newAxis.z;    zx = newAxis.z * newAxis.x;
+
+	xs = newAxis.x * sinAngle;  ys = newAxis.y * sinAngle;   zs = newAxis.z * sinAngle;   oneMinusCos = 1.0f - cosAngle;
+
+	m[0][0] = (oneMinusCos * xx) + cosAngle;
+	m[0][1] = (oneMinusCos * xy) + zs;
+	m[0][2] = (oneMinusCos * zx) - ys;
+
+	m[1][0] = (oneMinusCos * xy) - zs;
+	m[1][1] = (oneMinusCos * yy) + cosAngle;
+	m[1][2] = (oneMinusCos * yz) + xs;
+
+	m[2][0] = (oneMinusCos * zx) + ys;
+	m[2][1] = (oneMinusCos * yz) - xs;
+	m[2][2] = (oneMinusCos * zz) + cosAngle;
+}
+
+void   Matrix3::scale(const GLVector3 &scaleFactor)
+{
+	m[0][0] = scaleFactor.x;
+	m[0][1] = 0.0f;
+	m[0][2] = 0.0f;
+
+	m[1][0] = 0.0f;
+	m[1][1] = scaleFactor.y;
+	m[1][2] = 0.0f;
+	
+	m[2][0] = 0.0f;
+	m[2][1] = 0.0f;
+	m[2][2] = scaleFactor.z;
+}
+
+void Matrix3::scale(float x, float y, float z)
+{
+	m[0][0] = x;
+	m[0][1] = 0.0f;
+	m[0][2] = 0.0f;
+
+	m[1][0] = 0.0f;
+	m[1][1] = y;
+	m[1][2] = 0.0f;
+
+	m[2][0] = 0.0f;
+	m[2][1] = 0.0f;
+	m[2][2] = z;
+}
+
 float     Matrix3::det()const
 {
 	float     _result;
@@ -1173,6 +1297,19 @@ GLVector3     Matrix3::operator*(const GLVector3 &vec)const
 
 	return  GLVector3(x,y,z);
 }
+
+Matrix3 Matrix3::operator*(const Matrix3 &src)const
+{
+	Matrix3  tmp;
+	for (int i = 0; i < 3; ++i)
+	{
+		tmp.m[i][0] = m[i][0] * src.m[0][0] + m[i][1] * src.m[1][0] + m[i][2] * src.m[2][0];
+		tmp.m[i][1] = m[i][0] * src.m[0][1] + m[i][1] * src.m[1][1] + m[i][2] * src.m[2][1];
+		tmp.m[i][2] = m[i][0] * src.m[0][2] + m[i][1] * src.m[1][2] + m[i][2] * src.m[2][2];
+	}
+	return tmp;
+}
+
 Matrix3&    Matrix3::operator=(Matrix3  &src)
 {
 	if (this != &src)
