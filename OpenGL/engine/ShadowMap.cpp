@@ -117,7 +117,7 @@ void  ShadowMap::activeShadowFramebuffer()
 	//glClearBufferfv(GL_DEPTH,0,&depthValue);
 }
 
-void ShadowMap::setViewportChange(const float b)
+void ShadowMap::setViewportChange(const bool b)
 {
 	_isViewportChange = b;
 }

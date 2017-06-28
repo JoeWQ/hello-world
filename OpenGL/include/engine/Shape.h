@@ -6,6 +6,7 @@
 //Version 2.0:修改了关于立方体,球体生成数据的bug
 //Version 3.0:增加了天空盒
 //Version 4.0:添加了对切线的直接支持
+//Version 5.0:添加了对螺旋线的支持
 #ifndef   __SHAPE_H__
 #define  __SHAPE_H__
 #include<engine/Object.h>
