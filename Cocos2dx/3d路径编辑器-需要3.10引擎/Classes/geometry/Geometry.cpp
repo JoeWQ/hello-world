@@ -566,9 +566,10 @@ void    Matrix::copy(Matrix  &srcA)
 //ÓÒ³ËËõ·Å¾ØÕó
 void   Matrix::scale(float scaleX, float scaleY, float  scaleZ)
 {
-	m[0][0] *= scaleX; m[0][1] *= scaleX; m[0][2] *= scaleX; m[0][3] *= scaleX;
-	m[1][0] *= scaleY; m[1][1] *= scaleY; m[1][2] *= scaleY; m[1][3] *= scaleY;
-	m[2][0] *= scaleZ; m[2][1] *= scaleZ; m[2][2] *= scaleZ; m[2][3] *= scaleZ;
+	m[0][0] *= scaleX; m[0][1] *= scaleY; m[0][2] *= scaleZ; 
+	m[1][0] *= scaleX; m[1][1] *= scaleY; m[1][2] *= scaleZ; 
+	m[2][0] *= scaleX; m[2][1] *= scaleY; m[2][2] *= scaleZ; 
+	m[3][0] *= scaleX;m[3][1] *= scaleY; m[3][2] *= scaleZ;
 }
 //Æ½ÒÆ
 void    Matrix::translate(float deltaX, float  deltaY, float deltaZ)
@@ -919,7 +920,7 @@ Matrix3     Matrix::normalMatrix()
 	tmp.m[2][1] = m[2][1];
 	tmp.m[2][2] = m[2][2];
 //ÇóÄæ¾ØÕó
-	tmp = tmp.reverse();
+//	tmp = tmp.reverse();
 //×ªÖÃ
 #define     _SWAP_MAT3_(i,k) temp=tmp.m[i][k],  tmp.m[i][k]=tmp.m[k][i],tmp.m[k][i]=temp;
 	_SWAP_MAT3_(0, 1)

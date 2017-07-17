@@ -8,12 +8,19 @@
 #ifndef __BESSEL_UI_H__
 #define __BESSEL_UI_H__
 #include"cocos2d.h"
+#ifdef _WIN32
 #include"geometry/Geometry.h"
+#else
+#include "Geometry.h"
+#endif
 #include "extensions/cocos-ext.h"
 #include "ui/CocosGUI.h"
-#include"BesselNode.h"
+//#include"BesselNode.h"
 #include"DrawNode3D.h"
+#include"BezierRoute.hpp"
 #include<vector>
+#include"Common.h"
+#include "CurveNode.h"
 //键盘掩码,目前只是用了一个,以后随着工具的扩展,将会引入更多的按键掩码
 #define _KEY_CTRL_MASK_      0x01
 //如果W键被按下
@@ -31,6 +38,8 @@ class BesselUI :public cocos2d::Layer,public cocos2d::ui::EditBoxDelegate
 private:
 	//与贝塞尔曲线的参数设置有关的组件
 	cocos2d::Layer     *_settingLayer;
+	//ScrollView
+	cocos2d::ui::ScrollView  *_scrollView;
 	//摄像机参数
 	cocos2d::Camera	*_viewCamera;
 	//
@@ -49,15 +58,21 @@ private:
 	  *文本输入框
 	 */
 	cocos2d::ui::EditBox     *_editBox;
+	//对于螺旋曲线的上半径输入框
+	cocos2d::ui::EditBox     *_topRadiusEditBox;
+	//下半径输入框
+	cocos2d::ui::EditBox     *_bottomRadiusEditBox;
+	//编辑每一个曲线控制点的速度
+	cocos2d::ui::EditBox     *_speedEditBox;
 	/*
 	  *与摄像机相关的参数,摄像机可以拉伸的最远,最近距离
 	  *此数据域作用于视图矩阵之上
 	 */
 	float             _maxZeye, _minZeye,_nowZeye;
 	/*
-	  *贝塞尔曲线
+	  *曲线类型
 	 */
-	BesselNode             *_besselNode;
+	CurveNode                        *_curveNode;
 	//关于3个方向的坐标轴
 	cocos2d::DrawNode3D   *_axisNode;
 	//3d空间的网格,用来使整个场景具有空间感
@@ -67,8 +82,27 @@ private:
 	/*
 	  *记录所有已经完成的曲线点集合配置
 	 */
-	std::vector<BesselSet>     _besselSetData;
-	int                                      _besselSetSize;
+	std::vector<ControlPointSet>     _besselSetData;
+    
+    struct Parameters
+    {
+        cocos2d::Vec3 a;
+        cocos2d::Vec3 b;
+        cocos2d::Vec3 c;
+        cocos2d::Vec3 d;
+        cocos2d::Vec3 da;
+        cocos2d::Vec3 db;
+        cocos2d::Vec3 dc;
+    };
+    
+    struct PathInfo
+    {
+        std::vector<Parameters> segments;
+        float duration;
+    };
+    
+    std::vector<PathInfo> _parsedData;
+	//int                                      _besselSetSize;
 	/*
 	  *当前正在编辑的路径id,如果为-1则表示正在编辑新建的,否则为编辑已经存在的队列中的某个
 	 */
@@ -76,6 +110,18 @@ private:
 	//
 	cocos2d::EventListenerKeyboard   *_keyboardListener;
 	cocos2d::EventListenerTouchOneByOne    *_touchListener;
+	/*
+	  *路径与鱼的关联,使用路径id查找鱼,或者使用鱼的名字查找路径id
+	 */
+	std::map<int, FishPathMap>           _fishPathMap;
+	//使用路径的id去查找相关的鱼id
+	std::map<int, FishIdMap>				_pathFishMap;
+	//当前选中的鱼的集合
+	std::vector<int>                                  _currentSelectFishIds;
+	/*
+	  *所有鱼相关的资料,键为鱼的id
+	  */
+	std::map<int, FishVisual>                 _fishVisualStatic;
 private:
 	BesselUI();
 	void   initBesselLayer();
@@ -98,7 +144,7 @@ public:
 	//scene
 	static cocos2d::Scene  *createScene();
 
-	void BesselUI::visit(cocos2d::Renderer *renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags);
+	void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags);
 	//触屏事件
 	virtual  bool   onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event);
 	virtual void    onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event);
@@ -117,15 +163,21 @@ public:
 	/*
 	*新建一条路径
 	*/
-	void          onButtonCLick_New(cocos2d::Ref *sender,cocos2d::ui::Widget::TouchEventType type);
+	void          onButtonClick_New(cocos2d::Ref *sender,cocos2d::ui::Widget::TouchEventType type);
 	/*
 	  *控制贝塞尔曲线的控制点数目的组按钮事件
 	 */
-	void          onChangeRadioButtonSelect(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type);
+	void          onChangeRadioButtonSelect_ControlPoint(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type);
+	/*
+	  *切换曲线类型
+	 */
+	void          onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButton *radioButton,cocos2d::ui::RadioButton::EventType type);
 	/*
 	  *删除上一条记录
 	 */
 	void          onButtonClick_RemoveLast(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
+	//上一个回调函数的中间函数,用于删除某一个记录
+	void          removeSomeRecore(int index);
 	/*
 	  *保存当前记录
 	 */
@@ -134,10 +186,16 @@ public:
 	  *将当前记录写入到文件中
 	 */
 	void          onButtonClick_SaveToFile(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
+    
+    void          onButtonClick_SaveParsed(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
 	/*
 	  *预览曲线
 	 */
 	void         onButtonClick_Preview(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
+	/*
+	  *选择鱼群的配置
+	 */
+	void        onButtonClick_FishMap(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
 	/*
 	  *写入到文件中
 	 */
@@ -157,8 +215,28 @@ public:
 	virtual void editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text);
 	//当编辑框的结束操作被调用
 	virtual void editBoxReturn(cocos2d::ui::EditBox* editBox);
+    
+    void parseControlPoints();
+    std::vector<CubicBezierRoute*> _parsedRoutes;
 	/*
-	  *从某一个贝塞尔曲线点容器中载入以前设置的数据,场景矩阵不会发生变化
+	  *从和鱼相关的配置文件中加载所有的数据
 	*/
+	void        loadFishVisualStatic();
+	/*
+	  *加载鱼和路径相关联的文件中的数据
+	 */
+	void        loadFishPathMap();
+	/*
+	  *将鱼和路径的关联写入到文件中
+	 */
+	void       saveFishMap();
+	/*
+	  *切换当前曲线
+	 */
+	void       changeCurveNode(CurveType curveType);
+	/*
+	  *螺旋曲线半径变化通知
+	 */
+	void      onRadiusChangeCallback(SpiralValueType type,float radius);
 };
 #endif

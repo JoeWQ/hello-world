@@ -34,6 +34,7 @@ DrawNode3D::DrawNode3D()
 , _bufferCount(0)
 , _buffer(nullptr)
 , _dirty(false)
+, _lineWidth(1.0f)
 {
     _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
 }
@@ -127,6 +128,15 @@ bool DrawNode3D::init()
     
     return true;
 }
+void DrawNode3D::setLineWidth(float lineWidth)
+{
+	_lineWidth = lineWidth;
+}
+
+float DrawNode3D::getLineWidth()const
+{
+	return _lineWidth;
+}
 
 void DrawNode3D::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
@@ -165,7 +175,7 @@ void DrawNode3D::onDraw(const Mat4 &transform, uint32_t flags)
         // color
         glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_COLOR, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(V3F_C4B), (GLvoid *)offsetof(V3F_C4B, colors));
     }
-
+	glLineWidth(_lineWidth);
     glDrawArrays(GL_LINES, 0, _bufferCount);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 

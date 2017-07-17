@@ -6,11 +6,17 @@
 #include"BesselUI.h"
 #include "XMLParser.h"
 #include<fstream>
+#include "LayerDialog.h"
+#include "SpiralNode.h"
+#include "BesselNode.h"
 //#include "extensions/cocos-ext.h"
 //#include "ui/CocosGUI.h"
 //#include"geometry/Geometry.h"
+#define _TAG_RADIO_BUTTON_CURVE_                  0x0
 //记录当前的已经完成的贝塞尔曲线控制点的配置的数目
-#define  _TAG_LABEL_TOTAL_RECORD_                    0x15
+#define  _TAG_LABEL_TOTAL_RECORD_                    0x14
+//指示按钮
+#define _TAG_BUTTON_DIRECT_                                 0x15
 //新建一条路径
 #define  _TAG_NEW_PATH_                                           0x16
 //删除上一条记录
@@ -23,6 +29,19 @@
 #define  _TAG_BUTTON_PREVIEW_                                 0x20
 //组策略tag
 #define _TAG_RADIO_BUTTON_GROUP_                        0x21
+
+#define  _TAG_BUTTON_SAVE_PARSED_                      0x22
+//选择鱼的配置
+#define _TAG_BUTTON_FISH_MAP_                               0x23
+//曲线类型的组标志
+#define _TAG_RADIO_BUTTON_GROUP_CURVE_       0x24
+//ScrollView
+#define _TAG_SCROLL_VIEW_                                         0x25
+#define _TAG_EDIT_BOX_0_                                             0x26
+#define _TAG_EDIT_BOX_1_											  0x27
+#define _TAG_EDIT_BOX_TOP_RADIUS_                       0x28
+#define _TAG_EDIT_BOX_BOTTOM_RADIUS_               0x29
+#define _TAG_EDIT_BOX_SPEED_                                    0x30
 //组按钮的起始tag
 #define _TAG_RADIO_BUTTON_										   3
 USING_NS_CC;
@@ -44,14 +63,17 @@ BesselUI	*BesselUI::createBesselLayer()
 	return _layer;
 }
 
-BesselUI::BesselUI()
+BesselUI::BesselUI():
+_speedEditBox(nullptr)
+,_topRadiusEditBox(nullptr)
+,_bottomRadiusEditBox(nullptr)
 {
 	_settingLayer = NULL;
 	_viewCamera = NULL;
 	_keyboardListener = NULL;
 	_keyMask = 0;
 	_besselSetData.reserve(128);
-	_besselSetSize = 0;
+	//_besselSetSize = 0;
 	_currentEditPathIndex = -1;
 	//透视距离
 	_maxZeye = 0.0f;
@@ -68,8 +90,16 @@ void  BesselUI::initBesselLayer()
 	Layer::init();
 	//
 	//
-	_besselNode = BesselNode::createBesselNode();
-	this->addChild(_besselNode);
+    BesselNode * node = BesselNode::createBesselNode();
+    node->setTouchSelectedCallback([this, node](){
+        
+        char str[32];
+        sprintf(str, "%.2f", node->getSelectControlPoint()->_speedCoef);
+        this->_speedEditBox->setText(str);
+        
+    });
+	this->addChild(node);
+    _curveNode = node;
 	//创建一个新的摄像机
 	auto &winSize = Director::getInstance()->getWinSize();
 	const float zeye = winSize.height / 1.1566f;
@@ -88,6 +118,15 @@ void  BesselUI::initBesselLayer()
 	this->addChild(_axisNode);
 	this->drawAxisMesh();
 	this->addChild(_camera);
+	/*
+	  *背景图
+	 */
+	//cocos2d::Sprite *bg = cocos2d::Sprite::create("tools-ui/layer-ui/Map_new_0.jpg");
+	//if (bg != nullptr)
+	//{
+	//	bg->setGlobalZOrder(-1000);
+	//	this->addChild(bg);
+	//}
 	this->setCameraMask(2);
 	//load visual xml
 	loadVisualXml();
@@ -108,7 +147,11 @@ void  BesselUI::initBesselLayer()
 	_touchListener->onTouchEnded = CC_CALLBACK_2(BesselUI::onTouchEnded,this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(_touchListener, this);
 	//schedule update
-	schedule(CC_SCHEDULE_SELECTOR(BesselUI::updateCamera, this));
+	schedule(CC_SCHEDULE_SELECTOR(BesselUI::updateCamera));
+	loadFishVisualStatic();
+	loadFishPathMap();
+	//设置第一个
+	_curveNode->setPreviewModel(_fishVisualStatic.begin()->second);
 }
 
 void  BesselUI::makeRotateMatrix(const Vec2 &xyOffset, Mat4 &rotateMatrix,cocos2d::Quaternion &qua)
@@ -152,7 +195,7 @@ bool  BesselUI::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event
 	{
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width / 2.0f, winSize.height / 2.0f);
-		_besselNode->onTouchBegan(OpenGLVec2,_camera);
+		_curveNode->onTouchBegan(OpenGLVec2,_camera);
 	}
 	return true;
 }
@@ -165,7 +208,7 @@ void BesselUI::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 	{ 
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width/2.0f,winSize.height/2.0f);
-		_besselNode->onTouchMoved(OpenGLVec2,_camera);
+		_curveNode->onTouchMoved(OpenGLVec2,_camera);
 	}
 	else
 	{
@@ -173,9 +216,9 @@ void BesselUI::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 		Mat4  rotateMatrix;
 		cocos2d::Quaternion qua;
 		this->makeRotateMatrix(_xyOffset, rotateMatrix, qua);
-		_besselNode->setRotationQuat(qua);
+		_curveNode->setRotationQuat(qua);
 		_axisNode->setRotationQuat(qua);
-		_besselNode->setRotateMatrix(rotateMatrix);
+		_curveNode->setRotateMatrix(rotateMatrix);
 	}
 	_originVec2 = touch->getLocation();
 }
@@ -186,7 +229,7 @@ void BesselUI::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 	{
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width / 2.0f, winSize.height / 2.0f);
-		_besselNode->onTouchEnded(OpenGLVec2,_camera);
+		_curveNode->onTouchEnded(OpenGLVec2,_camera);
 	}
 	_lastSelectIndex = -1;
 }
@@ -205,7 +248,7 @@ void  BesselUI::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *unused_even
 	if (keyCode == EventKeyboard::KeyCode::KEY_CTRL)
 	{
 		_keyMask &= ~_KEY_CTRL_MASK_;//清除Ctrl按键
-		_besselNode->onCtrlKeyRelease();
+		_curveNode->onCtrlKeyRelease();
 	}
 	else if(keyCode == EventKeyboard::KeyCode::KEY_W)
 	{
@@ -340,51 +383,84 @@ void   BesselUI::drawAxisMesh()
 void    BesselUI::loadSettingLayer()
 {
 	_settingLayer = Layer::create();
-	const   float  layerHeight = 400;
+	const   float  layerHeight = 560;
 	const   float  layerWidth = 240;
+	const   float  secondaryHeight = 520;
 	auto &winSize = Director::getInstance()->getWinSize();
 	const  float halfWidth = winSize.width / 2.0f;
 	const  float halfHeight = winSize.height / 2.0f;
 	//背景板
-	Sprite   *bg = Sprite::create("tools-ui/layer-ui/global_bg_big.png",Rect((869.0f -layerWidth)/2.0f,(569.0f -layerHeight)/2.0f,layerWidth,layerHeight));
+	Sprite   *bg = Sprite::create("tools-ui/layer-ui/global_bg_big.png",Rect((864.0f -layerWidth)/2.0f,(569.0f -layerHeight)/2.0f,layerWidth,layerHeight));
 	bg->setAnchorPoint(Vec2(0.0f,0.0f));
 	_settingLayer->addChild(bg,1);
 	//面板右侧上下居中对齐,默认是关闭着的
 	_settingLayer->setPosition(Vec2(winSize.width,(winSize.height-layerHeight)/2));//(Vec2(halfWidth,(winSize.height-layerHeight)/2.0f - halfHeight));
 	//指示按钮
 	cocos2d::ui::Button   *directButton = cocos2d::ui::Button::create("tools-ui/direct-button/arrow.png", "");
+	directButton->setTag(_TAG_BUTTON_DIRECT_);
 	directButton->setFlippedX(true);
-	directButton->setPosition(Vec2(-18.0f,(layerHeight-56.0f)/2.0f));
+	directButton->setPosition(Vec2(-18.0f,(secondaryHeight -56.0f)/2.0f));
 	directButton->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_SpreadOrHide,this));
 	_settingLayer->addChild(directButton,2);
+	//创建可以切换曲线类型的RadioButton
+	char buffer[64];
+	char *nameTitle[2] = {"Bessel","Spiral"};
+	ui::RadioButtonGroup *group = ui::RadioButtonGroup::create();
+	group->setTag(_TAG_RADIO_BUTTON_GROUP_CURVE_);
+	_settingLayer->addChild(group);
+	for (int i = 0; i < 2; ++i)//目前只有两种曲线类型
+	{
+		cocos2d::ui::RadioButton *radioButton = ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
+		radioButton->setPosition(Vec2(32+ 48*i,layerHeight - 50));
+		radioButton->setTag(_TAG_RADIO_BUTTON_CURVE_+i);//设置按钮的标志类型,也代表着曲线的类型
+		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect_ChangeCurve,this));
+		group->addRadioButton(radioButton);
+		_settingLayer->addChild(radioButton);
+		Label *name = Label::createWithSystemFont(nameTitle[i], "Arial", 14);
+		name->setPosition(Vec2(32+48 *i,layerHeight -20));
+		_settingLayer->addChild(name);
+		if (!  i  )
+			group->setSelectedButton(radioButton);
+	}
+	//创建ScrollView
+	_scrollView = ui::ScrollView::create();
+	_scrollView->setBounceEnabled(true);
+	_scrollView->setDirection(ui::ScrollView::Direction::HORIZONTAL);
+	_scrollView->setContentSize(cocos2d::Size(200.0f, 48.0f));
+	_scrollView->setScrollBarPositionFromCorner(Vec2(4, 4));
+	_scrollView->setScrollBarColor(Color3B::YELLOW);
+	_scrollView->setPosition(cocos2d::Vec2((layerWidth-200)/2.0f,(secondaryHeight -92.0f)));
+	_scrollView->setInnerContainerSize(cocos2d::Size(48*14, 48.0f));
+	_scrollView->setTag(_TAG_SCROLL_VIEW_);
+	_settingLayer->addChild(_scrollView,5);
+
 	//控制贝塞尔曲线控制点数目的UIRadioButton
 	cocos2d::ui::RadioButtonGroup     *buttonGroup = cocos2d::ui::RadioButtonGroup::create();
 	buttonGroup->setTag(_TAG_RADIO_BUTTON_GROUP_);
-	_settingLayer->addChild(buttonGroup,3);
-	//目前支持的贝塞尔曲线控制点的数目为3,4,5,6
+	_scrollView->addChild(buttonGroup, 3);
+	//目前支持的贝塞尔曲线控制点的数目为3,4,5,6,----16
 	const float buttonWidth = 48.0f;
 	const float buttonStartX = 24.0f + (layerWidth - 4.0f * buttonWidth)/2.0f;
-	const float buttonHeight = layerHeight - buttonWidth *1.5f;
-	char buffer[64];
-	for (int j = 0; j < 4; ++j)
+	const float buttonHeight = secondaryHeight - buttonWidth *1.5f;
+	for (int j = 0; j < 14; ++j)
 	{
 		cocos2d::ui::RadioButton* radioButton = cocos2d::ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
-		radioButton->setPosition(Vec2(buttonStartX + buttonWidth * j,buttonHeight));
+		radioButton->setPosition(Vec2( 16+buttonWidth * j,16));
 		radioButton->setTag(3+j);
-		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect,this));
+		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect_ControlPoint,this));
 		buttonGroup->addRadioButton(radioButton);
-		_settingLayer->addChild(radioButton,4);
+		_scrollView->addChild(radioButton,4);
 		//label name,关于控制点数目的说明
 		sprintf(buffer,"%d",3+j);
 		Label    *labelName = Label::createWithSystemFont(buffer, "Arial", 14);
-		labelName->setPosition(Vec2(buttonStartX+buttonWidth*j,buttonHeight+buttonWidth/1.5f));
+		labelName->setPosition(Vec2(16+buttonWidth*j,10+buttonWidth/1.5f));
 		if(j+3 == 4)
 			buttonGroup->setSelectedButton(radioButton);
 
-		_settingLayer->addChild(labelName, 4);
+		_scrollView->addChild(labelName, 4);
 	}
 	//记录当前的已经保存的数据的数目
-	sprintf(buffer, "finished: %d", _besselSetSize);
+	sprintf(buffer, "finished: %d", _besselSetData.size());
 	Label      *_saveLabel = Label::createWithSystemFont(buffer, "Arial", 16);
 	_saveLabel->setAnchorPoint(Vec2());
 	_saveLabel->setTag(_TAG_LABEL_TOTAL_RECORD_);
@@ -394,24 +470,25 @@ void    BesselUI::loadSettingLayer()
 	//删除上一条
 	const  float     buttonX = layerWidth/2.0f;
 	const  float		buttonSeqHeight = 56.0f;//按钮序列的高度都设置为48.0f像素
-    float     buttonY = (layerHeight - buttonStartX - 24.0f - buttonSeqHeight);
+    float     buttonY = (secondaryHeight - buttonStartX - 24.0f - buttonSeqHeight);
 	//新建一条路径
 	cocos2d::ui::Button *buttonNew = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
+	const cocos2d::Size &buttonSize = buttonNew->getContentSize();
 	buttonNew->setTag(_TAG_NEW_PATH_);
 	buttonNew->setPosition(Vec2(buttonX,buttonY));
-	buttonNew->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonCLick_New,this));
-	Label   *name = Label::createWithSystemFont("New", "Arial", 14);
-	name->setPosition(Vec2(50,15));
+	buttonNew->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_New,this));
+	Label   *name = Label::createWithSystemFont("New", "Arial", 16);
+	name->setPosition(Vec2(buttonSize.width/2.0f, buttonSize.height/2.0f));
 	buttonNew->addChild(name);
 	_settingLayer->addChild(buttonNew, 5);
 	buttonY -= buttonSeqHeight;
 	//
 	cocos2d::ui::Button      *buttonRemove = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png","tools-ui/direct-button/backtotoppressed.png");
 	buttonRemove->setTag(_TAG_BUTTON_REMOVE_LAST_RECORD_);
-	Label       *labelName = Label::createWithSystemFont("Remove Record","Arial",14);
+	Label       *labelName = Label::createWithSystemFont("Remove Record","Arial",16);
 	buttonRemove->addChild(labelName);
-	buttonRemove->setEnabled(_besselSetSize);
-	labelName->setPosition(Vec2(50.0f,15.0f));
+	buttonRemove->setEnabled(_besselSetData.size());
+	labelName->setPosition(Vec2(buttonSize.width / 2.0f, buttonSize.height / 2.0f));
 	buttonRemove->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_RemoveLast,this));
 	buttonRemove->setPosition(Vec2(buttonX,buttonY));
 	_settingLayer->addChild(buttonRemove,6);
@@ -419,30 +496,51 @@ void    BesselUI::loadSettingLayer()
 	cocos2d::ui::Button  *buttonSave = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
 	buttonSave->setTag(_TAG_BUTTON_SAVE_CURRENT_RECORD_);
 	buttonSave->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_SaveRecord,this));
-	labelName = Label::createWithSystemFont("Save Record", "Arial", 14);
-	labelName->setPosition(Vec2(50.0f, 15.0f));
+	labelName = Label::createWithSystemFont("Save Record", "Arial", 16);
+	labelName->setPosition(Vec2(buttonSize.width / 2.0f, buttonSize.height / 2.0f));
 	buttonSave->addChild(labelName);
 	buttonSave->setPosition(Vec2(buttonX,buttonY - buttonSeqHeight));
 	_settingLayer->addChild(buttonSave,7);
 	//保存到文件中
 	cocos2d::ui::Button *buttonSaveFile = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
 	buttonSaveFile->setTag(_TAG_BUTTON_SAVE_TO_FILE_);
-	buttonSaveFile->setEnabled(_besselSetSize);
+	buttonSaveFile->setEnabled(_besselSetData.size());
 	buttonSaveFile->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_SaveToFile,this));
-	labelName = Label::createWithSystemFont("Save to File", "Arial", 14);
-	labelName->setPosition(Vec2(50.0f, 15.0f));
+	labelName = Label::createWithSystemFont("Save to File", "Arial", 16);
+	labelName->setPosition(Vec2(buttonSize.width / 2.0f, buttonSize.height / 2.0f));
 	buttonSaveFile->addChild(labelName);
 	buttonSaveFile->setPosition(Vec2(buttonX,buttonY - 2.0f*buttonSeqHeight));
 	_settingLayer->addChild(buttonSaveFile,8);
-	//曲线预览
+    
+    // 保存参数化数据
+    cocos2d::ui::Button *buttonSaveParsed = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
+    buttonSaveParsed->setTag(_TAG_BUTTON_SAVE_PARSED_);
+    buttonSaveParsed->setEnabled(_besselSetData.size());
+    buttonSaveParsed->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_SaveParsed,this));
+    labelName = Label::createWithSystemFont("Save parsed", "Arial", 16);
+    labelName->setPosition(Vec2(buttonSize.width / 2.0f, buttonSize.height / 2.0f));
+    buttonSaveParsed->addChild(labelName);
+    buttonSaveParsed->setPosition(Vec2(buttonX, buttonY - 3.0f*buttonSeqHeight));
+    _settingLayer->addChild(buttonSaveParsed,8);
+    
+    //曲线预览
 	cocos2d::ui::Button *buttonPreview = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
 	buttonPreview->setTag(_TAG_BUTTON_PREVIEW_);
 	buttonPreview->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_Preview,this));
-	labelName = Label::createWithSystemFont("Preview", "Arial", 14);
-	labelName->setPosition(Vec2(50.0f, 15.0f));
+	labelName = Label::createWithSystemFont("Preview", "Arial", 16);
+	labelName->setPosition(Vec2(buttonSize.width / 2.0f, buttonSize.height / 2.0f));
 	buttonPreview->addChild(labelName);
-	buttonPreview->setPosition(Vec2(buttonX,buttonY - 3.0f * buttonSeqHeight));
+	buttonPreview->setPosition(Vec2(buttonX,buttonY - 4.0f * buttonSeqHeight));
 	_settingLayer->addChild(buttonPreview, 9);
+	//选择所需要的鱼
+	cocos2d::ui::Button *fishMap = cocos2d::ui::Button::create("tools-ui/direct-button/backtotopnormal.png", "tools-ui/direct-button/backtotoppressed.png");
+	fishMap->setTag(_TAG_BUTTON_FISH_MAP_);
+	fishMap->addTouchEventListener(CC_CALLBACK_2(BesselUI::onButtonClick_FishMap,this));
+	labelName = Label::createWithSystemFont("Fish Map Setting","Arial",16);
+	labelName->setPosition(Vec2(buttonSize.width/2.0f,buttonSize.height/2.0f));
+	fishMap->addChild(labelName);
+	fishMap->setPosition(Vec2(buttonX,buttonY - 5.0f *buttonSeqHeight));
+	_settingLayer->addChild(fishMap, 10);
 	//编辑框
 	ui::Scale9Sprite *textBg = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
 	_editBox = cocos2d::ui::EditBox::create(cocos2d::Size(48,32),textBg);
@@ -453,10 +551,89 @@ void    BesselUI::loadSettingLayer()
 	_editBox->setMaxLength(3);
 	_editBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
 	_editBox->setDelegate(this);
-	_editBox->setPosition(Vec2(layerWidth - 42,32));
+	_editBox->setPosition(Vec2(layerWidth - 32,32));
+    _editBox->setName("RouteIndex");
 	_settingLayer->addChild(_editBox,10);
 
 	this->addChild(_settingLayer,2);
+    //编辑各个控制点的速度
+   ui::Scale9Sprite *b2g = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_speedEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(48, 32), b2g);
+	_speedEditBox->setTag(_TAG_EDIT_BOX_0_);
+	_speedEditBox->setFont("Arial", 16);
+	_speedEditBox->setFontColor(Color4B(255, 32, 255, 255));
+	_speedEditBox->setPlaceHolder("100");
+	_speedEditBox->setPlaceholderFontColor(Color4B::GRAY);
+	_speedEditBox->setMaxLength(3);
+	_speedEditBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
+	_speedEditBox->setDelegate(this);
+	_speedEditBox->setPosition(Vec2(567, 70));
+	_speedEditBox->setText("100");
+	_speedEditBox->setName("nicaicaispeed");
+	this->addChild(_speedEditBox, 13);
+	//
+    ui::Scale9Sprite *speedSetting = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+    cocos2d::ui::EditBox* _editBox = cocos2d::ui::EditBox::create(cocos2d::Size(48,32),speedSetting);
+	_editBox->setTag(_TAG_EDIT_BOX_0_);
+    _editBox->setFont("Arial",16);
+    _editBox->setFontColor(Color4B(255,32,255,255));
+    _editBox->setPlaceHolder("100");
+    _editBox->setPlaceholderFontColor(Color4B::GRAY);
+    _editBox->setMaxLength(3);
+    _editBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
+    _editBox->setDelegate(this);
+    _editBox->setPosition(Vec2(667, 70));
+    _editBox->setText("100");
+    _editBox->setName("SpeedSetting");
+
+    this->addChild(_editBox,10);
+    
+    ui::Scale9Sprite *weightSetting = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+    _editBox = cocos2d::ui::EditBox::create(cocos2d::Size(48,32),weightSetting);
+	_editBox->setTag(_TAG_EDIT_BOX_1_);
+    _editBox->setFont("Arial",16);
+    _editBox->setFontColor(Color4B(255,32,255,255));
+    _editBox->setPlaceHolder("0.5");
+    _editBox->setPlaceholderFontColor(Color4B::GRAY);
+    _editBox->setMaxLength(3);
+    _editBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
+    _editBox->setDelegate(this);
+    _editBox->setPosition(Vec2(767, 70));
+    _editBox->setText("0.5");
+    _editBox->setName("WeightSetting");
+    
+    this->addChild(_editBox,10);
+	//半径输入框
+	cocos2d::ui::Scale9Sprite *editboxBg = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_topRadiusEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(48,32),editboxBg);
+	_topRadiusEditBox->setTag(_TAG_EDIT_BOX_TOP_RADIUS_);
+	_topRadiusEditBox->setFont("Arial",16);
+	_topRadiusEditBox->setFontColor(Color4B::RED);
+	_topRadiusEditBox->setPlaceHolder("50");
+	_topRadiusEditBox->setMaxLength(3);
+	_topRadiusEditBox->setInputMode(cocos2d::ui::EditBox::InputMode::NUMERIC);
+	_topRadiusEditBox->setDelegate(this);
+	_topRadiusEditBox->setText("50");
+	_topRadiusEditBox->setName("TopRadius");
+	_topRadiusEditBox->setPosition(Vec2(867 ,70));
+	this->addChild(_topRadiusEditBox, 11);
+	//下半径输入框
+	editboxBg = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_bottomRadiusEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(48, 32), editboxBg);
+	_bottomRadiusEditBox->setTag(_TAG_EDIT_BOX_TOP_RADIUS_);
+	_bottomRadiusEditBox->setFont("Arial", 16);
+	_bottomRadiusEditBox->setFontColor(Color4B::RED);
+	_bottomRadiusEditBox->setPlaceHolder("50");
+	_bottomRadiusEditBox->setMaxLength(3);
+	_bottomRadiusEditBox->setInputMode(cocos2d::ui::EditBox::InputMode::NUMERIC);
+	_bottomRadiusEditBox->setDelegate(this);
+	_bottomRadiusEditBox->setText("50");
+	_bottomRadiusEditBox->setName("BottomRadius");
+	_bottomRadiusEditBox->setPosition(Vec2(967, 70));
+	this->addChild(_bottomRadiusEditBox, 12);
+
+	_topRadiusEditBox->setVisible(false);
+	_bottomRadiusEditBox->setVisible(false);
 }
 void   BesselUI::onButtonClick_SpreadOrHide(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
 {
@@ -490,7 +667,80 @@ void   BesselUI::onButtonClick_SpreadOrHide(cocos2d::Ref *pSender, cocos2d::ui::
 	}
 }
 
-void      BesselUI::onChangeRadioButtonSelect(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type)
+void      BesselUI::onRadiusChangeCallback(SpiralValueType type, float radius)
+{
+	char buffer[128];
+	sprintf(buffer,"%.1f",radius);
+	if (type == SpiralValueType::SpiralValueType_BottomRadius)
+		_bottomRadiusEditBox->setText(buffer);
+	else if (type == SpiralValueType::SpiralValueType_TopRadius)
+		_topRadiusEditBox->setText(buffer);
+}
+
+void      BesselUI::changeCurveNode(CurveType curveType)
+{
+	if (curveType != _curveNode->getType())
+	{
+		CurveNode *newNode = nullptr;
+		if (curveType == CurveType::CurveType_Bessel)
+		{
+			BesselNode *node = BesselNode::createBesselNode();
+			newNode = node;
+			//设置组按钮的相关按钮指示
+			cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_scrollView->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
+			int index = group->getSelectedButtonIndex();
+			cocos2d::ui::RadioButton *radioButton = group->getRadioButtonByIndex(index);
+			node->initControlPoint(radioButton->getTag());
+			//同时不再隐藏滑动控制点
+			_scrollView->setVisible(true);
+			_topRadiusEditBox->setVisible(false);
+			_bottomRadiusEditBox->setVisible(false);
+            node->setTouchSelectedCallback([this, node](){
+                
+                char str[32];
+                sprintf(str, "%.2f", node->getSelectControlPoint()->_speedCoef);
+                this->_speedEditBox->setText(str);
+                
+            });
+		}
+		else if (curveType == CurveType::CurveType_Spiral)
+		{	
+			SpiralNode *nbode=SpiralNode::createSpiralNode();
+			//设置通知回调函数
+			nbode->setRadiusChangeCallback(CC_CALLBACK_2(BesselUI::onRadiusChangeCallback,this));
+			newNode = nbode;
+			_scrollView->setVisible(false);
+			_topRadiusEditBox->setVisible(true);
+			_bottomRadiusEditBox->setVisible(true);
+		}
+		if (newNode != nullptr)
+		{
+			_curveNode->removeFromParent();
+			_curveNode = newNode;
+			_curveNode->setCameraMask((short)CameraFlag::USER1);
+			this->addChild(_curveNode);
+			//设置鱼的相关数据
+			if (_currentSelectFishIds.size())
+			{
+				int fishId = _currentSelectFishIds[0];
+				auto &fishVisual = _fishVisualStatic[fishId];
+				_curveNode->setPreviewModel(fishVisual);
+			}
+			else
+				_curveNode->setPreviewModel(_fishVisualStatic.begin()->second);
+		}
+	}
+}
+//切换曲线类型
+void      BesselUI::onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButton *radioButton, cocos2d::ui::RadioButton::EventType type)
+{
+	if (type == cocos2d::ui::RadioButton::EventType::SELECTED)
+	{
+		CurveType curveType = (CurveType)radioButton->getTag();
+		changeCurveNode(curveType);
+	}
+}
+void      BesselUI::onChangeRadioButtonSelect_ControlPoint(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type)
 {
 	//如果某一个按钮被选中了
 	if (type == cocos2d::ui::RadioButton::EventType::SELECTED)
@@ -500,15 +750,15 @@ void      BesselUI::onChangeRadioButtonSelect(cocos2d::ui::RadioButton* radioBut
 		_xyOffset = Vec2();
 		cocos2d::Quaternion qua;
 		Mat4       mat;
-		_besselNode->setRotationQuat(qua);
-		_besselNode->setRotateMatrix(mat);
-		_besselNode->initBesselPoint(nowTag);
+		_curveNode->setRotationQuat(qua);
+		_curveNode->setRotateMatrix(mat);
+		_curveNode->initControlPoint(nowTag);
 		//坐标轴恢复
 		_axisNode->setRotationQuat(qua);
 	}
 }
 
-void BesselUI::onButtonCLick_New(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType type)
+void BesselUI::onButtonClick_New(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType type)
 {
 	cocos2d::ui::Button *button = (cocos2d::ui::Button *)sender;
 	if (type == cocos2d::ui::Widget::TouchEventType::ENDED)
@@ -519,37 +769,96 @@ void BesselUI::onButtonCLick_New(cocos2d::Ref *sender, cocos2d::ui::Widget::Touc
 			//将场景设置为正常状态
 			cocos2d::Quaternion qua;
 			Mat4       mat;
-			_besselNode->setRotationQuat(qua);
-			_besselNode->setRotateMatrix(mat);
-			_besselNode->restoreBesselNodePosition();
+			_curveNode->setRotationQuat(qua);
+			_curveNode->setRotateMatrix(mat);
+			_curveNode->restoreCurveNodePosition();
 			//坐标轴恢复
 			_axisNode->setRotationQuat(qua);
 			_editBox->setText("");
+			_currentSelectFishIds.clear();
 		}
 	}
 }
-
+//删除id为index的路径
+void    BesselUI::removeSomeRecore(int index)
+{
+	_besselSetData.erase(_besselSetData.begin() + index);
+	//整合原来已经映射好了的路径与鱼之间的映射关系
+	if (_pathFishMap.find(index) != _pathFishMap.end())
+	{
+		auto &fishIdMap = _pathFishMap[index];
+		//遍历鱼的相关路径,删除与此路径相关的数据
+		std::vector<int>::iterator it = fishIdMap.fishIdSet.begin();
+		for (; it != fishIdMap.fishIdSet.end(); ++it)
+		{
+			//查找与此鱼本身绑定着的路径
+			auto &fishMap = _fishPathMap[*it];
+			removeVector(fishMap.fishPathSet,index);
+			if (!fishMap.fishPathSet.size())//如果删除此路径之后就没有了,就删除这条鱼的配置
+			{
+				_fishPathMap.erase(*it);
+			}
+		}
+		//删除原来的路径与鱼之间的映射关系
+		_pathFishMap.erase(index);
+	}
+	//后面的id向前移动
+	std::vector<ControlPointSet>::iterator it = _besselSetData.begin() + index;
+	int  id = index;
+	for (; it != _besselSetData.end(); ++it, ++id)
+	{
+		int lastId = it->_curveId;
+		it->_curveId = id;
+		//将其他路径修改为此路径id
+		if (_pathFishMap.find(lastId) != _pathFishMap.end())
+		{
+			_pathFishMap[id] = _pathFishMap[lastId];
+			//将路径与鱼/鱼与路径之间的映射关系修改
+			auto &pathMap = _pathFishMap[id];
+			std::vector<int>::iterator lut = pathMap.fishIdSet.begin();
+			for (; lut != pathMap.fishIdSet.end(); ++lut)
+			{
+				if (_fishPathMap.find(*lut) != _fishPathMap.end())
+				{
+					auto &fishMap = _fishPathMap[*lut];
+					//检查是否有以前的路径id
+					checkVector(fishMap.fishPathSet,lastId,id);//简化vector的替换操作
+				}
+			}
+			//删除当前处理后的路径与鱼之间的映射关系
+			_pathFishMap.erase(lastId);
+		}
+	}
+}
 void    BesselUI::onButtonClick_RemoveLast(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
 {
 	cocos2d::ui::Button      *buttonRemove = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_REMOVE_LAST_RECORD_);
 	if (type == cocos2d::ui::Widget::TouchEventType::ENDED)
 	{
-		//检测是否还有记录
-		if (_besselSetSize>0)
+		//检测是否还有记录,修正以前的bug,如果中间预览了以前的曲线导致删除的仍然是最后的曲线
+		if (_besselSetData.size() )
 		{
-			_besselSetSize -= 1;
+			if (_currentEditPathIndex != -1)
+				removeSomeRecore(_currentEditPathIndex);
+			else
+				removeSomeRecore(_besselSetData.size() - 1);
+			//删除之后直接跳到末尾
+			_currentEditPathIndex = -1;
 			//通知UI变化
 			Label  *_saveLabel = (Label *)_settingLayer->getChildByTag(_TAG_LABEL_TOTAL_RECORD_);
 			char    buffer[64];
-			sprintf(buffer,"finished: %d",_besselSetSize);
+			sprintf(buffer,"finished: %d", _besselSetData.size());
 			_saveLabel->setString(buffer);
 			//如果删除之后再也没有什么记录
-			if (!_besselSetSize)
+			if (!_besselSetData.size())
 			{
 				buttonRemove->setEnabled(false);
 				cocos2d::ui::Button *buttonSaveFile = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_SAVE_TO_FILE_);
 				buttonSaveFile->setEnabled(false);
 			}
+			_editBox->setText("");
+			//恢复原来的场景显示
+			_curveNode->restoreCurveNodePosition();
 		}
 	}
 }
@@ -561,9 +870,10 @@ void    BesselUI::onButtonClick_SaveRecord(cocos2d::Ref *pSender, cocos2d::ui::W
 	{
 		//增加记录
 		buttonRemove->setEnabled(true);
-		BesselSet		besselSet;
-		_besselNode->getBesselPoints(besselSet);
+		ControlPointSet		besselSet(_curveNode->getType());
+		_curveNode->getControlPoint(besselSet);
 		//检测是否是修改中间的部分
+		int pathId = _currentEditPathIndex;
 		if (_currentEditPathIndex != -1)
 		{
 			besselSet.setId(_currentEditPathIndex);
@@ -572,17 +882,51 @@ void    BesselUI::onButtonClick_SaveRecord(cocos2d::Ref *pSender, cocos2d::ui::W
 		else
 		{
 			//设置id
-			besselSet.setId(_besselSetSize);
-			if (_besselSetSize < _besselSetData.size())
-				_besselSetData.at(_besselSetSize) = besselSet;
+			besselSet.setId(_besselSetData.size());
+			_besselSetData.push_back(besselSet);
+			pathId = _besselSetData.size()-1;
+		}
+		//将当前的路径和鱼的关联写入到数据结构中
+		std::vector<int>::iterator  it = _currentSelectFishIds.begin();
+		for (; it != _currentSelectFishIds.end(); ++it)
+		{
+			if (_fishPathMap.find(*it) != _fishPathMap.end())
+			{
+				auto &fishPath = _fishPathMap[*it];
+				//检查是否重复了
+				if( !checkVector(fishPath.fishPathSet,pathId))
+				fishPath.fishPathSet.push_back(pathId);
+			}
 			else
-				_besselSetData.push_back(besselSet);
-			_besselSetSize += 1;
+			{
+				FishPathMap fishMap;
+				fishMap.fishPathSet.push_back(pathId);
+				_fishPathMap[*it] = fishMap;
+			}
+		}
+		//与该路径绑定的鱼的id也要相应的更新
+		if (_pathFishMap.find(pathId) != _pathFishMap.end())
+		{
+			auto &pathMap = _pathFishMap[pathId];
+			for (std::vector<int>::iterator it = _currentSelectFishIds.begin(); it != _currentSelectFishIds.end(); ++it)
+			{
+				if(!checkVector(pathMap.fishIdSet,*it))
+					pathMap.fishIdSet.push_back(*it);
+			}
+		}
+		else
+		{
+			FishIdMap fishIdMap;
+			for (std::vector<int>::iterator it = _currentSelectFishIds.begin(); it != _currentSelectFishIds.end(); ++it)
+			{
+				fishIdMap.fishIdSet.push_back(*it);
+			}
+			_pathFishMap[pathId] = fishIdMap;
 		}
 		//通知UI变化
 		Label     *_totalSaveLabel = (Label *)_settingLayer->getChildByTag(_TAG_LABEL_TOTAL_RECORD_);
 		char buffer[64];
-		sprintf(buffer,"finished: %d",_besselSetSize);
+		sprintf(buffer,"finished: %d", _besselSetData.size());
 		_totalSaveLabel->setString(buffer);
 		//防止点击过于频繁
 		cocos2d::ui::Button *buttonSave = (cocos2d::ui::Button *)pSender;
@@ -603,11 +947,12 @@ void    BesselUI::onButtonClick_SaveToFile(cocos2d::Ref *pSender, cocos2d::ui::W
 	if (type != cocos2d::ui::Widget::TouchEventType::ENDED)
 		return;
 	//检测是否有记录
-	if (_besselSetSize <= 0)
+	if (_besselSetData.size() <= 0)
 		return;
 	cocos2d::ui::Button *buttonSaveFile = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_SAVE_TO_FILE_);
 	buttonSaveFile->setEnabled(false);
 	writeRecordToFile();
+	saveFishMap();
 	buttonSaveFile->runAction(
 		cocos2d::Sequence::create(
 			cocos2d::DelayTime::create(10.0f),
@@ -618,31 +963,100 @@ void    BesselUI::onButtonClick_SaveToFile(cocos2d::Ref *pSender, cocos2d::ui::W
 		)
 	);
 }
+
+//这是所有的按钮功能中的重量级功能
+void    BesselUI::onButtonClick_SaveParsed(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
+{
+    if (type != cocos2d::ui::Widget::TouchEventType::ENDED)
+        return;
+    //检测是否有记录
+    if (_besselSetData.size() <= 0)
+        return;
+    cocos2d::ui::Button *buttonSaveFile = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_SAVE_PARSED_);
+    buttonSaveFile->setEnabled(false);
+
+    buttonSaveFile->runAction(
+                              cocos2d::Sequence::create(
+                                                        cocos2d::DelayTime::create(10.0f),
+                                                        cocos2d::CallFunc::create([=]() {
+                                  buttonSaveFile->setEnabled(true);
+                              }),
+                                                        NULL
+                                                        )
+                              );
+    
+    std::string    recordSet;
+    std::string    record;
+
+    recordSet.append("<?xml version=\"1.0\"?>\n");
+    recordSet.append("<FishPath>\n");
+    for (int j = 0; j < _besselSetData.size(); ++j)
+    {
+        _besselSetData.at(j).format(record);
+        recordSet.append(record);
+    }
+    recordSet.append("</FishPath>");
+    std::ofstream    targetStream("./Visual_Path.xml",std::ios::out | std::ios::binary);
+    targetStream.write(recordSet.c_str(), recordSet.size());
+    targetStream.close();
+}
+
 //此功能暂时不实现
 //目前已经实现了
 void    BesselUI::onButtonClick_Preview(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
 {
 	if (type == ui::Widget::TouchEventType::ENDED)
 	{
-		cocos2d::ui::Button *buttonPreview = (cocos2d::ui::Button *)pSender;
-		buttonPreview->setEnabled(false);
-		std::function<void(float)> callback = [=](float timeCost) {
-			buttonPreview->setEnabled(true);
-		};
-		_besselNode->previewCurive(callback);
+		cocos2d::ui::Button *sender = (cocos2d::ui::Button *)pSender;
+		//sender->setEnabled(false);
+//
+		_curveNode->previewCurive([=]() {
+			sender->setEnabled(true);
+		});
 	}
 }
+//鱼群设置
+void BesselUI::onButtonClick_FishMap(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
+{
+	if (type == ui::Widget::TouchEventType::ENDED)
+	{
+		LayerDialog *layer = LayerDialog::createLayerDialog(_fishVisualStatic, _currentSelectFishIds);
+		layer->setCameraMask((short)CameraFlag::DEFAULT, true);
+		this->addChild(layer, 101);
+		//隐藏按钮操作面板
+		const float     layerWidth = 240;
+		auto &winSize = Director::getInstance()->getWinSize();
+		//如果当前是伸展着的,隐藏按钮操作面板
+		cocos2d::ui::Button * directButton = (cocos2d::ui::Button *)_settingLayer->getChildByTag(_TAG_BUTTON_DIRECT_);
+		_settingLayer->runAction(
+			cocos2d::Sequence::create(cocos2d::MoveBy::create(0.4f,Vec2(240.0f,0.0f)),
+			cocos2d::CallFunc::create([=]() {
+				directButton->setFlippedX(true);
+			}),nullptr));
+		//设置layer的参数
+		layer->setConfirmCallback([=](std::vector<int> &result) {
+			//检测result
+			if (result.size())
+			{
+				_currentSelectFishIds = result;
+				auto &fishMap= _fishVisualStatic.find(result[0])->second;
+				_curveNode->setPreviewModel(fishMap);
+			}
+		});
+	}
+}
+
 //将记录写入到文件中
 void   BesselUI::writeRecordToFile()
 {
 	//如果没有什么记录可写,直接返回
-	if (_besselSetSize <= 0)
+	if (_besselSetData.size() <= 0)
 		return;
 	//使用C++创建文件
 //	const std::string  targetFile = "./Visual_Path.xml";
 	//计算大概需要的字节空间需求
 	int     needSpace = 0;
-	for (int j = 0; j < _besselSetSize; ++j)
+	for (int j = 0; j < _besselSetData.size(); ++j)
 	{
 		needSpace += _besselSetData.at(j).getProbablyCapacity();
 	}
@@ -653,7 +1067,7 @@ void   BesselUI::writeRecordToFile()
 	//首先写入xml文件的开头
 	recordSet.append("<?xml version=\"1.0\"?>\n");
 	recordSet.append("<FishPath>\n");
-	for (int j = 0; j < _besselSetSize; ++j)
+	for (int j = 0; j < _besselSetData.size(); ++j)
 	{
 		_besselSetData.at(j).format(record);
 		recordSet.append(record);
@@ -697,44 +1111,112 @@ void BesselUI::loadVisualXml()
 		for (Value& _v : TPS.asValueVector())
 		{
 			ValueMap v = _v.asValueMap();
-			std::vector<Vec3>   container;
+            float weight = v["weight"].asFloat();
+			CurveType type = (CurveType)v["Type"].asInt();
+            if(weight == 0) {weight = 0.5;}
+            std::vector<CubicBezierRoute::PointInfo>   container;
 			container.reserve(6);
-			for (Value &_vv : v["Position"].asValueVector())
+			if (type == CurveType::CurveType_Bessel)//贝塞尔曲线
 			{
-				ValueMap &vv = _vv.asValueMap();
-				const float x = vv["x"].asFloat() - 0.5f;
-				const float y = vv["y"].asFloat() - 0.5f;
-				const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
-				//还原数据
-				container.push_back(Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z));
+				for (Value &_vv : v["Position"].asValueVector())
+				{
+					ValueMap &vv = _vv.asValueMap();
+					const float x = vv["x"].asFloat() - 0.5f;
+					const float y = vv["y"].asFloat() - 0.5f;
+					const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+                    float speedCoef = vv["speedCoef"].asFloat();
+                    speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+					//还原数据
+                    CubicBezierRoute::PointInfo info;
+                    info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+                    info.speedCoef = speedCoef;
+                    
+					container.push_back(info);
+				}
 			}
-			BesselSet   _controlPointSet(container);
-			_controlPointSet.setId(visualId);
+			else if(type == CurveType::CurveType_Spiral)//螺旋线
+			{
+				for (Value &_vv : v["Position"].asValueVector())
+				{
+					ValueMap &vv = _vv.asValueMap();
+					const float x = vv["x"].asFloat();
+					const float y = vv["y"].asFloat();
+					const float z = vv["z"].asFloat();
+                    float speedCoef = vv["speedCoef"].asFloat();
+                    speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+					//还原数据
+                    CubicBezierRoute::PointInfo info;
+                    info.position = Vec3(x , y, z);
+                    info.speedCoef = speedCoef;
+                    
+                    container.push_back(info);
+				}
+				//更正中心坐标点
+				container[1].position.x -= halfWidth;
+				container[1].position.y -= halfHeight;
+			}
+			ControlPointSet   _controlPointSet(type ,container);
+            _controlPointSet.setId(visualId);
+            _controlPointSet.weight = weight;
 			_besselSetData.push_back(_controlPointSet);
 			++visualId;
 		}
 	}
-	else if(temp.getType() == cocos2d::Value::Type::MAP)
+	else if (temp.getType() == cocos2d::Value::Type::MAP)
 	{
 		ValueMap  &secondaryMap = TPS.asValueMap();
-		std::vector<Vec3>   container;
+        float weight = secondaryMap["weight"].asFloat();
+		CurveType  type = (CurveType)secondaryMap["Type"].asInt();
+        if(weight == 0) {weight = 0.5;}
+		std::vector<CubicBezierRoute::PointInfo>   container;
 		container.reserve(6);
-		for (Value& _v : secondaryMap["Position"].asValueVector())
+		if (type == CurveType::CurveType_Bessel)
 		{
-			ValueMap v = _v.asValueMap();
-			ValueMap &vv = _v.asValueMap();
-			const float x = vv["x"].asFloat() - 0.5f;
-			const float y = vv["y"].asFloat() - 0.5f;
-			const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
-			//还原数据
-			container.push_back(Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z));
+			for (Value& _v : secondaryMap["Position"].asValueVector())
+			{
+				ValueMap v = _v.asValueMap();
+				ValueMap &vv = _v.asValueMap();
+				const float x = vv["x"].asFloat() - 0.5f;
+				const float y = vv["y"].asFloat() - 0.5f;
+				const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+                float speedCoef = vv["speedCoef"].asFloat();
+                speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+				//还原数据
+                CubicBezierRoute::PointInfo info;
+                info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+                info.speedCoef = speedCoef;
+                
+                container.push_back(info);
+			}
 		}
-		BesselSet   _controlPointSet(container);
+		else if (type == CurveType::CurveType_Spiral)
+		{
+			for (Value& _v : secondaryMap["Position"].asValueVector())
+			{
+				ValueMap v = _v.asValueMap();
+				ValueMap &vv = _v.asValueMap();
+				const float x = vv["x"].asFloat();
+				const float y = vv["y"].asFloat();
+				const float z = vv["z"].asFloat();
+                float speedCoef = vv["speedCoef"].asFloat();
+                speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+				//还原数据
+                CubicBezierRoute::PointInfo info;
+                info.position = Vec3(x , y, z);
+                info.speedCoef = speedCoef;
+                
+				container.push_back(info);
+			}
+			//更正中心坐标点
+			container[1].position.x -= halfWidth;
+			container[1].position.y -= halfHeight;
+		}
+		ControlPointSet   _controlPointSet(type,container);
 		_controlPointSet.setId(visualId);
+        _controlPointSet.weight = weight;
 		_besselSetData.push_back(_controlPointSet);
 		++visualId;
 	}
-	_besselSetSize = _besselSetData.size();
 }
 
 void BesselUI::editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox)
@@ -744,7 +1226,77 @@ void BesselUI::editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox)
 
 void BesselUI::editBoxEditingDidEnd(cocos2d::ui::EditBox* editBox)
 {
-
+	const std::string &name = editBox->getName();
+    if(name == "SpeedSetting")
+    {
+        std::string content = editBox->getText();
+        int speed = 0;
+        std::stringstream converter;
+        converter << content;
+        converter >> speed;
+        
+        speed = speed == 0 ? 100 : speed;
+        
+		_curveNode->setPreviewSpeed(speed);
+    }
+    else if(name == "WeightSetting")
+    {
+        std::string content = editBox->getText();
+        float weight = 0.5;
+        std::stringstream converter;
+        converter << content;
+        converter >> weight;
+        
+        
+        if(_currentEditPathIndex == -1)
+        {
+            _besselSetData[_besselSetData.size() - 1].weight = weight;
+			_curveNode->setWeight(weight);
+        }
+        else
+        {
+            _besselSetData[_currentEditPathIndex].weight = weight;
+			_curveNode->setWeight(weight);
+        }
+    }
+	else if (name == "TopRadius")//上半径
+	{
+		//只能对螺旋曲线有效
+		if (_curveNode->getType() == CurveType::CurveType_Spiral)
+		{
+			SpiralNode *node = (SpiralNode*)_curveNode;
+			const char *text = _topRadiusEditBox->getText();
+			float radius = strtof(text);
+			node->setTopRadius(radius);
+			node->updateVertexData(true);
+		}
+	}
+	else if (name == "BottomRadius")
+	{
+		if (_curveNode->getType() == CurveType::CurveType_Spiral)
+		{
+			SpiralNode *node = (SpiralNode*)_curveNode;
+			const char *text = _bottomRadiusEditBox->getText();
+			float radius = strtof(text);
+			node->setBottomRadius(radius);
+			node->updateVertexData(true);
+		}
+	}
+	else if (name == "nicaicaispeed")
+	{
+		if (_curveNode->getType() == CurveType::CurveType_Bessel)
+		{
+			BesselNode *node = (BesselNode*)_curveNode;
+			const char *text = _speedEditBox->getText();
+			float  speed = strtof(text);
+			/////////////////剩下的是贝塞尔曲线控制点速度操作/////////////////
+			ControlPoint *controlPoint = node->getSelectControlPoint();
+			if (controlPoint != nullptr)//选中的控制点不为空
+			{
+                controlPoint->_speedCoef = speed;
+			}
+		}
+	}
 }
 
 void BesselUI::editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text)
@@ -754,16 +1306,269 @@ void BesselUI::editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::stri
 
 void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
 {
-	const char *text = editBox->getText();
-	//转换成int
-	const int number = atoi(text);
-	if (number<=0 || number > _besselSetSize || number-1== _currentEditPathIndex)
+    if(editBox->getName() == "RouteIndex")
+    {
+        const char *text = editBox->getText();
+        //转换成int,注意对于输入的值是从1-实际的曲线数目,需要转换到实际的索引
+        const int number = atoi(text);
+        if (number <= 0 || number > _besselSetData.size() || number - 1 == _currentEditPathIndex)
+		{
+			_editBox->setText("");
+			return;
+		}
+        _currentEditPathIndex = number - 1;
+        //检查当前的曲线是否需要更换,并切换当前正在编辑的贝塞尔曲线
+		auto &controlPointSet = _besselSetData.at(_currentEditPathIndex);
+		changeCurveNode(controlPointSet._type);
+        
+        std::vector<Vec3> points;
+        
+        for(int i = 0; i < controlPointSet._realSize; i++)
+        {
+            points.push_back(controlPointSet._pointsSet[i].position);
+        }
+        
+		_curveNode->initCurveNodeWithPoints(points);
+		_curveNode->setWeight(controlPointSet.weight);
+		//将该曲线对应的鱼的id也读入
+		_currentSelectFishIds.clear();
+		_currentSelectFishIds = _pathFishMap[_currentEditPathIndex].fishIdSet;
+		if (_currentSelectFishIds.size())
+			_curveNode->setPreviewModel(_fishVisualStatic[_currentSelectFishIds[0]]);
+		//设置组按钮的相关按钮指示
+		if (_curveNode->getType() == CurveType::CurveType_Bessel)//只有贝塞尔曲线才会支持
+		{
+			cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_scrollView->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
+			cocos2d::ui::RadioButton *radioButton = (cocos2d::ui::RadioButton*)group->getChildByTag(controlPointSet._pointsSet.size());
+			group->setSelectedButton(radioButton);
+		}
+        //检测曲线类型处的单选按钮是否需要变化
+		ui::RadioButtonGroup *group = (ui::RadioButtonGroup *)_settingLayer->getChildByTag(_TAG_RADIO_BUTTON_GROUP_CURVE_);
+		ui::RadioButton  *radioButton = (ui::RadioButton *)_settingLayer->getChildByTag(controlPointSet._type);
+		group->setSelectedButton(radioButton);
+		//
+        std::stringstream converter;
+        converter<<_besselSetData[_currentEditPathIndex].weight;
+        
+        ((cocos2d::ui::EditBox*)this->getChildByName("WeightSetting"))->setText(converter.str().c_str());
+    }
+}
+
+
+void BesselUI::parseControlPoints()
+{
+	for (int i = 0; i < _parsedRoutes.size(); i++)
+	{
+		delete _parsedRoutes[i];
+	}
+
+	_parsedRoutes.clear();
+	_parsedRoutes.resize(_besselSetData.size());
+
+	for (int i = 0; i < _besselSetData.size(); i++)
+	{
+		std::vector<cocos2d::Vec3> translatedPoints;
+		translatedPoints.resize(_besselSetData[i]._realSize);
+
+		for (int j = 0; j < _besselSetData[i]._realSize; j++)
+		{
+			//            _real
+		}
+
+
+		CubicBezierRoute* routeInfo = new CubicBezierRoute();
+		routeInfo->addPoints(_besselSetData[i]._pointsSet);
+//		routeInfo->calculateDistance();
+
+		_parsedRoutes[i] = routeInfo;
+	}
+}
+//////////////////////////四版////////////////////////////
+void  BesselUI::loadFishVisualStatic()
+{
+	std::string fileName = "./FishMap.xml";
+	std::ifstream inputStream(fileName, std::ios::binary);
+	//如果打开失败
+	if (!inputStream.is_open())
+	{		
+		auto &winSize = cocos2d::Director::getInstance()->getWinSize();
+		cocos2d::Label   *labelTip = cocos2d::Label::create("Error,can not open file'FishMap.xml","Arial",32);
+		labelTip->setColor(cocos2d::Color3B::RED);
+		labelTip->setPosition(Vec2(winSize.width/2.0f,winSize.height/2.0f));
+		cocos2d::LayerColor *maskLayer = cocos2d::LayerColor::create(cocos2d::Color4B(128,128,128,128),winSize.width,winSize.height);
+		auto *touchListener = cocos2d::EventListenerTouchOneByOne::create();
+		touchListener->onTouchBegan = [=](cocos2d::Touch *touch, cocos2d::Event *) {return true; };
+		touchListener->onTouchMoved = [=](cocos2d::Touch *touch, cocos2d::Event *) {};
+		touchListener->onTouchEnded = [=](cocos2d::Touch *touch, cocos2d::Event *) {};
+		touchListener->setSwallowTouches(true);
+
+		this->addChild(maskLayer, 101);
+		maskLayer->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, maskLayer);
+		maskLayer->addChild(labelTip);
+		maskLayer->setCameraMask((short)CameraFlag::DEFAULT, true);
 		return;
-	_currentEditPathIndex = number-1;
-	//切换当前正在编辑的贝塞尔曲线
-	_besselNode->initBesselNodeWithPoints(_besselSetData.at(_currentEditPathIndex)._pointsSet);
-	//设置组按钮的相关按钮指示
-	cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_settingLayer->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
-	cocos2d::ui::RadioButton *radioButton=(cocos2d::ui::RadioButton*)group->getChildByTag(_besselSetData.at(_currentEditPathIndex)._pointsSet.size());
-	group->setSelectedButton(radioButton);
+	}
+	//否则加载文件数据
+	inputStream.close();
+	//否则读取所有的文件
+	custom::XMLParser* doc = custom::XMLParser::create();
+	ValueMap valueMap = doc->parseXML(fileName);
+	Value& temp = valueMap["FishMap"];
+	//为了程序健壮,必须加上的错误处理代码
+	if (temp.getType() != cocos2d::Value::Type::MAP)
+		return;
+	Value& TPS = temp.asValueMap()["Fish"];
+	if (TPS.getType() == cocos2d::Value::Type::VECTOR)
+	{
+		for (Value& v : TPS.asValueVector())
+		{
+			FishVisual  visualData;
+			ValueMap fishMap = v.asValueMap();
+			visualData.id = fishMap["id"].asInt();
+			visualData.scale = fishMap["scale"].asFloat();
+			visualData.name = fishMap["name"].asString();
+			visualData.from = fishMap["from"].asFloat();
+			visualData.to = fishMap["to"].asFloat();
+			//加入到鱼的资料集合中
+			_fishVisualStatic[visualData.id] = visualData;
+		}
+	}
+	else if (temp.getType() == cocos2d::Value::Type::MAP)
+	{
+		FishVisual  visualData;
+		ValueMap fishMap = temp.asValueMap();
+		visualData.id = fishMap["id"].asInt();
+		visualData.scale = fishMap["scale"].asFloat();
+		visualData.name = fishMap["name"].asString();
+		visualData.from = fishMap["from"].asFloat();
+		visualData.to = fishMap["to"].asFloat();
+		//加入到鱼的资料集合中
+		_fishVisualStatic[visualData.id] = visualData;
+	}
+}
+
+void BesselUI::saveFishMap()
+{
+	if (!_fishPathMap.size())//没有什么可写的
+		return;
+	//格式化相关的数据
+	std::map<int, FishPathMap>::iterator it = _fishPathMap.begin();
+	std::string buffer;
+	buffer.reserve(_fishPathMap.size()*128);
+	//文件头
+	buffer.append("<?xml version=\"1.0\"?>\n");
+	buffer.append("<FishMap>\n");
+	for (; it != _fishPathMap.end(); ++it)
+	{
+		const FishPathMap & fishMap = it->second;
+		//每一行的头部标志
+		char  record[128];
+		sprintf(record, "	<Fish id=\"%d\"",it->first );
+		buffer.append(record);
+		//和每个鱼相关联的路径的id
+		buffer.append(" path=\"");
+		//遍历每一个路径
+		std::vector<int>::const_iterator lit = fishMap.fishPathSet.cbegin();
+		for (;lit != fishMap.fishPathSet.end(); ++lit)
+		{
+			sprintf(record, "%d,", *lit);
+			buffer.append(record);
+		}
+		//删除最后一个逗号
+		buffer.erase(buffer.size()-1);
+		buffer.append("\" />\n");
+	}
+	buffer.append("</FishMap>");
+	//写入到文件
+	std::ofstream    targetStream("./FishPathMap.xml", std::ios::out | std::ios::binary);
+	targetStream.write(buffer.c_str(), buffer.size());
+	targetStream.close();
+}
+
+void BesselUI::loadFishPathMap()
+{
+	std::string fileName = "./FishPathMap.xml";
+	std::ifstream inputStream(fileName, std::ios::binary);
+	//如果打开失败
+	if (!inputStream.is_open())
+	{
+		inputStream.close();
+		return;
+	}
+	//否则读取所有的文件
+	custom::XMLParser* doc = custom::XMLParser::create();
+	ValueMap valueMap = doc->parseXML(fileName);
+	Value& temp = valueMap["FishMap"];
+	//为了程序健壮,必须加上的错误处理代码
+	if (temp.getType() != cocos2d::Value::Type::MAP)
+		return;
+	Value& TPS = temp.asValueMap()["Fish"];
+	if (TPS.getType() == cocos2d::Value::Type::VECTOR)
+	{
+		for (Value& v : TPS.asValueVector())
+		{
+			ValueMap vv = v.asValueMap();
+			FishPathMap   pathMap;
+			const int id = vv["id"].asInt();
+			//将路径的id分解
+			std::string pathIds = vv["path"].asString();
+			std::string pathId;
+			for (int i = 0; i < pathIds.size(); ++i)
+			{
+				if (pathIds[i] != ',')
+					pathId.append(1,(char)pathIds[i]);
+				else//写入数据
+				{
+					pathMap.fishPathSet.push_back(atoi(pathId.c_str()));
+					pathId.clear();
+				}
+			}
+			pathMap.fishPathSet.push_back(atoi(pathId.c_str()));
+			_fishPathMap[id] = pathMap;
+		}
+	}
+	else if (temp.getType() == cocos2d::Value::Type::MAP)
+	{
+		FishPathMap   pathMap;
+		ValueMap vv = temp.asValueMap();
+		const int id = vv["id"].asInt();
+		//将路径的id分解
+		std::string pathIds = vv["path"].asString();
+		std::string pathId;
+		for (int i = 0; i < pathIds.size(); ++i)
+		{
+			if (pathIds[i] != ',')
+				pathId.append(1, (char)pathIds[i]);
+			else//写入数据
+			{
+				pathMap.fishPathSet.push_back(atoi(pathId.c_str()));
+				pathId.clear();
+			}
+		}
+		pathMap.fishPathSet.push_back(atoi(pathId.c_str()));
+		_fishPathMap[id] = pathMap;
+	}
+	//对生成的资料做反向的统计,以方便以后的删除时的快速查找
+	std::map<int, FishPathMap>::iterator it = _fishPathMap.begin();
+	for (; it != _fishPathMap.end(); ++it)
+	{
+		auto &pathVector = it->second.fishPathSet;
+		std::vector<int>::iterator lut = pathVector.begin();
+		//遍历与此鱼相关的所有的路径
+		for (; lut != pathVector.end(); ++lut)
+		{
+			//检测与相关的路径是否有对应的鱼
+			if (_pathFishMap.find(*lut) != _pathFishMap.end())//如果发现关于此路径对应的集合不为空,直接添加
+			{
+				_pathFishMap[*lut].fishIdSet.push_back(it->first);
+			}
+			else//否则创建一个新的容器,然后将鱼的id添加进去
+			{
+				FishIdMap  fishIdMap;
+				fishIdMap.fishIdSet.push_back(it->first);
+				_pathFishMap[*lut] = fishIdMap;
+			}
+		}
+	}
+
 }

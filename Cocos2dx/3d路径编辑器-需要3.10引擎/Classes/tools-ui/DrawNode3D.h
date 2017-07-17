@@ -80,7 +80,10 @@ public:
     
     // Overrides
     virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
-    
+    //set OpenGL line width
+	void     setLineWidth(float lineWidth);
+
+	float    getLineWidth()const;
 CC_CONSTRUCTOR_ACCESS:
     DrawNode3D();
     virtual ~DrawNode3D();
@@ -105,7 +108,7 @@ protected:
     cocos2d::CustomCommand _customCommand;
 
     bool        _dirty;
-
+	float       _lineWidth;
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(DrawNode3D);
 };
