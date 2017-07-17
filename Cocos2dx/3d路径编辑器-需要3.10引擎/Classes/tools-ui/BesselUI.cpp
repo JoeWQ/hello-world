@@ -408,11 +408,12 @@ void    BesselUI::loadSettingLayer()
 	ui::RadioButtonGroup *group = ui::RadioButtonGroup::create();
 	group->setTag(_TAG_RADIO_BUTTON_GROUP_CURVE_);
 	_settingLayer->addChild(group);
+	int   tags[2] = {CurveType::CurveType_Bessel,CurveType::CurveType_Spiral};
 	for (int i = 0; i < 2; ++i)//目前只有两种曲线类型
 	{
 		cocos2d::ui::RadioButton *radioButton = ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
 		radioButton->setPosition(Vec2(32+ 48*i,layerHeight - 50));
-		radioButton->setTag(_TAG_RADIO_BUTTON_CURVE_+i);//设置按钮的标志类型,也代表着曲线的类型
+		radioButton->setTag(_TAG_RADIO_BUTTON_CURVE_+ tags[i]);//设置按钮的标志类型,也代表着曲线的类型
 		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect_ChangeCurve,this));
 		group->addRadioButton(radioButton);
 		_settingLayer->addChild(radioButton);
@@ -736,7 +737,7 @@ void      BesselUI::onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButt
 {
 	if (type == cocos2d::ui::RadioButton::EventType::SELECTED)
 	{
-		CurveType curveType = (CurveType)radioButton->getTag();
+		CurveType curveType = (CurveType)(radioButton->getTag()- _TAG_RADIO_BUTTON_CURVE_);
 		changeCurveNode(curveType);
 	}
 }
