@@ -1,5 +1,5 @@
 /*
-  *有关类型的定义
+  *有关类型的定义,以及一些枚举类型
   *@date:2017-4-15
   @Author:xiaohuaxiong
  */
@@ -38,4 +38,14 @@ typedef void (glk::Object::*GLKMouseReleaseCallback)(const glk::MouseType mouseT
 #define glk_mouse_press_selector(selector) static_cast<GLKMousePressCallback>(&selector)
 #define glk_mouse_move_selector(selector) static_cast<GLKMouseMotionCallback>(&selector)
 #define glk_mouse_release_selector(selector) static_cast<GLKMouseReleaseCallback>(&selector)
+
+///////////////////////////引擎需要用到的一些枚举///////////////////////////
+__NS_GLK_BEGIN
+enum CameraType
+{
+	CameraType_None = 0,//无效的类型
+	CameraType_Perspertive = 1,//透视矩阵
+	CameraType_Ortho =2,//正交矩阵
+};
+__NS_GLK_END
 #endif
