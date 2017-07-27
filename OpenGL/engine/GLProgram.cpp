@@ -378,16 +378,16 @@ ComputeShader	*ComputeShader::createWithString(const char *shader_string)
 	return  _glProgram;
 }
 
-void       ComputeShader::dispatch(int dispatch_x_size, int dispatch_y_size, int dispatch_z_size)
+void       ComputeShader::dispatch(int dispatch_x_size, int dispatch_y_size, int dispatch_z_size)const
 {
-	glUseProgram(_object);
+	//glUseProgram(_object);
 	glDispatchCompute(dispatch_x_size, dispatch_y_size, dispatch_z_size);
 }
 
-//void       ComputeShader::perform()
-//{
-//	glUseProgram(_object);
-//}
+void       ComputeShader::perform()const
+{
+	glUseProgram(_object);
+}
 
 int         ComputeShader::getUniformLocation(const char *name)const
 {

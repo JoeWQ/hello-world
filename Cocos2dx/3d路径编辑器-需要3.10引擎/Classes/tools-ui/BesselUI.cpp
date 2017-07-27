@@ -1345,7 +1345,7 @@ void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
 		}
         //检测曲线类型处的单选按钮是否需要变化
 		ui::RadioButtonGroup *group = (ui::RadioButtonGroup *)_settingLayer->getChildByTag(_TAG_RADIO_BUTTON_GROUP_CURVE_);
-		ui::RadioButton  *radioButton = (ui::RadioButton *)_settingLayer->getChildByTag(controlPointSet._type);
+		ui::RadioButton  *radioButton = (ui::RadioButton *)_settingLayer->getChildByTag(controlPointSet._type + _TAG_RADIO_BUTTON_CURVE_);
 		group->setSelectedButton(radioButton);
 		//
         std::stringstream converter;

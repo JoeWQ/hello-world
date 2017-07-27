@@ -72,12 +72,12 @@ private:
 	void            initWithString(const char *shader_string);
 public:
 	~ComputeShader();
-	ComputeShader       *createWithString(const  char  *shader_string);
-	ComputeShader       *createWithFile(const char *file_name);
+	static ComputeShader       *createWithString(const  char  *shader_string);
+	static ComputeShader       *createWithFile(const char *file_name);
 //在三个维度上分发的数目
-	void                     dispatch(int  dispatch_x_size,int  dispatch_y_size,int  dispatch_z_size);
+	void                     dispatch(int  dispatch_x_size,int  dispatch_y_size,int  dispatch_z_size)const;
 ////启用着色器
-//	void                     perform();
+	void                     perform()const;
 //获取着色器对象
 	unsigned             getObject()const;
 //获取统一变量的位置

@@ -121,7 +121,7 @@ const Matrix& Camera::getInverseViewProjMatrix()
 
 void Camera::updateRotateMatrix(float dx, float dy)
 {
-	if (dx != 0 && dy != 0)
+	if (dx != 0 || dy != 0)
 	{
 		_rotateVec.x += dx;
 		_rotateVec.y += dy;
@@ -138,7 +138,7 @@ void Camera::updateRotateMatrix(float dx, float dy)
 
 void Camera::updateTranslateMatrix(float dx, float dz)
 {
-	if (dx != 0 && dz != 0)
+	if (dx != 0 || dz != 0)
 	{
 		GLVector4 afterRotateVec = GLVector4(-dx,0,-dz,0.0f)* getInverseViewMatrix();
 		_translateVec.x += afterRotateVec.x;
@@ -150,9 +150,9 @@ void Camera::updateTranslateMatrix(float dx, float dz)
 		_viewMatrix.rotateY(_rotateVec.y);
 		_viewMatrix.rotateX(_rotateVec.x);
 		//
-		_eyePosition.x =  _translateVec.x;
-		_eyePosition.y = _translateVec.y;
-		_eyePosition.z = _translateVec.z;
+		_eyePosition.x = - _translateVec.x;
+		_eyePosition.y = -_translateVec.y;
+		_eyePosition.z = -_translateVec.z;
 		//波及到了其他的数据
 		_isViewDirty = true;
 		_isViewProjDirty = true;
