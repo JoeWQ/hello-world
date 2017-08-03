@@ -5,6 +5,9 @@
  */
  //OpenGL Shader
 #include "Common.h"
+
+const  int _static_bessel_node_max_count = 27;
+
 const char *_static_bessel_Vertex_Shader = "attribute vec4 a_position;"
 "void main()"
 "{"

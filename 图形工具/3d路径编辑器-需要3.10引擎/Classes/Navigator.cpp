@@ -37,7 +37,7 @@ bool Navigator::init()
         Vec3(1500, 100, 100),
         
     };
-    _route->addPoints(points);
+//    _route->addPoints(points);
     ((CubicBezierRoute*)_route)->setWeight(1.5);
     
     return true;

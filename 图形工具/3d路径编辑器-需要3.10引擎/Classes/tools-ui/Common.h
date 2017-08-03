@@ -35,6 +35,8 @@ extern const char *_static_bessel_Frag_Shader;
 extern const char *_static_spiral_Vertex_Shader;
 extern const char *_static_spiral_Frag_Shader;
 
+extern const int     _static_bessel_node_max_count;//贝赛尔曲线所能允许的最大节点数
+
 enum CurveType//曲线的类型
 {
 	CurveType_Line = 0,//直线

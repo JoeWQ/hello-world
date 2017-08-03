@@ -27,6 +27,7 @@ protected:
 	//是否支持控制点的选择
 	bool              _isSupportedControlPoint;
 	float _weight;
+	std::function<void(CurveType type, int param, int param2)> _onUIChangedCallback;
 protected:
 	void              setSupportedControlPoint(bool b) { _isSupportedControlPoint = b; };
 protected:
@@ -54,6 +55,21 @@ public:
 	*当按下的Ctrl键释放的时候的回掉函数
 	*/
 	virtual void    onCtrlKeyRelease();
+	/*
+	  *当按下Ctrl+Z键的时候的回调函数
+	 */
+	virtual  void   onCtrlZPressed();
+	/*
+	  *当曲线控制点发生变化的时候对象向UI层发送的通知
+	  *param,param2参数的具体的意义由回调函数自己解释
+	 */
+	virtual  void   setUIChangedCallback(std::function<void (CurveType type,int param,int param2)>);
+	/*
+	  *鼠标右键分发,且只有在同时按下alt键的时候才会有效
+	 */
+	virtual  void   onMouseClick(const cocos2d::Vec2 &clickPoint,cocos2d::Camera *camera);
+	virtual  void   onMouseMoved(const cocos2d::Vec2 &clickPoint,cocos2d::Camera *camera);
+	virtual  void   onMouseReleased(const cocos2d::Vec2 &clickPoint,cocos2d::Camera *camera);
 	/*
 	*三维投影矩阵变换
 	*/
@@ -108,12 +124,17 @@ private:
 	cocos2d::Sprite         *_iconSprite;
 	//在控制点上画出坐标轴
 	cocos2d::DrawNode3D *_drawNode3D;
+	int                                _index;
 private:
 	ControlPoint();
 	void      initControlPoint(int index);
 public:
 	~ControlPoint();
 	static ControlPoint   *createControlPoint(int index);
+	/*
+	  *修改控制点的次序
+	 */
+	void   changeSequence(int index);
 	/*
 	  *需要手工开启该函数
 	 */

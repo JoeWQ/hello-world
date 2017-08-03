@@ -14,34 +14,34 @@
 //#include"geometry/Geometry.h"
 #define _TAG_RADIO_BUTTON_CURVE_                  0x0
 //记录当前的已经完成的贝塞尔曲线控制点的配置的数目
-#define  _TAG_LABEL_TOTAL_RECORD_                    0x14
+#define  _TAG_LABEL_TOTAL_RECORD_                    0x80
 //指示按钮
-#define _TAG_BUTTON_DIRECT_                                 0x15
+#define _TAG_BUTTON_DIRECT_                                 0x81
 //新建一条路径
-#define  _TAG_NEW_PATH_                                           0x16
+#define  _TAG_NEW_PATH_                                           0x82
 //删除上一条记录
-#define  _TAG_BUTTON_REMOVE_LAST_RECORD_ 0x17
+#define  _TAG_BUTTON_REMOVE_LAST_RECORD_ 0x83
 //保存当前记录
-#define  _TAG_BUTTON_SAVE_CURRENT_RECORD_ 0x18
+#define  _TAG_BUTTON_SAVE_CURRENT_RECORD_ 0x84
 //将所有记录写入到文件
-#define  _TAG_BUTTON_SAVE_TO_FILE_                      0x19
+#define  _TAG_BUTTON_SAVE_TO_FILE_                      0x85
 //曲线预览
-#define  _TAG_BUTTON_PREVIEW_                                 0x20
+#define  _TAG_BUTTON_PREVIEW_                                 0x86
 //组策略tag
-#define _TAG_RADIO_BUTTON_GROUP_                        0x21
+#define _TAG_RADIO_BUTTON_GROUP_                        0x87
 
-#define  _TAG_BUTTON_SAVE_PARSED_                      0x22
+#define  _TAG_BUTTON_SAVE_PARSED_                      0x88
 //选择鱼的配置
-#define _TAG_BUTTON_FISH_MAP_                               0x23
+#define _TAG_BUTTON_FISH_MAP_                               0x89
 //曲线类型的组标志
-#define _TAG_RADIO_BUTTON_GROUP_CURVE_       0x24
+#define _TAG_RADIO_BUTTON_GROUP_CURVE_       0x90
 //ScrollView
-#define _TAG_SCROLL_VIEW_                                         0x25
-#define _TAG_EDIT_BOX_0_                                             0x26
-#define _TAG_EDIT_BOX_1_											  0x27
-#define _TAG_EDIT_BOX_TOP_RADIUS_                       0x28
-#define _TAG_EDIT_BOX_BOTTOM_RADIUS_               0x29
-#define _TAG_EDIT_BOX_SPEED_                                    0x30
+#define _TAG_SCROLL_VIEW_                                         0x91
+#define _TAG_EDIT_BOX_0_                                             0x92
+#define _TAG_EDIT_BOX_1_											  0x93
+#define _TAG_EDIT_BOX_TOP_RADIUS_                       0x94
+#define _TAG_EDIT_BOX_BOTTOM_RADIUS_               0x95
+#define _TAG_EDIT_BOX_SPEED_                                    0x96
 //组按钮的起始tag
 #define _TAG_RADIO_BUTTON_										   3
 USING_NS_CC;
@@ -98,6 +98,7 @@ void  BesselUI::initBesselLayer()
         this->_speedEditBox->setText(str);
         
     });
+	node->setUIChangedCallback(CC_CALLBACK_3(BesselUI::onUIChangedCallback,this));
 	this->addChild(node);
     _curveNode = node;
 	//创建一个新的摄像机
@@ -146,6 +147,12 @@ void  BesselUI::initBesselLayer()
 	_touchListener->onTouchMoved = CC_CALLBACK_2(BesselUI::onTouchMoved,this);
 	_touchListener->onTouchEnded = CC_CALLBACK_2(BesselUI::onTouchEnded,this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(_touchListener, this);
+	//鼠标邮件事件
+	_mouseListener = EventListenerMouse::create();
+	_mouseListener->onMouseDown = CC_CALLBACK_1(BesselUI::onMouseClick,this);
+	_mouseListener->onMouseMove = CC_CALLBACK_1(BesselUI::onMouseMoved,this);
+	_mouseListener->onMouseUp = CC_CALLBACK_1(BesselUI::onMouseReleased,this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(_mouseListener, this);
 	//schedule update
 	schedule(CC_SCHEDULE_SELECTOR(BesselUI::updateCamera));
 	loadFishVisualStatic();
@@ -242,6 +249,13 @@ void  BesselUI::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* unused_event
 		_keyMask |= _KEY_W_MASK_;
 	else if (keyCode == EventKeyboard::KeyCode::KEY_S)
 		_keyMask |= _KEY_S_MASK_;
+	else if (keyCode == EventKeyboard::KeyCode::KEY_ALT)
+		_keyMask |= _KEY_ALT_MASK_;
+	//检测是否有Ctrl+Z键,且只有Ctrl+Z
+	if ((_keyMask & _KEY_CTRL_MASK_) && keyCode == EventKeyboard::KeyCode::KEY_Z  && !(_keyMask  - _KEY_CTRL_MASK_))
+	{
+		_curveNode->onCtrlZPressed();
+	}
 }
 void  BesselUI::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *unused_event)
 {
@@ -250,13 +264,55 @@ void  BesselUI::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *unused_even
 		_keyMask &= ~_KEY_CTRL_MASK_;//清除Ctrl按键
 		_curveNode->onCtrlKeyRelease();
 	}
-	else if(keyCode == EventKeyboard::KeyCode::KEY_W)
+	else if (keyCode == EventKeyboard::KeyCode::KEY_W)
 	{
 		_keyMask &= ~_KEY_W_MASK_;
 	}
 	else if (keyCode == EventKeyboard::KeyCode::KEY_S)
 	{
 		_keyMask &= ~_KEY_S_MASK_;
+	}
+	else if (keyCode == EventKeyboard::KeyCode::KEY_ALT)
+		_keyMask &= ~_KEY_ALT_MASK_;
+}
+/*
+  *鼠标事件
+  *
+ */
+void    BesselUI::onMouseClick(cocos2d::EventMouse *mouseEvent)
+{
+	_isResponseMouse = false;
+	//只会响应鼠标的右键
+	if (mouseEvent->getMouseButton() == MOUSE_BUTTON_RIGHT &&(_keyMask & _KEY_ALT_MASK_) )
+	{
+		_isResponseMouse = true;
+		//向下分发事件
+		Vec2 touchPoint = mouseEvent->getLocation();
+		auto &winSize = Director::getInstance()->getWinSize();
+		touchPoint.y = winSize.height - touchPoint.y;
+		_curveNode->onMouseClick(touchPoint - Vec2(winSize.width/2.0f,winSize.height/2.0f),_camera);
+	}
+}
+
+void BesselUI::onMouseMoved(cocos2d::EventMouse *mouseEvent)
+{
+	if (_isResponseMouse && (_keyMask & _KEY_ALT_MASK_))
+	{
+		Vec2 touchPoint = mouseEvent->getLocation();
+		auto &winSize = Director::getInstance()->getWinSize();
+		touchPoint.y = winSize.height - touchPoint.y;
+		_curveNode->onMouseMoved(touchPoint - Vec2(winSize.width/2.0f,winSize.height/2.0f),_camera);
+	}
+}
+
+void BesselUI::onMouseReleased(cocos2d::EventMouse *mouseEvent)
+{
+	if (_isResponseMouse && (_keyMask & _KEY_ALT_MASK_))
+	{
+		Vec2 touchPoint = mouseEvent->getLocation();
+		auto &winSize = Director::getInstance()->getWinSize();
+		touchPoint.y = winSize.height - touchPoint.y;
+		_curveNode->onMouseReleased(touchPoint - Vec2(winSize.width / 2.0f, winSize.height / 2.0f), _camera);
 	}
 }
 
@@ -431,7 +487,7 @@ void    BesselUI::loadSettingLayer()
 	_scrollView->setScrollBarPositionFromCorner(Vec2(4, 4));
 	_scrollView->setScrollBarColor(Color3B::YELLOW);
 	_scrollView->setPosition(cocos2d::Vec2((layerWidth-200)/2.0f,(secondaryHeight -92.0f)));
-	_scrollView->setInnerContainerSize(cocos2d::Size(48*14, 48.0f));
+	_scrollView->setInnerContainerSize(cocos2d::Size(48*(_static_bessel_node_max_count-_TAG_RADIO_BUTTON_), 48.0f));
 	_scrollView->setTag(_TAG_SCROLL_VIEW_);
 	_settingLayer->addChild(_scrollView,5);
 
@@ -443,19 +499,19 @@ void    BesselUI::loadSettingLayer()
 	const float buttonWidth = 48.0f;
 	const float buttonStartX = 24.0f + (layerWidth - 4.0f * buttonWidth)/2.0f;
 	const float buttonHeight = secondaryHeight - buttonWidth *1.5f;
-	for (int j = 0; j < 14; ++j)
+	for (int j = 0; j < _static_bessel_node_max_count- _TAG_RADIO_BUTTON_; ++j)
 	{
 		cocos2d::ui::RadioButton* radioButton = cocos2d::ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
 		radioButton->setPosition(Vec2( 16+buttonWidth * j,16));
-		radioButton->setTag(3+j);
+		radioButton->setTag(_TAG_RADIO_BUTTON_ +j);
 		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect_ControlPoint,this));
 		buttonGroup->addRadioButton(radioButton);
 		_scrollView->addChild(radioButton,4);
 		//label name,关于控制点数目的说明
-		sprintf(buffer,"%d",3+j);
+		sprintf(buffer,"%d", _TAG_RADIO_BUTTON_ +j);
 		Label    *labelName = Label::createWithSystemFont(buffer, "Arial", 14);
 		labelName->setPosition(Vec2(16+buttonWidth*j,10+buttonWidth/1.5f));
-		if(j+3 == 4)
+		if(j+ _TAG_RADIO_BUTTON_ == 4)
 			buttonGroup->setSelectedButton(radioButton);
 
 		_scrollView->addChild(labelName, 4);
@@ -668,14 +724,27 @@ void   BesselUI::onButtonClick_SpreadOrHide(cocos2d::Ref *pSender, cocos2d::ui::
 	}
 }
 
-void      BesselUI::onRadiusChangeCallback(SpiralValueType type, float radius)
+void BesselUI::onUIChangedCallback(CurveType curveType, int param1, int param2)
 {
-	char buffer[128];
-	sprintf(buffer,"%.1f",radius);
-	if (type == SpiralValueType::SpiralValueType_BottomRadius)
-		_bottomRadiusEditBox->setText(buffer);
-	else if (type == SpiralValueType::SpiralValueType_TopRadius)
-		_topRadiusEditBox->setText(buffer);
+	if (curveType == CurveType::CurveType_Bessel)
+	{
+		//检测当前滑动面板中RadioButton的显示情况
+		if (param2)
+		{
+			cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_scrollView->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
+			cocos2d::ui::RadioButton *radioButton = (cocos2d::ui::RadioButton*)_scrollView->getChildByTag(param2);
+			group->setSelectedButton(radioButton);
+		}
+	}
+	else if (curveType == CurveType::CurveType_Spiral)
+	{
+		char buffer[128];
+		sprintf(buffer, "%.1f", param2);
+		if (param1 == SpiralValueType::SpiralValueType_BottomRadius)
+			_bottomRadiusEditBox->setText(buffer);
+		else if (param1 == SpiralValueType::SpiralValueType_TopRadius)
+			_topRadiusEditBox->setText(buffer);
+	}
 }
 
 void      BesselUI::changeCurveNode(CurveType curveType)
@@ -707,8 +776,6 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 		else if (curveType == CurveType::CurveType_Spiral)
 		{	
 			SpiralNode *nbode=SpiralNode::createSpiralNode();
-			//设置通知回调函数
-			nbode->setRadiusChangeCallback(CC_CALLBACK_2(BesselUI::onRadiusChangeCallback,this));
 			newNode = nbode;
 			_scrollView->setVisible(false);
 			_topRadiusEditBox->setVisible(true);
@@ -719,6 +786,7 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 			_curveNode->removeFromParent();
 			_curveNode = newNode;
 			_curveNode->setCameraMask((short)CameraFlag::USER1);
+			_curveNode->setUIChangedCallback(CC_CALLBACK_3(BesselUI::onUIChangedCallback,this));
 			this->addChild(_curveNode);
 			//设置鱼的相关数据
 			if (_currentSelectFishIds.size())
@@ -1340,7 +1408,7 @@ void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
 		if (_curveNode->getType() == CurveType::CurveType_Bessel)//只有贝塞尔曲线才会支持
 		{
 			cocos2d::ui::RadioButtonGroup *group = (cocos2d::ui::RadioButtonGroup*)_scrollView->getChildByTag(_TAG_RADIO_BUTTON_GROUP_);
-			cocos2d::ui::RadioButton *radioButton = (cocos2d::ui::RadioButton*)group->getChildByTag(controlPointSet._pointsSet.size());
+			cocos2d::ui::RadioButton *radioButton = (cocos2d::ui::RadioButton*)_scrollView->getChildByTag(controlPointSet._pointsSet.size());
 			group->setSelectedButton(radioButton);
 		}
         //检测曲线类型处的单选按钮是否需要变化

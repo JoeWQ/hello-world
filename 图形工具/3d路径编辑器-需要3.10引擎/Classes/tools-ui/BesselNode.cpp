@@ -28,7 +28,7 @@ static const float  __static_bessel_coefficient[7][7] = {
 BesselNode::BesselNode():CurveNode(CurveType::CurveType_Bessel)
 {
 	_lineProgram = NULL;
-	_besselPointSize = 0;
+	//_besselPointSize = 0;
 	_positionLoc = 0;
 	_colorLoc = 0;
 	_lastSelectIndex = -1;
@@ -43,6 +43,7 @@ BesselNode::BesselNode():CurveNode(CurveType::CurveType_Bessel)
     //this->addChild(drawNode);
     
     showLines = true;
+	_backTraceindex = -1;
 }
 
 BesselNode::~BesselNode()
@@ -88,8 +89,9 @@ void BesselNode::setWeight(float weight)
   */
  void    BesselNode::initControlPoint(int pointCount)
  {
-	 if (_besselPointSize == pointCount)
+	 if (_besselContainer.size() == pointCount)
 		 return;
+	 _backTraceindex = -1;
 	 if (_currentSelectIndex >= 0)
 		 _besselContainer[_currentSelectIndex]->setColor(Color3B::WHITE);
 	 _currentSelectIndex = -1;
@@ -98,43 +100,39 @@ void BesselNode::setWeight(float weight)
 	 int  i = 0;
 	 //第一阶段，可视化判定
 	 const   float  stepX = winSize.width / (pointCount + 1);
-	 const   int _oneOrder = pointCount < _besselPointSize ? pointCount : _besselPointSize;
+	 const   int    count = _besselContainer.size();
+	 const   int    oneOrder = pointCount > count ? pointCount : count;
 	 //float    disturbFactor[8] = { 1.0f,1.5f,1.5f,1.5f ,1.5f,1.5f,1.5f};
 	 const   float  halfWidth = winSize.width / 2.0f;
 	 const   float  halfHeight = winSize.height / 2.0f;
 	 const   float  disturbFactor[2] = {1.0f,1.5f};
-	 for (i = 0; i < _besselContainer.size(); ++i)
+	 for (i = 0; i < oneOrder; ++i)
 	 {
-		 ControlPoint		*other = _besselContainer.at(i);
-		 other->setVisible(true);
-		 //等分屏幕空间
-		 other->setPosition3D(Vec3((i+1)*stepX-halfWidth, winSize.height*disturbFactor[i && i != pointCount-1] / 2.0f - halfHeight,0.0f));
+		 if (i >= count)
+		 {
+			 ControlPoint    *other = ControlPoint::createControlPoint(i);
+			 other->setZOrder(i);
+			 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
+			 other->drawAxis();
+			 //需要设置摄像机参数,否则不能被摄像机看到
+			 other->setCameraMask(2);
+			 this->addChild(other);
+			 _besselContainer.push_back(other);
+		 }
+		 else
+		 {
+			 ControlPoint		*other = _besselContainer.at(i);
+			 if (i >= pointCount)
+			 {
+				 other->removeFromParent();
+				 _besselContainer.erase(_besselContainer.begin() + pointCount);
+			 }
+			 else
+				 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
+		 }
 	 }
-	 //第二阶段,创建新的贝塞尔曲线节点
-     
-     //_controlPoints.clear();
-     
-	 for (i = _besselContainer.size(); i < pointCount; ++i)
-	 {
-		 ControlPoint    *other = ControlPoint::createControlPoint(i);
-		 other->setZOrder(i);
-		 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount-1] / 2.0f - halfHeight, 0.0f));
-		 other->drawAxis();
-		 //需要设置摄像机参数,否则不能被摄像机看到
-		 other->setCameraMask(2);
-		 this->addChild(other);
-		 _besselContainer.push_back(other);
-         //_controlPoints.push_back(other->getPosition3D());
-	 }
-	 //第三阶段,隐藏多余的节点
-	 for (i = pointCount; i < _besselContainer.size(); ++i)
-	 {
-		 _besselContainer.at(i)->setVisible(false);
-	 }
-	 _besselPointSize = pointCount;
-     
      _controlPoints.clear();
-     for(int i=0;i<_besselPointSize;++i)
+     for(int i=0;i<_besselContainer.size();++i)
      {
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();
@@ -151,39 +149,35 @@ void BesselNode::setWeight(float weight)
  void   BesselNode::initCurveNodeWithPoints(const std::vector<cocos2d::Vec3> &points)
  {
 	 //判断是否需要重新创建节点
-	 const int originSize = _besselContainer.size();
 	 //取消选中的控制点
 	 if (_currentSelectIndex >= 0)
 		 _besselContainer[_currentSelectIndex]->setColor(Color3B::WHITE);
 	 _currentSelectIndex = -1;
+	 _backTraceindex = -1;
 	 //
-	 if (points.size() > originSize)
+	 const int count = _besselContainer.size();
+	 const int maxCount = points.size() > count ? points.size() : count;
+	 for (int i = 0; i < maxCount; ++i)
 	 {
-		 for (int i = originSize; i < points.size(); ++i)
+		 if (i >= count)
 		 {
 			 ControlPoint    *other = ControlPoint::createControlPoint(i);
 			 other->drawAxis();
 			 other->setZOrder(i);
 			 other->setCameraMask(2);
+			 other->setPosition3D(points.at(i));
 			 this->addChild(other);
 			 _besselContainer.push_back(other);
 		 }
-	 }
-	 //设置相关的数据
-	 for (int i = 0; i < points.size(); ++i)
-	 {
-		 ControlPoint *other = _besselContainer.at(i);
-		 other->setVisible(true);
-		 other->setPosition3D(points.at(i));
-	 }
-	 _besselPointSize = points.size();
-	 //如果原来的数据已经大于point.size,则隐藏掉多余的节点
-	 for (int i = points.size(); i < originSize; ++i)
-	 {
-		 _besselContainer.at(i)->setVisible(false);
+		 else if (i >= points.size())
+		 {
+			 _besselContainer.erase(_besselContainer.begin() + points.size());
+		 }
+		 else
+			 _besselContainer[i]->setPosition3D(points.at(i));
 	 }
      _controlPoints.clear();
-     for(int i=0;i<_besselPointSize;++i)
+     for(int i=0;i<_besselContainer.size();++i)
      {
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();
@@ -202,20 +196,20 @@ void BesselNode::setWeight(float weight)
 	 const cocos2d::Size &winSize = Director::getInstance()->getWinSize();
 	 int  i = 0;
 	 //第一阶段，可视化判定
-	 const   float  stepX = winSize.width / (_besselPointSize+ 1);
+	 const   float  stepX = winSize.width / (_besselContainer.size()+ 1);
 	 //float    disturbFactor[8] = { 1.0f,1.5f,1.5f,1.5f ,1.5f,1.5f,1.5f};
 	 const   float  halfWidth = winSize.width / 2.0f;
 	 const   float  halfHeight = winSize.height / 2.0f;
 	 const   float  disturbFactor[2] = { 1.0f,1.5f };
-	 for (i = 0; i < _besselPointSize; ++i)
+	 for (i = 0; i < _besselContainer.size(); ++i)
 	 {
 		 ControlPoint		*other = _besselContainer.at(i);
 		 other->setVisible(true);
 		 //等分屏幕空间
-		 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != _besselPointSize - 1] / 2.0f - halfHeight, 0.0f));
+		 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != _besselContainer.size() - 1] / 2.0f - halfHeight, 0.0f));
 	 }
  }
- /////////////////////////////////////触屏回掉函数/////////////////////////////////////////
+ /////////////////////////////////////触屏回调函数/////////////////////////////////////////
  void    BesselNode::onTouchBegan(const Vec2 &touchPoint, cocos2d::Camera  *camera)
  {
 	 _lastOffsetVec2 = touchPoint;
@@ -225,7 +219,7 @@ void BesselNode::setWeight(float weight)
 	 const float  halfHeight = pointSize.height / 2.0f;
 	 _lastSelectIndex = -1;
 	 float        _lastZorder=0.0f;
-	 for (int j = 0; j < _besselPointSize; ++j)
+	 for (int j = 0; j < _besselContainer.size(); ++j)
 	 {
 		 ControlPoint    *other = _besselContainer.at(j);
 		 Vec3     nowPoint =_rotateMatrix * other->getPosition3D();
@@ -254,74 +248,12 @@ void BesselNode::setWeight(float weight)
 			 }
 		 }
 	 }
-     
-     cocos2d::Size winSize = Director::getInstance()->getWinSize();
-     Vec3 nearMin = camera->unprojectGL(Vec3(0, 0, -1));
-     Vec3 nearMax = camera->unprojectGL(Vec3(winSize.width, winSize.height, -1));
-     Vec3 farMin = camera->unprojectGL(Vec3(0, 0, 1));
-     Vec3 farMax = camera->unprojectGL(Vec3(winSize.width, winSize.height, 1));
-     Vec3 nearCenter = (nearMax - nearMin) / 2;
-     Vec3 farCenter = (farMax - farMin) / 2;
-     
-     Vec3 Pn(touchPoint.x, touchPoint.y, -1), Pf(touchPoint.x, touchPoint.y, 1);
-     Pn = camera->unprojectGL(Pn);
-     Pf = camera->unprojectGL(Pf);
-     
-     Pn.x = (Pn.x + nearCenter.x);
-     Pn.y = (Pn.y + nearCenter.y);
-     
-     Pf.x = (Pf.x + farCenter.x);
-     Pf.y = (Pf.y + farCenter.y);
-     
-     Vec3 center = (Pn + Pf) / 2;
-     Vec3 zAxis = Pf - Pn;
-     zAxis.normalize();
-     Vec3 xAxis = Vec3(1, 1, -(zAxis.x + zAxis.y) / zAxis.z);
-     xAxis.normalize();
-     Vec3 yAxis;
-     Vec3::cross(zAxis, xAxis, &yAxis);
-     yAxis.normalize();
-     
-     Vec3 extents = Vec3(10, 10, (Pf - Pn).length());
-     
-     OBB selector;
-     selector.set(center, xAxis, yAxis, zAxis, extents);
-     selector._extentX = selector._xAxis * selector._extents.x;
-     selector._extentY = selector._yAxis * selector._extents.y;
-     selector._extentZ = selector._zAxis * selector._extents.z;
-     
-     int result = -1;
-     float minZ = 10000000;
-     Vec3 corners[8];
-     
-     for (int i = 0; i < _besselPointSize; ++i)
-     {
-         ControlPoint *current = _besselContainer[i];
-         AABB aabb = current->_modelSprite->getAABB();
-         Mat4 transform = current->_modelSprite->getNodeToWorldTransform();
-         OBB obb = OBB(aabb);
-//         obb.transform(transform);
-         
-         if(obb.intersects(selector) && current->getPosition3D().z < minZ)
-         {
-             result = i;
-         }
-         
-         obb.getCorners(corners);
-//         drawNode->drawCube(corners, Color4F(1.0, 0.0, 0.0, 1.0));
-     }
-     
-//     drawNode->drawLine(Pf, Vec3(0, 0, 0), Color4F(1.0, 0.0, 0.0, 1.0));
-//     drawNode->drawLine(Pn, Vec3(0, 0, 0), Color4F(1.0, 0.0, 0.0, 1.0));
-//     drawNode->drawLine(Pn, Pf, Color4F(1.0, 0.0, 0.0, 1.0));
-     
-     _lastSelectIndex = result;
 	 //检测以前是否选中了
 	 if (_currentSelectIndex >= 0)
 	 {
 		 _besselContainer[_currentSelectIndex]->setColor(Color3B::WHITE);
 	 }
-	 _currentSelectIndex = result;
+	 _currentSelectIndex = _lastSelectIndex;
 	 if (_currentSelectIndex >= 0)
 	 {
 		 _besselContainer[_currentSelectIndex]->setCascadeColorEnabled(true);
@@ -350,13 +282,28 @@ void BesselNode::setWeight(float weight)
 		 const float zeye = winSize.height / (1.1566f*4.0f);
 		 if (afterPosition.z > zeye)
 			 afterPosition.z = zeye;
-		 other->setPosition3D(afterPosition);
+		 //额外的限制,两个控制点的距离不能小于4像素
+		 bool changed = true;
 		 _lastOffsetVec2 = touchPoint;
+		 for (int i = 0; i < _besselContainer.size(); ++i)
+		 {
+			 if (i != _lastSelectIndex)
+			 {
+				 Vec3 point = _besselContainer[i]->getPosition3D();
+				 if ((point - afterPosition).length() <= 24.0f)
+				 {
+					 changed = false;
+					 return;
+				 }
+			 }
+		}
+		 if(changed)//如果修改坐标的条件满足
+			other->setPosition3D(afterPosition);
 	 }
      
      _controlPoints.clear();
      
-     for(int i = 0; i < _besselPointSize; i++)
+     for(int i = 0; i < _besselContainer.size(); i++)
      {
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();
@@ -403,6 +350,153 @@ void BesselNode::setWeight(float weight)
 	 _lastSelectIndex = -1;
  }
 
+ void BesselNode::onCtrlZPressed()
+ {
+	 if (_backTraceindex != -1)
+	 {
+		 //将控制点插入控制队列中
+		 _besselContainer[_backTraceindex]->removeFromParent();
+		 _besselContainer.erase(_besselContainer.begin() + _backTraceindex);
+		 //修改某些控制点的次序
+		 for (int i = _backTraceindex; i < _besselContainer.size(); ++i)
+			 _besselContainer[i]->changeSequence(i);
+		 //更新控制点的数据
+		 _controlPoints.clear();
+		 for (int i = 0; i < _besselContainer.size(); ++i)
+		 {
+			 CubicBezierRoute::PointInfo info;
+			 info.position = _besselContainer[i]->getPosition3D();
+			 info.speedCoef = _besselContainer[i]->_speedCoef;
+
+			 _controlPoints.push_back(info);
+		 }
+
+		 _bezierRoute->clear();
+		 _bezierRoute->addPoints(_controlPoints);
+		 //通知上层UI,底层控制点发生了变化
+		 _onUIChangedCallback(_curveType, 0, _besselContainer.size());
+		 _backTraceindex = -1;
+		 //检测以前是否选中了
+		 if (_currentSelectIndex >= 0)
+		 {
+			 _besselContainer[_currentSelectIndex]->setColor(Color3B::WHITE);
+			 _currentSelectIndex = -1;
+		 }
+	 }
+ }
+
+ void BesselNode::onMouseClick(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 //如果已经到达了节点数目允许的上限,直接跳过
+	 if (_besselContainer.size() >= _static_bessel_node_max_count)
+	 {
+		 return;
+	 }
+	 //转换为NDC
+	 auto &winSize = Director::getInstance()->getWinSize();
+	 float ndcx = clickPoint.x / winSize.width * 2.0f;
+	 float ndcy = clickPoint.y / winSize.height * 2.0f;
+	 //还原摄像机空间中的点的坐标到世界空间
+	 Vec4  worldPosition;
+	 Mat4 mvpMatrix = camera->getViewProjectionMatrix();//注意,节点本身还有一个旋转矩阵
+	 Mat4 inverseMatrix = mvpMatrix.getInversed();
+	 inverseMatrix.transformVector(Vec4(ndcx, ndcy, 1.0f, 1.0f), &worldPosition);
+	 Vec3   worldPoint(worldPosition.x / worldPosition.w, worldPosition.y / worldPosition.w, worldPosition.z / worldPosition.w);
+	 //
+	 Vec3 cameraPosition = camera->getPosition3D();
+	 //求取射线
+	 Vec3 ray = (worldPoint - cameraPosition).getNormalized();
+	 //求点是否在直线上
+	 CubicBezierRoute *route =  (CubicBezierRoute *)_bezierRoute;
+	 const std::vector<cocos2d::Vec3> &cachedPositions = route->getCachedPosition();
+	 float  maxL = 0x7FFFFFFF;
+	 int     selectIndex = -1;
+	 for (int i = 0; i < cachedPositions.size(); ++i)
+	 {
+		 const Vec3 point = _rotateMatrix * cachedPositions[i];
+		 Vec3     unitVec = point - cameraPosition;
+		 float D = unitVec.length();
+		 Vec3    normal = unitVec.getNormalized();
+		 float     cosValue = Vec3::dot(normal, ray);
+		 //如果平行,则一定在直线上
+		 int        S = -1;
+		 float      L = 0x7FFFFFFF;
+	     float d = D * sqrtf(1.0 - cosValue * cosValue);
+	    //检测d的取值范围,如果很小,则可以认为在这条直线上
+		 if (d <= 4)//在4像素之内,可以认为是选中曲线上某一点了
+			S = i;
+		L = d;
+		 if (selectIndex != -1 )
+		 {
+			 if (L < maxL)
+			 {
+				 selectIndex = S;
+				 maxL = L;
+			 }
+		 }
+		 else if(S !=-1)
+			 selectIndex=S;
+	 }
+	 if (selectIndex != -1)
+	 {
+		 //检测以前是否选中了
+		 if (_currentSelectIndex >= 0)
+		 {
+			 _besselContainer[_currentSelectIndex]->setColor(Color3B::WHITE);
+			 _currentSelectIndex = -1;
+		 }
+		 const std::vector<int>   &cachedIndex = route->getCachedIndex();
+		 int     targetIndex = cachedIndex[selectIndex];
+		 //获取目标索引在曲线中的坐标
+		 const Vec3 targetPosition = cachedPositions[selectIndex];
+		 //检测目标点与某一个控制点是否距离太近
+		 for (int u = 0; u < _besselContainer.size(); ++u)
+		 {
+			 Vec3 position = _besselContainer[u]->getPosition3D();
+			 if ((position - targetPosition).length() <= 24)//方圆24像素之内不能再次插入点
+				 return;
+		 }
+		 //需要修改的目标控制点
+		 _backTraceindex = targetIndex+1;
+		 //修改控制点
+		 ControlPoint  *cpoint = ControlPoint::createControlPoint(_backTraceindex);
+		 cpoint->setPosition3D(targetPosition);
+		 cpoint->setCameraMask((short)CameraFlag::USER1);
+		 this->addChild(cpoint);
+		 //将控制点插入控制队列中
+		 _besselContainer.insert(_besselContainer.begin()+ _backTraceindex,cpoint);
+		 //修改某些控制点的次序
+		 for (int i = _backTraceindex; i < _besselContainer.size(); ++i)
+			 _besselContainer[i]->changeSequence(i);
+		 //更新控制点的数据
+		 _controlPoints.clear();
+		 for (int i = 0; i < _besselContainer.size(); ++i)
+		 {
+			 CubicBezierRoute::PointInfo info;
+			 info.position = _besselContainer[i]->getPosition3D();
+			 info.speedCoef = _besselContainer[i]->_speedCoef;
+
+			 _controlPoints.push_back(info);
+		 }
+
+		 _bezierRoute->clear();
+		 _bezierRoute->addPoints(_controlPoints);
+		 //通知上层UI,底层控制点发生了变化
+		 _onUIChangedCallback(_curveType, 0, _besselContainer.size());
+	 }
+ }
+
+ void BesselNode::onMouseMoved(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 //转换为NDC
+	 auto &winSize = Director::getInstance()->getWinSize();
+ }
+
+ void BesselNode::onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+
+ }
+
  ControlPoint *BesselNode::getSelectControlPoint()const
  {
 	 if (_currentSelectIndex >= 0)
@@ -447,7 +541,7 @@ void BesselNode::setWeight(float weight)
      
      if( false )//if(!showLines)
      {
-         for(int i = 0; i < _besselPointSize; i++)
+         for(int i = 0; i < _besselContainer.size(); i++)
          {
              _besselContainer[i]->setVisible(false);
          }
@@ -456,7 +550,7 @@ void BesselNode::setWeight(float weight)
      }
      else
      {
-         for(int i = 0; i < _besselPointSize; i++)
+         for(int i = 0; i < _besselContainer.size(); i++)
          {
              _besselContainer[i]->setVisible(true);
          }
@@ -550,7 +644,7 @@ void BesselNode::setWeight(float weight)
  void BesselNode::getControlPoint(ControlPointSet &besSet)
  {
 	 besSet.setType(_curveType);
-	 for (int j = 0; j < _besselPointSize; ++j)
+	 for (int j = 0; j < _besselContainer.size(); ++j)
 	 {
 		 ControlPoint	*other = _besselContainer.at(j);
          Vec3 position = other->getPosition3D();
@@ -602,7 +696,7 @@ void BesselNode::setWeight(float weight)
      showLines = false;
      
      _controlPoints.clear();
-     for(int i=0;i<_besselPointSize;++i)
+     for(int i=0;i<_besselContainer.size();++i)
      {
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();

@@ -14,9 +14,22 @@
 class RouteProtocol {
     
 public:
+    struct PointInfo
+    {
+        PointInfo():
+        position(cocos2d::Vec3(0, 0, 0)),
+        speedCoef(1.0),
+        segmentDistance(0)
+        {}
+        
+        cocos2d::Vec3 position;
+        float speedCoef;
+        int segmentDistance;
+    };
+    
     RouteProtocol() {}
     virtual ~RouteProtocol() {}
-    virtual void addPoints(std::vector<cocos2d::Vec3>& points) = 0;
+    virtual void addPoints(std::vector<PointInfo>& points) = 0;
     virtual cocos2d::Vec3 getDirection(float t) = 0;
     virtual cocos2d::Vec3 getLocation(float t) = 0;
     virtual cocos2d::Vec3 getCurrentDirection() = 0;
@@ -38,7 +51,7 @@ public:
     virtual ~BezierRoute() {};
     
 public:
-    virtual void addPoints(std::vector<cocos2d::Vec3>& points) override;
+    virtual void addPoints(std::vector<PointInfo>& points) override;
     virtual cocos2d::Vec3 getDirection(float t) override;
     virtual cocos2d::Vec3 getLocation(float t) override;
     virtual cocos2d::Vec3 getCurrentDirection() override;
@@ -58,7 +71,7 @@ protected:
     float _position;
     cocos2d::Vec3 _valueCache;
     cocos2d::Vec3 _tangentCache;
-    std::vector<cocos2d::Vec3> _points;
+    std::vector<PointInfo> _points;
     bool _ended;
     unsigned int _distance;
 };
@@ -86,7 +99,7 @@ public:
     void setWeight(float weight);
     void setPrecision(float precision);
     void relativeAdvance(int index, float& tCurrent, float& deltaDistance, cocos2d::Vec3& currentPosition, cocos2d::Vec3& currentDirection);
-    void retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& overflow, float distance);
+    void retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& speedCoef, float& overflow, float distance);
     
     std::vector<CaculatedParameter>& getParameters();
     
@@ -95,18 +108,21 @@ public:
     virtual void clear() override;
     virtual void calculateDistance() override;
     virtual float getDistance() override;
-    
-private:
+	const  std::vector<cocos2d::Vec3>   &getCachedPosition()const { return _cachedPosition; };
+	const std::vector<int>                        &getCachedIndex()const { return _controlPointIndex; };
+protected:
     virtual void buildParameters() override;
     virtual cocos2d::Vec3 caculateTangent(float position) override;
     virtual cocos2d::Vec3 caculateValue(float position) override;
     virtual float getPositionByDeltaDistance(float deltaDistance) override;
-    
+	
 private:
     std::vector<cocos2d::Vec3> _controlPoints;
     std::vector<CaculatedParameter> _caculatedParameters;
     std::vector<cocos2d::Vec3> _cachedPosition;
+	std::vector<int>                    _controlPointIndex;
     std::vector<cocos2d::Vec3> _cachedDirection;
+    std::vector<float> _cachedSpeedCoef;
     int _currentStartIndex;
     float _weight;
 };

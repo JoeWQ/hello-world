@@ -66,9 +66,34 @@ void   CurveNode::projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3 &
 	 CCASSERT(false, "Unsupported Method:CurveNode::onTouchEnded");
  }
 
+ void CurveNode::onMouseClick(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 printf("not realize function CurveNode::onMouseClick\n");
+ }
+
+ void CurveNode::onMouseMoved(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 printf("not realize function CurveNode::onMouseMoved\n");
+ }
+
+ void CurveNode::onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 printf("not realize function CurveNode::onMouseReleased\n");
+ }
+
  void    CurveNode::onCtrlKeyRelease()
  {
 	 CCASSERT(false, "Unsupported Method:CurveNode::onCtrlKeyRelease");
+ }
+
+ void CurveNode::onCtrlZPressed()
+ {
+
+ }
+
+ void CurveNode::setUIChangedCallback(std::function<void(CurveType type, int param, int param2)> callback)
+ {
+	 _onUIChangedCallback = callback;
  }
 
  void   CurveNode::previewCurive(std::function<void()> callback)
@@ -115,11 +140,12 @@ ControlPoint::~ControlPoint()
 void ControlPoint::initControlPoint(int index)
 {
 	Node::init();
-	_modelSprite = Sprite3D::create("Sprite3d/xiaolvyu/xiaolvyu.c3b");
-	_modelSprite->setForce2DQueue(true);
-	_modelSprite->setScale(0.15);
-	this->addChild(_modelSprite);
-	_modelSprite->setVisible(false);
+	_index=index;
+	//_modelSprite = Sprite3D::create("Sprite3d/xiaolvyu/xiaolvyu.c3b");
+	//_modelSprite->setForce2DQueue(true);
+	//_modelSprite->setScale(0.15);
+	//this->addChild(_modelSprite);
+	//_modelSprite->setVisible(false);
 
 	_iconSprite = Sprite::create("tools-ui/snow.png");
 	this->addChild(_iconSprite,9);
@@ -142,6 +168,20 @@ ControlPoint   *ControlPoint::createControlPoint(int index)
 	point->initControlPoint(index);
 	point->autorelease();
 	return point;
+}
+
+void ControlPoint::changeSequence(int index)
+{
+	if (_index != index)
+	{
+		_index = index;
+		int width = 14;
+		if (index > 9)
+			width = 28;
+		char str[256];
+		sprintf(str, "%d", index);
+		_sequence->setString(str);
+	}
 }
 
 void ControlPoint::drawAxis()

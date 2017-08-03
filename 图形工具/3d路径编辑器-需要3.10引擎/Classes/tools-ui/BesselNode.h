@@ -55,7 +55,7 @@ private:
 	//贝塞尔曲线点的集合
 	std::vector<ControlPoint *>  _besselContainer;
 	//实际的顶点的数目
-	int                                          _besselPointSize;
+	//int                                          _besselPointSize;
 	//OpenGL程序对象
 	cocos2d::GLProgram          *_lineProgram;
 	//曲线的颜色
@@ -80,6 +80,8 @@ private:
     std::vector<CubicBezierRoute::PointInfo> _controlPoints;
 	//预览模型的时候使用的模型的信息
 	FishVisual          _fishVisual;
+	//按下Ctrl+Z键的时候回退,只能回退一次
+	int                       _backTraceindex;
 private:
 	BesselNode();
 	void        initBesselNode();
@@ -107,14 +109,22 @@ public:
 	  *touchPoint:必须是以中心点为屏幕的中心的OpenGL世界坐标系下的点坐标
 	 */
 	virtual void   onTouchBegan(const   cocos2d::Vec2   &touchPoint,cocos2d::Camera  *camera);
-
 	virtual void   onTouchMoved(const   cocos2d::Vec2   &touchPoint,cocos2d::Camera *camera);
-
 	virtual void   onTouchEnded(const    cocos2d::Vec2   &touchPoint,cocos2d::Camera *camera);
+	/*
+	  *响应鼠标右键的函数,此为用来在曲线中间进行插值的点
+	 */
+	virtual void onMouseClick(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
+	virtual void onMouseMoved(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
+	virtual void onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
 	/*
 	  *当按下的Ctrl键释放的时候的回掉函数
 	 */
 	virtual void    onCtrlKeyRelease();
+	/*
+	  *当按下Ctrl+Z键的时候
+	*/
+	virtual void onCtrlZPressed();
 	/*
 	  *获取当前的贝塞尔控制点信息
 	  */

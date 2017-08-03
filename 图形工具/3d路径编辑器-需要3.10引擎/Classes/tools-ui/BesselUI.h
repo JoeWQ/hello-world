@@ -27,6 +27,8 @@
 #define _KEY_W_MASK_            0x02
 //如果S键被按下
 #define _KEY_S_MASK_			  0x04
+//Alt按键
+#define _KEY_ALT_MASK_         0x08
 /*
   *贝塞尔曲线生成工具类
   *3d场景采用的是以屏幕的中心点为(0,0,0)点,坐标系按照OpenGL世界坐标系来进行建模
@@ -110,6 +112,9 @@ private:
 	//
 	cocos2d::EventListenerKeyboard   *_keyboardListener;
 	cocos2d::EventListenerTouchOneByOne    *_touchListener;
+	//鼠标事件
+	cocos2d::EventListenerMouse        *_mouseListener;
+	bool                                                     _isResponseMouse;//是否响应鼠标右键
 	/*
 	  *路径与鱼的关联,使用路径id查找鱼,或者使用鱼的名字查找路径id
 	 */
@@ -152,6 +157,14 @@ public:
 	//键盘事件,主要检测Ctrl键是否按下了,以后随着工具的扩展,将会引入更多的按键处理
 	void                onKeyPressed(cocos2d::EventKeyboard::KeyCode    keyCode,cocos2d::Event    *unused_event);
 	void                onKeyReleased(cocos2d::EventKeyboard::KeyCode   keyCode,cocos2d::Event *unused_event);
+	//鼠标事件,此事件只会检测邮件
+	void					onMouseClick(cocos2d::EventMouse  *mouseEvent);
+	void                 onMouseMoved(cocos2d::EventMouse *mouseEvent);
+	void                 onMouseReleased(cocos2d::EventMouse *mouseEvent);
+	/*当底层的曲线对象中控制点发生了变化的时候产生的通知
+	//param参数的具体意义由曲线的类型决定,一般来说param1指代参数的类型,param2指代这个类型的值
+	*/
+	void                 onUIChangedCallback(CurveType curveType,int param1,int param2);
 	/*
 	  *控制3d场景的面板
 	 */
@@ -234,9 +247,5 @@ public:
 	  *切换当前曲线
 	 */
 	void       changeCurveNode(CurveType curveType);
-	/*
-	  *螺旋曲线半径变化通知
-	 */
-	void      onRadiusChangeCallback(SpiralValueType type,float radius);
 };
 #endif

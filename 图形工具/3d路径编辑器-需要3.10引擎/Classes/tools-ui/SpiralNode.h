@@ -51,8 +51,6 @@ private:
 	int                                               _lastSelectIndex;
 	//上次的坐标点
 	cocos2d::Vec2                           _lastOffsetPoint;
-	//回调函数
-	std::function<void(SpiralValueType type,float radius)>  _radiusChangeCallback;
 private:
 	void  initSpiralNode();
 	SpiralNode();
@@ -65,6 +63,10 @@ public:
 	virtual void onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
 	virtual void onTouchMoved(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
 	virtual void onTouchEnded(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
+	//响应鼠标右键的函数,此三个函数为哑函数
+	virtual void onMouseClick(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
+	virtual void onMouseMoved(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
+	virtual void onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
 	/*
 	*当按下的Ctrl键释放的时候的回掉函数
 	*/
@@ -100,12 +102,6 @@ public:
 	  *计算曲线的实际长度
 	 */
 	float             getSpiralLength()const;
-	/*
-	  *下半径发生变化的时候的回调函数
-	  *type表半径的类型,也可以表示其他的类型
-	  *目前0:下半径,1表示上半径
-	 */
-	void             setRadiusChangeCallback(std::function<void (SpiralValueType type,float radius)> callback);
 	/*
 	  *设置下半径
 	 */

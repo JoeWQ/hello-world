@@ -176,10 +176,10 @@ void  SpiralNode::updateVertexData(bool needUpdateVertex)
 	_axisNode->drawLine(bottomPoint, Vec3(point.x, point.y, point.z),Color4F(1.0f,1.0f,0.0f,1.0f));//底部半径
 	_axisNode->drawLine(topPoint, Vec3(point1.x, point1.y, point1.z),Color4F(0.3f,0.0f,1.0f,1.0f));//顶部半径
 	//半径发生了变化
-	if (_radiusChangeCallback)
+	if (_onUIChangedCallback)
 	{
-		_radiusChangeCallback(SpiralValueType::SpiralValueType_BottomRadius,_radius0);
-		_radiusChangeCallback(SpiralValueType::SpiralValueType_TopRadius,_radius1);
+		_onUIChangedCallback(_curveType, SpiralValueType::SpiralValueType_BottomRadius, _radius0);
+		_onUIChangedCallback(_curveType, SpiralValueType::SpiralValueType_TopRadius, _radius1);
 	}
 }
 
@@ -192,11 +192,6 @@ void SpiralNode::updateRotateMatrix(const cocos2d::Vec3 &rotateAxis)
 	const float dotValue = Vec3::dot(rotateAxis, Vec3(0.0f, 1.0f, 0.0f));
 	const float angle = acosf(dotValue);
 	Mat4::createRotation(axis, angle, &_curveRotateMatrix);
-}
-
-void SpiralNode::setRadiusChangeCallback(std::function<void(SpiralValueType type, float radius)> callback)
-{
-	_radiusChangeCallback = callback;
 }
 
 void SpiralNode::setBottomRadius(float radius)
@@ -457,6 +452,21 @@ void SpiralNode::onTouchMoved(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *
 void SpiralNode::onTouchEnded(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera)
 {
 	_lastSelectIndex = -1;
+}
+
+void SpiralNode::onMouseClick(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+{
+
+}
+
+void SpiralNode::onMouseMoved(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+{
+
+}
+
+void SpiralNode::onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+{
+
 }
 
 void SpiralNode::onCtrlKeyRelease()
