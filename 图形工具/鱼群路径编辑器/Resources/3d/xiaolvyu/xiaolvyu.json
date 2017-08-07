@@ -1,0 +1,120 @@
+{
+    "bindingConfig": [
+        {
+            "boneName": "Bone004",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone003",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone002",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone006(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone006",
+            "bindings": []
+        },
+        {
+            "boneName": "B_head",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            208.0,
+                            74.0,
+                            54.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            -87.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "boneName": "Bip01",
+            "bindings": []
+        }
+    ]
+}

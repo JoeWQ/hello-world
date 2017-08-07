@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<FishMap>
+	<Fish id="0" path="0,1" />
+	<Fish id="3" path="0,1" />
+	<Fish id="5" path="0,1" />
+	<Fish id="14" path="2" />
+	<Fish id="16" path="0,1,2" />
+</FishMap>

@@ -1,0 +1,348 @@
+{
+    "bindingConfig": [
+        {
+            "boneName": "Bone026(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone013",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone026",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone028",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone005",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            101.0,
+                            -48.0,
+                            53.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "boneName": "Bone006",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone019(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone007",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone011",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone017(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone023",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone023(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone015",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone017",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone021(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone021",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone019",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone009",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "boneName": "Bone003",
+            "bindings": []
+        },
+        {
+            "boneName": "Bip01",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            261.0,
+                            481.0,
+                            256.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            -5.0,
+                            0.0,
+                            84.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

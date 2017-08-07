@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<FishMap>
+	<Fish id="0" name="cheqiyu" scale="0.15" from="0" to="50"/>
+	<Fish id="1" name="bianfuyu" scale="0.15" from="0" to="60"/>
+	<Fish id="2" name="chuitousha" scale="1.75" from="10" to="42"/>
+	<Fish id="3" name="denglongyu" scale="0.15" from="0" to="48"/>
+	<Fish id="4" name="dianmanyu" scale="0.15" from="0" to="20"/>
+	<Fish id="5" name="hetun-1" scale="0.15" from="0" to="90"/>
+	<Fish id="6" name="haigui" scale="0.15" from="0" to="80"/>
+	<Fish id="7" name="hetun-2" scale="0.15" from="0" to="90"/>
+	<Fish id="8" name="jianyu" scale="0.15" from="0" to="11"/>
+	<Fish id="9" name="jinqiangyu" scale="0.15" from="0" to="64"/>
+	<Fish id="10" name="jinqiangyu_blue" scale="0.15" from="0" to="64"/>
+	<Fish id="11" name="jinqiangyu_gold" scale="0.15" from="0" to="64"/>
+	<Fish id="12" name="jinqiangyu_red" scale="0.15" from="0" to="64"/>
+	<Fish id="13" name="long" scale="5.0" from="0" to="48"/>
+	<Fish id="14" name="shayu" scale="0.15" from="0" to="32"/>
+	<Fish id="15" name="shayu_j2" scale="0.15" from="0" to="32"/>
+	<Fish id="16" name="shiziyu" scale="0.15" from="0" to="96"/>
+	<Fish id="17" name="tianshiyu" scale="0.15" from="0" to="16"/>
+	<Fish id="18" name="xiaochouyu" scale="0.15" from="0" to="54"/>
+	<Fish id="19" name="xiaohuangyu" scale="0.15" from="0" to="54"/>
+	<Fish id="20" name="xiaolvyu" scale="0.15" from="0" to="24"/>
+</FishMap>

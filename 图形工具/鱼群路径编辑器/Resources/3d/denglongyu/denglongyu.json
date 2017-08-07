@@ -1,0 +1,172 @@
+{
+    "bindingConfig": [
+        {
+            "boneName": "Bone006",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone007",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone016",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone022(mirrored)(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone022(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone023",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone014",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone004",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone011",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone013",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone009",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone012",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone008",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone022",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone024",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone021",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone027",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone021(mirrored)",
+            "bindings": []
+        },
+        {
+            "boneName": "Bone020",
+            "bindings": []
+        },
+        {
+            "boneName": "Bip01",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            353.0,
+                            241.0,
+                            311.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
