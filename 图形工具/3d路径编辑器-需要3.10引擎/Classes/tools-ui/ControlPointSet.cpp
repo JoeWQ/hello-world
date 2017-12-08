@@ -92,11 +92,11 @@ void ControlPointSet::setType(CurveType type)
 	auto   &winSize = cocos2d::Director::getInstance()->getWinSize();
 	const  float halfWidth = winSize.width / 2.0f;
 	const  float halfHeight = winSize.height / 2.0f;
-	const  float   zPositive = winSize.height / 1.1566f;
+	//const  float   zPositive = winSize.height / 1.1566f;
 	//Z轴的总长度
-	const float    nearPlane = 0.1f;
-	const float    farPlane = zPositive + winSize.height / 2.0f + 400;
-	const  float   zAxis = farPlane - nearPlane;
+	//const float    nearPlane = 0.1f;
+	//const float    farPlane = zPositive + winSize.height / 2.0f + 400;
+	//const  float   zAxis = farPlane - nearPlane;
 	//统一Z平面
 	output.clear();
 	output.reserve(60 + input->_realSize * 60);
@@ -109,20 +109,25 @@ void ControlPointSet::setType(CurveType type)
 		output.append("		<Position ");
 		//x,y,z缩放到屏幕空间
 		//x
-		sprintf(buffer, "x=\"%.8f\"", other.position.x / halfWidth*0.5f + 0.5f);
+		sprintf(buffer, "x=\"%.8f\"", other.position.x );
 		output.append(buffer);
 		//y
-		sprintf(buffer, " y=\"%.8f\"", other.position.y / halfHeight*0.5f + 0.5f);
+		sprintf(buffer, " y=\"%.8f\"", other.position.y );
 		output.append(buffer);
 		//注意，这里需要将Z坐标变换到左手坐标系中
-		sprintf(buffer, " z=\"%.8f\"", (-other.position.z + zPositive - nearPlane) / zAxis);
+		sprintf(buffer, " z=\"%.8f\"", other.position.z );
 		output.append(buffer);
         
         sprintf(buffer, " speedCoef=\"%.8f\"", other.speedCoef);
         output.append(buffer);
 
-		sprintf(buffer, " realZ=\"%.8f\" />\n", other.position.z);
+		sprintf(buffer," actionIndex=\"%d\"",other.aniIndex);
 		output.append(buffer);
+
+		sprintf(buffer," distance=\"%.1f\" />\n",other.aniDistance);
+		output.append(buffer);
+		//sprintf(buffer, " realZ=\"%.8f\" />\n", other.position.z);
+		//output.append(buffer);
 	}
 	output.append("	</Path>\n");
 }
@@ -146,7 +151,7 @@ void  _static_spiral_format(ControlPointSet *input, std::string &output)
 			point.position.x += winSize.width *0.5f;
 			point.position.y += winSize.height *0.5f;
 		}
-		sprintf(buffer,"		<Position x=\"%.8f\" y=\"%.8f\" z= \"%.8f\" />\n", point.position.x, point.position.y, point.position.z);
+		sprintf(buffer,"		<Position x=\"%.8f\" y=\"%.8f\" z= \"%.8f\"/>\n", point.position.x, point.position.y, point.position.z);
 		output.append(buffer);
 	}
 	output.append("	</Path>\n");

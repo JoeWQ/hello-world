@@ -83,7 +83,7 @@ void DrawNode3D::ensureCapacity(int count)
 
 bool DrawNode3D::init()
 {
-    _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+    _blendFunc = BlendFunc::ALPHA_NON_PREMULTIPLIED;
 
     setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_COLOR));
     

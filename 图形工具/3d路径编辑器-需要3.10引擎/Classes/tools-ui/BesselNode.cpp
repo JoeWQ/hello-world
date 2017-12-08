@@ -36,7 +36,7 @@ BesselNode::BesselNode():CurveNode(CurveType::CurveType_Bessel)
     _previewSpeed = 100;
     _weight = 0.5;
     _bezierRoute = new CubicBezierRoute();
-    _selectedCallback = [](){};
+    _selectedCallback = nullptr;
     ((CubicBezierRoute*)_bezierRoute)->setWeight(_weight);
     
     //drawNode = DrawNode3D::create();
@@ -76,7 +76,12 @@ void BesselNode::setWeight(float weight)
 	 /*
 	   *GLProgram
 	  */
-	 _lineProgram = GLProgram::createWithByteArrays(_static_bessel_Vertex_Shader, _static_bessel_Frag_Shader);
+	 _lineProgram = GLProgramCache::getInstance()->getGLProgram(_SHADER_TYPE_COMMON_);
+	 if (!_lineProgram)
+	 {
+		 _lineProgram = GLProgram::createWithByteArrays(_static_bessel_Vertex_Shader, _static_bessel_Frag_Shader);
+		 GLProgramCache::getInstance()->addGLProgram(_lineProgram, _SHADER_TYPE_COMMON_);
+	 }
 	 _lineProgram->retain();
 
 	 _positionLoc = _lineProgram->getAttribLocation("a_position");
@@ -114,6 +119,7 @@ void BesselNode::setWeight(float weight)
 			 other->setZOrder(i);
 			 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
 			 other->drawAxis();
+             other->setLabelPosition(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
 			 //需要设置摄像机参数,否则不能被摄像机看到
 			 other->setCameraMask(2);
 			 this->addChild(other);
@@ -121,14 +127,18 @@ void BesselNode::setWeight(float weight)
 		 }
 		 else
 		 {
-			 ControlPoint		*other = _besselContainer.at(i);
 			 if (i >= pointCount)
 			 {
+				 ControlPoint		*other = _besselContainer.at(pointCount);
 				 other->removeFromParent();
 				 _besselContainer.erase(_besselContainer.begin() + pointCount);
 			 }
 			 else
+			 {
+				 ControlPoint		*other = _besselContainer.at(i);
 				 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
+                 other->setLabelPosition(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != pointCount - 1] / 2.0f - halfHeight, 0.0f));
+			 }
 		 }
 	 }
      _controlPoints.clear();
@@ -146,7 +156,7 @@ void BesselNode::setWeight(float weight)
 //     _bezierRoute->calculateDistance();
  }
 
- void   BesselNode::initCurveNodeWithPoints(const std::vector<cocos2d::Vec3> &points)
+ void   BesselNode::initCurveNodeWithPoints(const ControlPointSet  &controlPointSet)
  {
 	 //判断是否需要重新创建节点
 	 //取消选中的控制点
@@ -155,6 +165,7 @@ void BesselNode::setWeight(float weight)
 	 _currentSelectIndex = -1;
 	 _backTraceindex = -1;
 	 //
+	 const std::vector<RouteProtocol::PointInfo> &points = controlPointSet._pointsSet;
 	 const int count = _besselContainer.size();
 	 const int maxCount = points.size() > count ? points.size() : count;
 	 for (int i = 0; i < maxCount; ++i)
@@ -165,7 +176,10 @@ void BesselNode::setWeight(float weight)
 			 other->drawAxis();
 			 other->setZOrder(i);
 			 other->setCameraMask(2);
-			 other->setPosition3D(points.at(i));
+			 other->setPosition3D(points.at(i).position);
+             other->setLabelPosition(points.at(i).position);
+			 other->setActionIndex(points.at(i).aniIndex);
+			 other->setActionDistance(points.at(i).aniDistance);
 			 this->addChild(other);
 			 _besselContainer.push_back(other);
 		 }
@@ -174,7 +188,11 @@ void BesselNode::setWeight(float weight)
 			 _besselContainer.erase(_besselContainer.begin() + points.size());
 		 }
 		 else
-			 _besselContainer[i]->setPosition3D(points.at(i));
+		 {
+			 _besselContainer[i]->setPosition3D(points.at(i).position);
+			 _besselContainer[i]->setActionIndex(points.at(i).aniIndex);
+			 _besselContainer[i]->setActionDistance(points.at(i).aniDistance);
+		 }
 	 }
      _controlPoints.clear();
      for(int i=0;i<_besselContainer.size();++i)
@@ -182,7 +200,9 @@ void BesselNode::setWeight(float weight)
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();
          info.speedCoef = _besselContainer[i]->_speedCoef;
-         
+		 info.aniIndex = _besselContainer[i]->_actionIndex;
+		 info.aniDistance = _besselContainer[i]->_distance;
+		 //
          _controlPoints.push_back(info);
      }
      _bezierRoute->clear();
@@ -207,10 +227,28 @@ void BesselNode::setWeight(float weight)
 		 other->setVisible(true);
 		 //等分屏幕空间
 		 other->setPosition3D(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != _besselContainer.size() - 1] / 2.0f - halfHeight, 0.0f));
+         other->setLabelPosition(Vec3((i + 1)*stepX - halfWidth, winSize.height*disturbFactor[i && i != _besselContainer.size() - 1] / 2.0f - halfHeight, 0.0f));
+		 other->setColor(Color3B::WHITE);
 	 }
+	 //恢复被选中的点的颜色
+	 _currentSelectIndex = -1;
+	 //重新生成曲线
+	 _controlPoints.clear();
+	 for (int i = 0; i < _besselContainer.size(); ++i)
+	 {
+		 CubicBezierRoute::PointInfo info;
+		 info.position = _besselContainer[i]->getPosition3D();
+		 info.speedCoef = _besselContainer[i]->_speedCoef;
+		 info.aniIndex = _besselContainer[i]->_actionIndex;
+		 info.aniDistance = _besselContainer[i]->_distance;
+		 //
+		 _controlPoints.push_back(info);
+	 }
+	 _bezierRoute->clear();
+	 _bezierRoute->addPoints(_controlPoints);
  }
  /////////////////////////////////////触屏回调函数/////////////////////////////////////////
- void    BesselNode::onTouchBegan(const Vec2 &touchPoint, cocos2d::Camera  *camera)
+ bool    BesselNode::onTouchBegan(const Vec2 &touchPoint, cocos2d::Camera  *camera)
  {
 	 _lastOffsetVec2 = touchPoint;
 	 //检测是否某一个贝塞尔曲线控制点被选中了
@@ -258,8 +296,9 @@ void BesselNode::setWeight(float weight)
 	 {
 		 _besselContainer[_currentSelectIndex]->setCascadeColorEnabled(true);
 		 _besselContainer[_currentSelectIndex]->setColor(Color3B::RED);
-         _selectedCallback();
+         _selectedCallback(_currentSelectIndex);
 	 }
+	 return true;
  }
 
  void    BesselNode::onTouchMoved(const Vec2  &touchPoint, cocos2d::Camera  *camera)
@@ -296,9 +335,12 @@ void BesselNode::setWeight(float weight)
 					 return;
 				 }
 			 }
-		}
+		 }
 		 if(changed)//如果修改坐标的条件满足
-			other->setPosition3D(afterPosition);
+         {
+             other->setPosition3D(afterPosition);
+             other->setLabelPosition(afterPosition);
+         }
 	 }
      
      _controlPoints.clear();
@@ -398,7 +440,7 @@ void BesselNode::setWeight(float weight)
 	 float ndcy = clickPoint.y / winSize.height * 2.0f;
 	 //还原摄像机空间中的点的坐标到世界空间
 	 Vec4  worldPosition;
-	 Mat4 mvpMatrix = camera->getViewProjectionMatrix();//注意,节点本身还有一个旋转矩阵
+	 const Mat4 &mvpMatrix = camera->getViewProjectionMatrix();//注意,节点本身还有一个旋转矩阵
 	 Mat4 inverseMatrix = mvpMatrix.getInversed();
 	 inverseMatrix.transformVector(Vec4(ndcx, ndcy, 1.0f, 1.0f), &worldPosition);
 	 Vec3   worldPoint(worldPosition.x / worldPosition.w, worldPosition.y / worldPosition.w, worldPosition.z / worldPosition.w);
@@ -461,6 +503,7 @@ void BesselNode::setWeight(float weight)
 		 //修改控制点
 		 ControlPoint  *cpoint = ControlPoint::createControlPoint(_backTraceindex);
 		 cpoint->setPosition3D(targetPosition);
+         cpoint->setLabelPosition(targetPosition);
 		 cpoint->setCameraMask((short)CameraFlag::USER1);
 		 this->addChild(cpoint);
 		 //将控制点插入控制队列中
@@ -495,6 +538,21 @@ void BesselNode::setWeight(float weight)
  void BesselNode::onMouseReleased(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
  {
 
+ }
+
+ void BesselNode::onMouseClickCtrl(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+	 //检测是否有模型正在进行动作
+	 Node *previewNode = this->getChildByName("PreviewModel");
+	 if (previewNode)
+	 {
+		 if (!_isPauseModel)
+			 _director->getActionManager()->pauseTarget(previewNode);
+		 else
+			 _director->getActionManager()->resumeTarget(previewNode);
+		 _isPauseModel = !_isPauseModel;
+		 return;
+	 }
  }
 
  ControlPoint *BesselNode::getSelectControlPoint()const
@@ -538,7 +596,7 @@ void BesselNode::setWeight(float weight)
 //		 }
 //		 linePoints[j] = linePoint;
 //	 }
-     
+#ifdef __USE_TEMP_DATA_
      if( false )//if(!showLines)
      {
          for(int i = 0; i < _besselContainer.size(); i++)
@@ -605,16 +663,17 @@ void BesselNode::setWeight(float weight)
              t1 = t = t > 1.0 ? 1.0 : t ;
              
              Vec3 from = t0 * t0 * t0 * a + t0 * t0 * b + t0 * c + d;
-             Vec3 to = t1 * t1 * t1 * a + t1 * t1 * b + t1 * c + d;
+             //Vec3 to = t1 * t1 * t1 * a + t1 * t1 * b + t1 * c + d;
              
 //             drawLine(from, to, color);
              vertices.push_back(from);
-             vertices.push_back(to);
+             //vertices.push_back(to);
              
          }while(t != 1);
-         
      }
-     
+#endif
+	 CubicBezierRoute *cubic = (CubicBezierRoute*)_bezierRoute;
+	 const std::vector<Vec3> &position = cubic->getCachedPosition();
 	 //将曲线画出来
 	 int  _defaultVertex;
 	 glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &_defaultVertex);
@@ -626,12 +685,12 @@ void BesselNode::setWeight(float weight)
 	 _lineProgram->setUniformsForBuiltins(parentTransform);
 
 	 glEnableVertexAttribArray(_positionLoc);
-	 glVertexAttribPointer(_positionLoc, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
+	 glVertexAttribPointer(_positionLoc, 3, GL_FLOAT, GL_FALSE, 0, position.data());
 
 	 glUniform4fv(_colorLoc, 1, &_lineColor.x);
 	 glLineWidth(1.0f);
 
-	 glDrawArrays(GL_LINES, 0, vertices.size());
+	 glDrawArrays(GL_LINE_STRIP, 0, position.size());
 
 	 if (_defaultVertex != 0)
 		 glBindBuffer(GL_ARRAY_BUFFER, _defaultVertex);
@@ -644,12 +703,17 @@ void BesselNode::setWeight(float weight)
  void BesselNode::getControlPoint(ControlPointSet &besSet)
  {
 	 besSet.setType(_curveType);
+	 CubicBezierRoute *route = (CubicBezierRoute*)_bezierRoute;
+	 auto &pointToDistanceVec = route->getPointToDistance();
 	 for (int j = 0; j < _besselContainer.size(); ++j)
 	 {
 		 ControlPoint	*other = _besselContainer.at(j);
          Vec3 position = other->getPosition3D();
 		 besSet.addNewPoint(position, other->_speedCoef);
          besSet.weight = _weight;
+		 //对于ActionIndex不为0的数据,计算其详细的distance数值
+		 besSet._pointsSet[j].aniIndex = other->_actionIndex;
+		 besSet._pointsSet[j].aniDistance = pointToDistanceVec[j];
 	 }
  }
 
@@ -659,8 +723,9 @@ void BesselNode::setWeight(float weight)
      if(previewModel)
      {
          previewModel->removeFromParent();
+		 this->removeChildByName("PreviewModelLabel");
      }
-     
+      _isPauseModel = false;
 //	 //计算相关的时间
 //	 std::vector<cocos2d::Vec3>  pointSequence;
 //	 pointSequence.reserve(_besselPointSize);
@@ -685,10 +750,32 @@ void BesselNode::setWeight(float weight)
 	 tempModel->setScale(_fishVisual.scale);
 	 //UIAnimation3D，播放游动动作
 	 cocos2d::Animation3D  *animation = cocos2d::Animation3D::create(filename);
-	  float startTime = _fishVisual.from;
-	  float endTime = _fishVisual.to ;
-	 cocos2d::Animate3D      *aniAction = cocos2d::Animate3D::create(animation, startTime/30.0f, (endTime - startTime)/30.0f);
-	 tempModel->runAction(cocos2d::RepeatForever::create(aniAction));
+	 //选取第一个控制点上的动画
+	 cocos2d::Animate3D      *aniAction = nullptr;
+	 Action *headAction = nullptr;
+	 if (_controlPoints[1].aniIndex != 0)
+	 {
+		 auto &fishAniMap =_fishVisual.fishAniVec[_controlPoints[1].aniIndex];
+		 aniAction = Animate3D::create(animation,fishAniMap.startFrame/30.0f,(fishAniMap.endFrame-fishAniMap.startFrame)/30.0f);
+		 auto &firstAniMap = _fishVisual.fishAniVec[0];
+		 headAction = Sequence::create(aniAction,
+			 CallFunc::create([this,tempModel,filename,firstAniMap,animation] {
+				Action *action = RepeatForever::create(Animate3D::create(animation, firstAniMap.startFrame / 30.0f, (firstAniMap.endFrame - firstAniMap.startFrame) / 30.0f));
+				action->setTag(0x87);
+				tempModel->runAction(action);
+		 }),
+			 nullptr);
+	 }
+	 else
+	 {
+		 auto &fishAniMap = _fishVisual.fishAniVec[0];
+		 aniAction = cocos2d::Animate3D::create(animation, fishAniMap.startFrame / 30.0f, (fishAniMap.endFrame - fishAniMap.startFrame) / 30.0f);
+		 headAction = RepeatForever::create(aniAction);
+	 }
+	 //Action *aniForever = cocos2d::RepeatForever::create(aniAction);
+	 //设置上标志,方便在贝塞尔曲线动作中停止这个动画动作
+	 headAction->setTag(0x87);
+	 tempModel->runAction(headAction);
      tempModel->setName("PreviewModel");
 
 	 this->addChild(tempModel,16);
@@ -701,68 +788,107 @@ void BesselNode::setWeight(float weight)
          CubicBezierRoute::PointInfo info;
          info.position = _besselContainer[i]->getPosition3D();
          info.speedCoef = _besselContainer[i]->_speedCoef;
+		 info.aniIndex = _besselContainer[i]->_actionIndex;
+		 info.aniDistance = _besselContainer[i]->_distance;
          
          _controlPoints.push_back(info);
      }
      
      _bezierRoute->clear();
      _bezierRoute->addPoints(_controlPoints);
+	 //
+	 //收集动画索引
+	 std::vector<int> actionIndexVec;
+	 for (auto it = _controlPoints.begin(); it != _controlPoints.end(); ++it)
+	 {
+		 actionIndexVec.push_back(it->aniIndex);
+	 }
+	 //
      ((CubicBezierRoute*)_bezierRoute)->setWeight(_weight);
 	 BesselNAction *action = BesselNAction::createWithBezierRoute(_previewSpeed, _bezierRoute);
      tempModel->runAction(action);
-     action->retain();
-     
-     this->getScheduler()->unschedule("checkEnd", this);
-     
-     this->getScheduler()->schedule([this, action, tempModel, callback](float dt){
-         
-         if(action->isDone())
-         {
-             action->release();
-             tempModel->removeFromParent();
-             callback();
-             this->getScheduler()->unschedule("checkEnd", this);
-         }
-         
-         
-     }, this, 0, CC_REPEAT_FOREVER, 0, false, "checkEnd");
-//     tempModel->runAction(Sequence::create(action,  CallFuncN::create([=](cocos2d::Node *sender){
-//         showLines = true;
-//		 sender->removeFromParentAndCleanup(true);
-//		 if(callback)
-//			callback();
-//     }), nullptr));
-     
+	 action->setAnimationFile(filename);
+	 action->setActionIndex(_controlPoints[1].aniIndex);
+	 action->setActionIndexVec(actionIndexVec);
+	 action->setFishVisual(_fishVisual);
+     //action->retain();
+     //
+     //this->getScheduler()->unschedule("checkEnd", this);
+     //
+     //this->getScheduler()->schedule([this, action, tempModel, callback](float dt){
+     //    
+     //    if(action->isDone())
+     //    {
+     //        action->release();
+     //        tempModel->removeFromParent();
+     //        callback();
+     //        this->getScheduler()->unschedule("checkEnd", this);
+     //    }
+     //    
+     //    
+     //}, this, 0, CC_REPEAT_FOREVER, 0, false, "checkEnd");
+	 Label *label = Label::createWithSystemFont("0", "Arial",24);
+	 this->addChild(label,18);
+	 action->setCallback([label](const Vec3 &position) {
+		 label->setPosition3D(Vec3(position.x,position.y-40,position.z));
+		 char buffer[128];
+		 sprintf(buffer,"[%d,%d,%d]",(int)position.x,(int)position.y,(int)position.z);
+		 label->setString(buffer);
+	 });
+	 label->setCameraMask((short)CameraFlag::USER1);
+	 label->setName("PreviewModelLabel");
+	 tempModel->runAction(Sequence::create(action, CallFuncN::create([=](cocos2d::Node *sender) {
+		 showLines = true;
+		 sender->removeFromParentAndCleanup(true);
+		 this->removeChildByName("PreviewModelLabel");
+		 if (callback)
+			 callback();
+		 _isPauseModel = false;
+	 }), nullptr));
  }
  /////////////////////////////////Action//////////////////////////////////////////////////////////
- void   BesselNAction::initWithControlPoints(float d, std::vector<cocos2d::Vec3> &pointSequence)
+ BesselNAction::BesselNAction():
+	 _controlPointIndex(1)
+	 , _actionIndex(0)
+ {
+
+ }
+ BesselNAction::~BesselNAction()
+ {
+	 _route->release();
+ }
+ void   BesselNAction::initWithControlPoints(float d, std::vector<int> &actionIndexVec)
  {
 	 cocos2d::ActionInterval::initWithDuration(d);
-	 _besselPoints = pointSequence;
+	 _actionIndexVec = actionIndexVec;
  }
 
 void   BesselNAction::initWithBezierRoute(float speed, BezierRoute* route)
 {
     float duration = route->getDistance();
     
-    cocos2d::ActionInterval::initWithDuration(duration);
+    cocos2d::ActionInterval::initWithDuration(duration/ speed);
     
     _speed = speed;
     _route = route;
+	_distance = duration;
+	route->retain();
 }
 
  void  BesselNAction::startWithTarget(cocos2d::Node *target)
  {
 	 cocos2d::ActionInterval::startWithTarget(target);
      m_fLastInterp = 0;
+	 _pastDistance = 0;
      float overflow = 0;
-    ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, 0);
+	 
+    ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, _controlPointIndex, 0);
  }
 
- BesselNAction *BesselNAction::createWithDuration(float duration, std::vector<cocos2d::Vec3> &pointSequence, BezierRoute*  route)
+ BesselNAction *BesselNAction::createWithDuration(float duration, std::vector<int> &actionIndexVec, BezierRoute*  route)
  {
 	 BesselNAction *nAction = new BesselNAction();
-	 nAction->initWithControlPoints(duration, pointSequence);
+	 nAction->initWithControlPoints(duration, actionIndexVec);
 	 nAction->autorelease();
      nAction->_route = route;
 	 return nAction;
@@ -782,16 +908,17 @@ void   BesselNAction::step(float fdt)
     float overflow = 0;
     State currentState;
     State nextState;
-    
+	int pointIndex = _controlPointIndex;
+
     while (fdt > 0.016)
     {
         float currentSpeed = _speed * m_pBaseInterpState.m_fSpeedCoef;
         
-        _elapsed += 0.016 * currentSpeed;
+		_pastDistance += 0.016 * currentSpeed;
         
-        if (_elapsed < _duration)
+        if (_pastDistance < _distance)
         {
-            ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, _elapsed);
+            ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, pointIndex,_pastDistance);
             
             fdt = fdt - 0.016;
         }
@@ -805,22 +932,22 @@ void   BesselNAction::step(float fdt)
 //	 //绕X轴的旋转分量,Y-Z平面向量与Z轴的夹角b
         else
         {
-            ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, _duration - 1);
+            ((CubicBezierRoute*)_route)->retrieveState(m_pBaseInterpState.m_Position, m_pBaseInterpState.m_Direction, m_pBaseInterpState.m_fSpeedCoef, overflow, pointIndex,_distance - 1);
             
             fdt = 0;
         }
     }
     
-    if (_elapsed > _duration)
+    if (_pastDistance > _distance)
     {
-        ((CubicBezierRoute*)_route)->retrieveState(currentState.m_Position, currentState.m_Direction, currentState.m_fSpeedCoef, overflow, _duration - 1);
+        ((CubicBezierRoute*)_route)->retrieveState(currentState.m_Position, currentState.m_Direction, currentState.m_fSpeedCoef, overflow, pointIndex,_distance - 1);
     }
     else
     {
         float currentSpeed = _speed * m_pBaseInterpState.m_fSpeedCoef;
-        float futureTime = _elapsed + 0.016 * currentSpeed;
-        futureTime = futureTime < (_duration - 1) ? futureTime : (_duration - 1);
-        ((CubicBezierRoute*)_route)->retrieveState(nextState.m_Position, nextState.m_Direction, nextState.m_fSpeedCoef, overflow, futureTime);
+        float futureTime = _pastDistance + 0.016 * currentSpeed;
+        futureTime = futureTime < (_distance - 1) ? futureTime : (_distance - 1);
+        ((CubicBezierRoute*)_route)->retrieveState(nextState.m_Position, nextState.m_Direction, nextState.m_fSpeedCoef, overflow, pointIndex,futureTime);
         
         m_fLastInterp = fdt / 0.016;
         
@@ -840,6 +967,40 @@ void   BesselNAction::step(float fdt)
     cocos2d:: Quaternion quatZ = cocos2d::Quaternion(Vec3(0, 0, 1), rotZ);
     
     _target->setRotationQuat(quatY * quatZ);
+	if (_callback)
+		_callback(currentState.m_Position);
+	//检测是否需要切换动画
+	if (pointIndex != _controlPointIndex &&_actionIndexVec[pointIndex] != _actionIndex )//跨过了不同的控制点,且动画索引不同
+	{
+		_controlPointIndex = pointIndex;
+		_actionIndex = _actionIndexVec[pointIndex];
+		//切换不同的动画
+		if (_actionIndex != 0)
+		{
+			_target->stopActionByTag(0x87);
+			_target->stopActionByTag(0x87);
+			Animation3D *animation = Animation3D::create(_aniFile);
+			auto &fishAniMap = _fishVisualMap.fishAniVec[_actionIndex];
+			auto &firstAniMap = _fishVisualMap.fishAniVec[0];
+			/*
+			 *注意不能使用Sequence内嵌RepeateForever动作,实验证明这种写法是无效的
+			 */
+			Animate3D *animate = Animate3D::create(animation, fishAniMap.startFrame / 30.0f, (fishAniMap.endFrame - fishAniMap.startFrame) / 30.0f);
+			Action *headAction = Sequence::create(animate,
+				CallFunc::create([this, firstAniMap, animation] {
+					Action *action = RepeatForever::create(Animate3D::create(animation, firstAniMap.startFrame / 30.0f, (firstAniMap.endFrame - firstAniMap.startFrame) / 30.0f));
+					action->setTag(0x87);
+					_target->runAction(action);
+			}),nullptr);
+			headAction->setTag(0x87);
+			_target->runAction(headAction);
+		}
+	}
+}
+
+void BesselNAction::update(float time)
+{
+
 }
 
 void BesselNode::onEnter()

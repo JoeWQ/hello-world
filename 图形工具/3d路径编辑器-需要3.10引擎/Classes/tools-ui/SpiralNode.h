@@ -33,6 +33,8 @@ private:
 	cocos2d::Mat4                      _modelMatrix;
 	//关于螺旋线的顶点数据,需要动态计算
 	float                                         *_vertexData;
+	//是否是顺时针,正常情况下,是绕Y轴逆时针旋转
+	float                                           _clockwise;
 	//顶点的数目
 	int                                              _vertexCount;
 	/*
@@ -60,7 +62,7 @@ public:
 	//设置曲线的控制点的数目,此函数为一个哑函数
 	virtual void initControlPoint(int pointCount);
 	//触屏回调,此回调函数都是在Control键被按下的时候调用
-	virtual void onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
+	virtual bool onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
 	virtual void onTouchMoved(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
 	virtual void onTouchEnded(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera);
 	//响应鼠标右键的函数,此三个函数为哑函数
@@ -77,7 +79,7 @@ public:
 	/*
 	*使用给定的一系列控制点来初始化节点数据,必要的时候需要重新创建节点
 	*/
-	virtual void   initCurveNodeWithPoints(const std::vector<cocos2d::Vec3>  &points);
+	virtual void   initCurveNodeWithPoints(const ControlPointSet  &controlPointSet);
 	/*
 	*恢复当前节点的位置
 	*/
@@ -110,6 +112,10 @@ public:
 	  *设置上半径
 	 */
 	void            setTopRadius(float radius);
+	/*
+	  *设置顺时针/逆时针旋转标志
+	 */
+	void           setCCWValue(float  ccwValue);
 };
 /*
   *螺旋曲线动作,
@@ -123,17 +129,18 @@ private:
 	float                  _topRadius;//上方半径
 	float                  _spiralHeight;//导程
 	float                  _windCount;//匝数
+	float                 _clockwise;//旋转的方向
 	cocos2d::Mat4 _modelMatrix;//全部的数据合成的变换矩阵
 private:
 	/*
 	  *数据排列的原则遵循getControlPoint函数中的说明
 	 */
 	void    initWithControlPoint(float duration,const std::vector<cocos2d::Vec3> &controlPoints);
-	void    initWithControlPoint(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount);
+	void    initWithControlPoint(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount,float clockwise);
 	//计算旋转矩阵
 	void    updateRotateMatrix();
 public:
-	static SpiralAction *create(float duration,const cocos2d::Vec3 &rotateAxis,const cocos2d::Vec3 &centerPoint,float bottomRadius,float topRadius,float spiralHeight,float windCount);
+	static SpiralAction *create(float duration,const cocos2d::Vec3 &rotateAxis,const cocos2d::Vec3 &centerPoint,float bottomRadius,float topRadius,float spiralHeight,float windCount,float clockwise);
 	static SpiralAction *create(float duration,const std::vector<cocos2d::Vec3> &controlPoints);
 	virtual  void update(float rate);
 };

@@ -9,6 +9,7 @@
 #include "LayerDialog.h"
 #include "SpiralNode.h"
 #include "BesselNode.h"
+#include "RouteGroup.h"
 //#include "extensions/cocos-ext.h"
 //#include "ui/CocosGUI.h"
 //#include"geometry/Geometry.h"
@@ -42,11 +43,15 @@
 #define _TAG_EDIT_BOX_TOP_RADIUS_                       0x94
 #define _TAG_EDIT_BOX_BOTTOM_RADIUS_               0x95
 #define _TAG_EDIT_BOX_SPEED_                                    0x96
+#define _TAG_EDIT_BOX_ROUTE_GROUP_                    0x97
 //组按钮的起始tag
 #define _TAG_RADIO_BUTTON_										   3
+//对话框tag
+#define _TAG_LAYER_DIALOG_                                        0x101
 USING_NS_CC;
 ////////////////////////////////////////////////////////////////////////////////
-
+//#define __USE_OLD_LOAD_VISUAL_XML__ //如果需要转换原来的生成的数据文件,请打开这个宏
+///////////////////////////////////////////////////////////////////////////////
 Scene     *BesselUI::createScene()
 {
 	Scene  *_scene = Scene::create();
@@ -67,6 +72,11 @@ BesselUI::BesselUI():
 _speedEditBox(nullptr)
 ,_topRadiusEditBox(nullptr)
 ,_bottomRadiusEditBox(nullptr)
+, _ccwComponentPanel(nullptr)
+, _routeGroupNode(nullptr)
+, _routeGroupEditBox(nullptr)
+, _actionIndexEditBox(nullptr)
+, _curveNodeReturnValue(false)
 {
 	_settingLayer = NULL;
 	_viewCamera = NULL;
@@ -91,26 +101,20 @@ void  BesselUI::initBesselLayer()
 	//
 	//
     BesselNode * node = BesselNode::createBesselNode();
-    node->setTouchSelectedCallback([this, node](){
-        
-        char str[32];
-        sprintf(str, "%.2f", node->getSelectControlPoint()->_speedCoef);
-        this->_speedEditBox->setText(str);
-        
-    });
+	node->setTouchSelectedCallback(CC_CALLBACK_1(BesselUI::notifyBesselNodeSelected, this));
 	node->setUIChangedCallback(CC_CALLBACK_3(BesselUI::onUIChangedCallback,this));
 	this->addChild(node);
     _curveNode = node;
 	//创建一个新的摄像机
 	auto &winSize = Director::getInstance()->getWinSize();
 	const float zeye = winSize.height / 1.1566f;
-	_camera = Camera::createPerspective(60.0f, winSize.width/ winSize.height,0.1f,zeye+winSize.height/2.0f+400);
+	_camera = Camera::createPerspective(60.0f, winSize.width/ winSize.height,0.1f,zeye+winSize.height/2.0f + 5000);
 	_camera->setCameraFlag(CameraFlag::USER1);
 	_camera->setPosition3D(Vec3(0.0f, 0.0f, zeye));
 	_camera->lookAt(Vec3(0.0f,0.0f,0.0),Vec3(0.0f,1.0f,0.0f));
 	//设置相关的透视距离
 	_nowZeye = zeye;
-	_maxZeye = zeye *1.5f;
+	_maxZeye = zeye * 5.5f;
 	_minZeye = zeye;
 	/*
 	  *Mesh
@@ -202,7 +206,7 @@ bool  BesselUI::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event
 	{
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width / 2.0f, winSize.height / 2.0f);
-		_curveNode->onTouchBegan(OpenGLVec2,_camera);
+		_curveNodeReturnValue = _curveNode->onTouchBegan(OpenGLVec2,_camera);
 	}
 	return true;
 }
@@ -215,9 +219,11 @@ void BesselUI::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 	{ 
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width/2.0f,winSize.height/2.0f);
-		_curveNode->onTouchMoved(OpenGLVec2,_camera);
+		//如果_curveNode没有隐藏
+		if(_curveNodeReturnValue && _curveNode->isVisible())
+			_curveNode->onTouchMoved(OpenGLVec2,_camera);
 	}
-	else
+	else if( !_keyMask)
 	{
 		_xyOffset += _nowOffset;
 		Mat4  rotateMatrix;
@@ -226,6 +232,9 @@ void BesselUI::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 		_curveNode->setRotationQuat(qua);
 		_axisNode->setRotationQuat(qua);
 		_curveNode->setRotateMatrix(rotateMatrix);
+		if (_routeGroupNode != nullptr)
+			_routeGroupNode->setRotationQuat(qua);
+		_rotateQua = qua;
 	}
 	_originVec2 = touch->getLocation();
 }
@@ -236,6 +245,7 @@ void BesselUI::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 	{
 		auto &winSize = Director::getInstance()->getWinSize();
 		const Vec2   OpenGLVec2 = touch->getLocation() - Vec2(winSize.width / 2.0f, winSize.height / 2.0f);
+		if(_curveNodeReturnValue)
 		_curveNode->onTouchEnded(OpenGLVec2,_camera);
 	}
 	_lastSelectIndex = -1;
@@ -255,6 +265,16 @@ void  BesselUI::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* unused_event
 	if ((_keyMask & _KEY_CTRL_MASK_) && keyCode == EventKeyboard::KeyCode::KEY_Z  && !(_keyMask  - _KEY_CTRL_MASK_))
 	{
 		_curveNode->onCtrlZPressed();
+	}
+	//是否有F5按键按下
+	if (keyCode == EventKeyboard::KeyCode::KEY_F5)
+	{
+		if (_routeGroupNode != nullptr)
+		{
+			_routeGroupNode->removeFromParent();
+			_curveNode->setVisible(true);
+			_routeGroupNode = nullptr;
+		}
 	}
 }
 void  BesselUI::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *unused_event)
@@ -283,15 +303,29 @@ void    BesselUI::onMouseClick(cocos2d::EventMouse *mouseEvent)
 {
 	_isResponseMouse = false;
 	//只会响应鼠标的右键
-	if (mouseEvent->getMouseButton() == MOUSE_BUTTON_RIGHT &&(_keyMask & _KEY_ALT_MASK_) )
+	if (mouseEvent->getMouseButton() == MOUSE_BUTTON_RIGHT)
 	{
-		_isResponseMouse = true;
 		//向下分发事件
 		Vec2 touchPoint = mouseEvent->getLocation();
 		auto &winSize = Director::getInstance()->getWinSize();
 		touchPoint.y = winSize.height - touchPoint.y;
-		_curveNode->onMouseClick(touchPoint - Vec2(winSize.width/2.0f,winSize.height/2.0f),_camera);
-	}
+		if (_keyMask & _KEY_ALT_MASK_)
+		{
+			_isResponseMouse = true;
+			_curveNode->onMouseClick(touchPoint - Vec2(winSize.width / 2.0f, winSize.height / 2.0f), _camera);
+		}
+		else if (_keyMask & _KEY_CTRL_MASK_)
+		{
+			_curveNode->onMouseClickCtrl(touchPoint - Vec2(winSize.width / 2.0f, winSize.height / 2.0f), _camera);
+		}
+		else if(! _keyMask)//检测是否可以调用另一个对话框中的函数
+		{
+				LayerDialog *dialog = (LayerDialog *)this->getChildByTag(_TAG_LAYER_DIALOG_);
+				//调用鼠标响应函数
+				if ( dialog != nullptr)
+					dialog->onMouseClick(touchPoint);
+		}
+	 }
 }
 
 void BesselUI::onMouseMoved(cocos2d::EventMouse *mouseEvent)
@@ -318,10 +352,11 @@ void BesselUI::onMouseReleased(cocos2d::EventMouse *mouseEvent)
 
 void    BesselUI::updateCamera(float dt)
 {
+	const float speed = 256.0f;
 	//S键被按下
 	if (_keyMask & _KEY_S_MASK_)
 	{
-		_nowZeye = _nowZeye + dt * 64.0f;//速度设定为24像素
+		_nowZeye = _nowZeye + dt * speed;//速度设定为24像素
 		//截断
 		_nowZeye =fmin(  fmax(_nowZeye,_minZeye),  _maxZeye);
 		_camera->setPosition3D(Vec3(0.0f,0.0f,_nowZeye));
@@ -330,7 +365,7 @@ void    BesselUI::updateCamera(float dt)
 	//不能两个按键同时被按下
 	if (_keyMask & _KEY_W_MASK_)
 	{
-		_nowZeye = _nowZeye - dt * 64.0f;
+		_nowZeye = _nowZeye - dt * speed;
 		_nowZeye = fmin( fmax(_nowZeye,_minZeye) ,_maxZeye);
 		_camera->setPosition3D(Vec3(0.0f,0.0f,_nowZeye));
 		_camera->lookAt(Vec3(0.0f,0.0f,0.0f));
@@ -351,11 +386,17 @@ void   BesselUI::drawAxisMesh()
 {
 	auto &winSize = Director::getInstance()->getWinSize();
 	//X Axis
-	_axisNode->drawLine(Vec3(0.0f,0.0f,0.0f),Vec3(winSize.width/2.0f,0.0f,0.0f),Color4F(1.0f,0.0f,0.0f,1.0f));
+//	_axisNode->drawLine(Vec3(0.0f,0.0f,0.0f),Vec3(winSize.width/2.0f,0.0f,0.0f),Color4F(1.0f,0.0f,0.0f,1.0f));
 	//Y Axis
-	_axisNode->drawLine(Vec3(0.0f,0.0f,0.0f),Vec3(0.0f,winSize.height/2.0f,0.0f),Color4F(0.0f,1.0f,0.0f,1.0f));
+//	_axisNode->drawLine(Vec3(0.0f,0.0f,0.0f),Vec3(0.0f,winSize.height/2.0f,0.0f),Color4F(0.0f,1.0f,0.0f,1.0f));
 	//Z Axis
-	_axisNode->drawLine(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f,0.0f,winSize.height/1.1566f),Color4F(0.0f,0.0f,1.0f,1.0f));
+//	_axisNode->drawLine(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f,0.0f,winSize.height/1.1566f),Color4F(0.0f,0.0f,1.0f,1.0f));
+    
+    _axisNode->drawLine(Vec3(-667, -375, 0), Vec3(667, -375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(667, -375, 0), Vec3(667, 375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(667, 375, 0), Vec3(-667, 375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(-667, 375, 0), Vec3(-667, -375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    
 	//空间网格,默认24*24
 	const  int   meshSize = 24;
 	const float stepX = winSize.width / meshSize;
@@ -369,7 +410,7 @@ void   BesselUI::drawAxisMesh()
 	const float  halfHeight = winSize.height / 2.0f;
 	//计算视锥体最近与最远处的八个坐标
 	const float nearZ = startZ;
-	const float farZ = zeye + winSize.height/2.0f + 400.0f;
+	const float farZ = zeye + winSize.height/2.0f + 5000.0f;
 	//屏幕的横纵比
 	const float screenFactor = winSize.width/winSize.height;
 	const float tanOfValue = tanf(CC_DEGREES_TO_RADIANS(60.0f/2.0f));
@@ -398,50 +439,84 @@ void   BesselUI::drawAxisMesh()
 	 const Vec3 farStepBottomZ = (frustumCoord[5] - frustumCoord[4])/meshSize;
 	 const Vec3 nearStepBottomZ =( frustumCoord[1] - frustumCoord[0])/meshSize;
 	 for (int i = 0; i < meshSize + 1; ++i)
-		 _axisNode->drawLine(frustumCoord[0] + nearStepBottomZ * i, frustumCoord[4]+farStepBottomZ*i, Color4F(1.0f, 0.6f, 0.6f, 1.0f));
+		 _axisNode->drawLine(frustumCoord[0] + nearStepBottomZ * i, frustumCoord[4]+farStepBottomZ*i, Color4F(1.0f, 0.6f, 0.6f, 0.15));
 		//_axisNode->drawLine(Vec3(i*stepX- halfWidth,-halfHeight ,startZ),Vec3(i*stepX-halfWidth,-halfHeight,finalZ),Color4F(1.0f,0.6f,0.6f,1.0f));
 	 const Vec3 leftStepBottom = (frustumCoord[4] - frustumCoord[0])/meshSize;
 	 const Vec3 rightStepBottom = (frustumCoord[5]- frustumCoord[1])/meshSize;
 	 for (int j = 0; j < meshSize + 1; ++j)
-		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[1]+rightStepBottom*j,Color4F(0.6f,1.0f,0.6f,1.0f));
+		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[1]+rightStepBottom*j,Color4F(0.6f,1.0f,0.6f,0.15));
 		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,-halfHeight,startZ+j*zlengthUnit),Color4F(0.6f,1.0f,0.6f,1.0f));
 	//上方的网格
 	 const Vec3 nearStepTopZ = (frustumCoord[3] - frustumCoord[2])/meshSize;
 	 const Vec3 farStepTopZ = (frustumCoord[7] - frustumCoord[6])/meshSize;
 	 for (int i = 0; i < meshSize + 1; ++i)
-		 _axisNode->drawLine(frustumCoord[2]+nearStepTopZ*i, frustumCoord[6]+farStepTopZ*i,Color4F(1.0f,1.0f,0.0f,1.0f));
+		 _axisNode->drawLine(frustumCoord[2]+nearStepTopZ*i, frustumCoord[6]+farStepTopZ*i,Color4F(1.0f,1.0f,0.0f,0.15));
 		//_axisNode->drawLine(Vec3(i*stepX-halfWidth,halfHeight,startZ),Vec3(i*stepX-halfWidth,halfHeight,finalZ),Color4F(1.0f,1.0f,0.0f,1.0f));
 	 const Vec3 leftStepTop = (frustumCoord[6] - frustumCoord[2])/meshSize;
 	 const Vec3 rightStepTop = (frustumCoord[7]- frustumCoord[3])/meshSize;
 	 for (int j = 0; j < meshSize + 1; ++j)
-		 _axisNode->drawLine(frustumCoord[2]+leftStepTop*j, frustumCoord[3]+rightStepTop*j,Color4F(1.0f,0.0f,1.0f,1.0f));
+		 _axisNode->drawLine(frustumCoord[2]+leftStepTop*j, frustumCoord[3]+rightStepTop*j,Color4F(1.0f,0.0f,1.0f,0.15));
 		//_axisNode->drawLine(Vec3(-halfWidth,halfHeight,startZ+j*zlengthUnit),Vec3(halfWidth,halfHeight,startZ+j*zlengthUnit),Color4F(1.0f,0.0f,1.0f,1.0f));
 	//左侧网格
 	 const Vec3 leftStepNear =( frustumCoord[2]- frustumCoord[0])/meshSize;
 	 const Vec3 leftStepFar = (frustumCoord[6]- frustumCoord[4])/meshSize;
 	 for (int i = 0; i < meshSize + 1; ++i)
-		 _axisNode->drawLine(frustumCoord[0]+leftStepNear*i, frustumCoord[4]+leftStepFar*i,Color4F(1.0f,0.8f,0.2f,1.0f));
+		 _axisNode->drawLine(frustumCoord[0]+leftStepNear*i, frustumCoord[4]+leftStepFar*i,Color4F(1.0f,0.8f,0.2f,0.15));
 		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight+i*ylengthUnit,startZ),Vec3(-halfWidth,-halfHeight+i*ylengthUnit,finalZ),Color4F(1.0f,0.8f,0.2f,1.0f));
 	 for (int j = 0; j < meshSize + 1; ++j)
-		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[2]+leftStepTop*j,Color4F(0.2f,1.0f,0.8f,1.0f));
+		 _axisNode->drawLine(frustumCoord[0]+leftStepBottom*j, frustumCoord[2]+leftStepTop*j,Color4F(0.2f,1.0f,0.8f,0.15));
 		//_axisNode->drawLine(Vec3(-halfWidth,-halfHeight,startZ+zlengthUnit*j),Vec3(-halfWidth,halfHeight,startZ+zlengthUnit*j),Color4F(0.2f,1.0f,0.8f,1.0f));
 	//右侧的网格
 	 const Vec3 rightStepNear = (frustumCoord[3] - frustumCoord[1])/meshSize;
 	 const Vec3 rightStepFar = (frustumCoord[7] - frustumCoord[5])/meshSize;
 	 for (int i = 0; i < meshSize + 1; ++i)
-		 _axisNode->drawLine(frustumCoord[1]+rightStepNear*i, frustumCoord[5]+rightStepFar*i,Color4F(0.782, 0.387, 0.664, 1.0f));
+		 _axisNode->drawLine(frustumCoord[1]+rightStepNear*i, frustumCoord[5]+rightStepFar*i,Color4F(0.782, 0.387, 0.664, 0.15));
 	 // _axisNode->drawLine(Vec3(halfWidth, -halfHeight + i*ylengthUnit, startZ), Vec3(halfWidth, -halfHeight + i*ylengthUnit, finalZ), Color4F(0.782, 0.387, 0.664, 1.0f));
 	 for (int j = 0; j < meshSize + 1; ++j)
-		_axisNode->drawLine(frustumCoord[1]+ rightStepBottom*j, frustumCoord[3]+rightStepTop*j,Color4F(0.664f, 0.387f, 0.782f, 1.0f)) ;
+		_axisNode->drawLine(frustumCoord[1]+ rightStepBottom*j, frustumCoord[3]+rightStepTop*j,Color4F(0.664f, 0.387f, 0.782f, 0.15)) ;
 	 // _axisNode->drawLine(Vec3(halfWidth, -halfHeight, startZ + zlengthUnit*j), Vec3(halfWidth, halfHeight, startZ + zlengthUnit*j), Color4F(0.664f, 0.387f, 0.782f, 1.0f));
+    
+    
+    float nearZBorder = zeye - 300;
+    float farZBorder = zeye + 800;
+    float nearYBorder = nearZBorder * tan(30.0 * M_PI / 180);
+    float farYBorder = farZBorder * tan(30.0 * M_PI / 180);
+    float nearXBorder = nearYBorder * 1334 / 750;
+    float farXBorder= farYBorder * 1335 / 750;
+    
+    _axisNode->drawLine(Vec3(-nearXBorder, -nearYBorder, 300), Vec3(nearXBorder, -nearYBorder, 300), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(nearXBorder, -nearYBorder, 300), Vec3(nearXBorder, nearYBorder, 300), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(nearXBorder, nearYBorder, 300), Vec3(-nearXBorder, nearYBorder, 300), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(-nearXBorder, nearYBorder, 300), Vec3(-nearXBorder, -nearYBorder, 300), Color4F(1.0, 0.0, 0.0, 1.0));
+    
+    _axisNode->drawLine(Vec3(-farXBorder, -farYBorder, -800), Vec3(farXBorder, -farYBorder, -800), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(farXBorder, -farYBorder, -800), Vec3(farXBorder, farYBorder, -800), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(farXBorder, farYBorder, -800), Vec3(-farXBorder, farYBorder, -800), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(-farXBorder, farYBorder, -800), Vec3(-farXBorder, -farYBorder, -800), Color4F(1.0, 0.0, 0.0, 1.0));
+    
+    _axisNode->drawLine(Vec3(-667, -375, 0), Vec3(667, -375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(667, -375, 0), Vec3(667, 375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(667, 375, 0), Vec3(-667, 375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    _axisNode->drawLine(Vec3(-667, 375, 0), Vec3(-667, -375, 0), Color4F(1.0, 0.0, 0.0, 1.0));
+    
+    _axisNode->drawLine(Vec3(-farXBorder, 0, -800), Vec3(farXBorder, 0, -800), Color4F(1.0, 0.0, 0.0, 0.3));
+    _axisNode->drawLine(Vec3(0, farYBorder, -800), Vec3(0, -farYBorder, -800), Color4F(1.0, 0.0, 0.0, 0.3));
+    
+    _axisNode->drawLine(Vec3(-nearXBorder, 0, 300), Vec3(nearXBorder, 0, 300), Color4F(1.0, 0.0, 0.0, 0.3));
+    _axisNode->drawLine(Vec3(0, -nearYBorder, 300), Vec3(0, nearYBorder, 300), Color4F(1.0, 0.0, 0.0, 0.3));
+    
+    _axisNode->drawLine(Vec3(-667, 0, 0), Vec3(667, 0, 0), Color4F(1.0, 0.0, 0.0, 0.3));
+    _axisNode->drawLine(Vec3(0, -375, 0), Vec3(0, 375, 0), Color4F(1.0, 0.0, 0.0, 0.3));
+    
+
 }
 
 void    BesselUI::loadSettingLayer()
 {
 	_settingLayer = Layer::create();
-	const   float  layerHeight = 560;
+	const   float  layerHeight = 600;
 	const   float  layerWidth = 240;
-	const   float  secondaryHeight = 520;
+	const   float  secondaryHeight = 560;
 	auto &winSize = Director::getInstance()->getWinSize();
 	const  float halfWidth = winSize.width / 2.0f;
 	const  float halfHeight = winSize.height / 2.0f;
@@ -516,6 +591,29 @@ void    BesselUI::loadSettingLayer()
 
 		_scrollView->addChild(labelName, 4);
 	}
+	//控制螺旋曲线的旋转方向的组件
+	_ccwComponentPanel = Node::create();
+	_ccwComponentPanel->setPosition(Vec2(layerWidth/2.0f, (secondaryHeight - 76.0f)));
+	_settingLayer->addChild(_ccwComponentPanel,5);
+	ui::RadioButtonGroup  *ccwGroup = ui::RadioButtonGroup::create();
+	_settingLayer->addChild(ccwGroup,5);
+	const char *ccwName[2] = {"CW","CCW"};
+	for (int j = 0; j < 2; ++j)
+	{
+		ui::RadioButton  *radioButton = ui::RadioButton::create("tools-ui/layer-ui/radio_button_off.png", "tools-ui/layer-ui/radio_button_on.png");
+		radioButton->setPosition(Vec2(16 + buttonWidth * (j-1), 0));
+		radioButton->setTag(j * 2 - 1);
+		radioButton->addEventListener(CC_CALLBACK_2(BesselUI::onChangeRadioButtonSelect_ChangeCCW,this));
+		Label    *labelName = Label::createWithSystemFont(ccwName[j], "Arial", 14);
+		labelName->setPosition(Vec2(16 + buttonWidth * (j - 1),  buttonWidth / 1.5f));
+		_ccwComponentPanel->addChild(radioButton);
+		_ccwComponentPanel->addChild(labelName);
+		ccwGroup->addRadioButton(radioButton);
+		//
+		if (j == 1)
+			ccwGroup->setSelectedButton(radioButton);
+	}
+	_ccwComponentPanel->setVisible(false);
 	//记录当前的已经保存的数据的数目
 	sprintf(buffer, "finished: %d", _besselSetData.size());
 	Label      *_saveLabel = Label::createWithSystemFont(buffer, "Arial", 16);
@@ -611,15 +709,25 @@ void    BesselUI::loadSettingLayer()
 	_editBox->setPosition(Vec2(layerWidth - 32,32));
     _editBox->setName("RouteIndex");
 	_settingLayer->addChild(_editBox,10);
-
 	this->addChild(_settingLayer,2);
+	//预览曲线的编辑框,支持多种文法
+	ui::Scale9Sprite  *editboxBgc = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_routeGroupEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(100, 32), editboxBgc);
+	_routeGroupEditBox->setTag(_TAG_EDIT_BOX_ROUTE_GROUP_);
+	_routeGroupEditBox->setFont("Arial", 16);
+	_routeGroupEditBox->setFontColor(Color4B::RED);
+	//_routeGroupEditBox->setInputMode(cocos2d::ui::EditBox::InputMode::NUMERIC);
+	_routeGroupEditBox->setDelegate(this);
+	_routeGroupEditBox->setName("RouteGroup");
+	_routeGroupEditBox->setPosition(Vec2(layerWidth/2-10,48));
+	_settingLayer->addChild(_routeGroupEditBox,2);
     //编辑各个控制点的速度
    ui::Scale9Sprite *b2g = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
 	_speedEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(48, 32), b2g);
 	_speedEditBox->setTag(_TAG_EDIT_BOX_0_);
 	_speedEditBox->setFont("Arial", 16);
 	_speedEditBox->setFontColor(Color4B(255, 32, 255, 255));
-	_speedEditBox->setPlaceHolder("100");
+	_speedEditBox->setPlaceHolder("1.00");
 	_speedEditBox->setPlaceholderFontColor(Color4B::GRAY);
 	_speedEditBox->setMaxLength(3);
 	_speedEditBox->setInputMode(ui::EditBox::InputMode::NUMERIC);
@@ -688,6 +796,20 @@ void    BesselUI::loadSettingLayer()
 	_bottomRadiusEditBox->setName("BottomRadius");
 	_bottomRadiusEditBox->setPosition(Vec2(967, 70));
 	this->addChild(_bottomRadiusEditBox, 12);
+	//编辑曲线的动画索引
+	editboxBg = cocos2d::ui::Scale9Sprite::create("tools-ui/text_bg.png");
+	_actionIndexEditBox = cocos2d::ui::EditBox::create(cocos2d::Size(48, 32), editboxBg);
+	_actionIndexEditBox->setTag(_TAG_EDIT_BOX_TOP_RADIUS_);
+	_actionIndexEditBox->setFont("Arial", 16);
+	_actionIndexEditBox->setFontColor(Color4B::RED);
+	_actionIndexEditBox->setPlaceHolder("0");
+	_actionIndexEditBox->setMaxLength(3);
+	_actionIndexEditBox->setInputMode(cocos2d::ui::EditBox::InputMode::NUMERIC);
+	_actionIndexEditBox->setDelegate(this);
+	_actionIndexEditBox->setText("0");
+	_actionIndexEditBox->setName("ActionIndex");
+	_actionIndexEditBox->setPosition(Vec2(1067, 70));
+	this->addChild(_actionIndexEditBox,12);
 
 	_topRadiusEditBox->setVisible(false);
 	_bottomRadiusEditBox->setVisible(false);
@@ -765,13 +887,8 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 			_scrollView->setVisible(true);
 			_topRadiusEditBox->setVisible(false);
 			_bottomRadiusEditBox->setVisible(false);
-            node->setTouchSelectedCallback([this, node](){
-                
-                char str[32];
-                sprintf(str, "%.2f", node->getSelectControlPoint()->_speedCoef);
-                this->_speedEditBox->setText(str);
-                
-            });
+			_ccwComponentPanel->setVisible(false);
+			node->setTouchSelectedCallback(CC_CALLBACK_1(BesselUI::notifyBesselNodeSelected,this));
 		}
 		else if (curveType == CurveType::CurveType_Spiral)
 		{	
@@ -780,6 +897,7 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 			_scrollView->setVisible(false);
 			_topRadiusEditBox->setVisible(true);
 			_bottomRadiusEditBox->setVisible(true);
+			_ccwComponentPanel->setVisible(true);
 		}
 		if (newNode != nullptr)
 		{
@@ -787,6 +905,7 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 			_curveNode = newNode;
 			_curveNode->setCameraMask((short)CameraFlag::USER1);
 			_curveNode->setUIChangedCallback(CC_CALLBACK_3(BesselUI::onUIChangedCallback,this));
+			_curveNode->setRotationQuat(_rotateQua);
 			this->addChild(_curveNode);
 			//设置鱼的相关数据
 			if (_currentSelectFishIds.size())
@@ -800,6 +919,21 @@ void      BesselUI::changeCurveNode(CurveType curveType)
 		}
 	}
 }
+
+void BesselUI::notifyBesselNodeSelected(int selectedIndex)
+{
+	if (_curveNode->getType() != CurveType::CurveType_Bessel)
+		return;
+	BesselNode	 *node = (BesselNode*)_curveNode;
+	char buffer[128];
+	//当前控制点的速度系数
+	sprintf(buffer, "%.2f", node->getSelectControlPoint()->_speedCoef);
+	_speedEditBox->setText(buffer);
+	//当前控制点的动画索引
+	sprintf(buffer,"%d",node->getSelectControlPoint()->getActionIndex());
+	_actionIndexEditBox->setText(buffer);
+}
+
 //切换曲线类型
 void      BesselUI::onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButton *radioButton, cocos2d::ui::RadioButton::EventType type)
 {
@@ -809,6 +943,17 @@ void      BesselUI::onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButt
 		changeCurveNode(curveType);
 	}
 }
+
+void      BesselUI::onChangeRadioButtonSelect_ChangeCCW(cocos2d::ui::RadioButton *radioButton, cocos2d::ui::RadioButton::EventType type)
+{
+	if (type == ui::RadioButton::EventType::SELECTED)
+	{
+		int   tag = radioButton->getTag();
+		SpiralNode *node = (SpiralNode *)_curveNode;
+		node->setCCWValue(tag);
+	}
+}
+
 void      BesselUI::onChangeRadioButtonSelect_ControlPoint(cocos2d::ui::RadioButton* radioButton, cocos2d::ui::RadioButton::EventType type)
 {
 	//如果某一个按钮被选中了
@@ -1091,6 +1236,7 @@ void BesselUI::onButtonClick_FishMap(cocos2d::Ref *pSender, cocos2d::ui::Widget:
 	{
 		LayerDialog *layer = LayerDialog::createLayerDialog(_fishVisualStatic, _currentSelectFishIds);
 		layer->setCameraMask((short)CameraFlag::DEFAULT, true);
+		layer->setTag(_TAG_LAYER_DIALOG_);
 		this->addChild(layer, 101);
 		//隐藏按钮操作面板
 		const float     layerWidth = 240;
@@ -1146,11 +1292,11 @@ void   BesselUI::writeRecordToFile()
 	targetStream.write(recordSet.c_str(), recordSet.size());
 	targetStream.close();
 }
-
+#ifdef __USE_OLD_LOAD_VISUAL_XML__
 void BesselUI::loadVisualXml()
 {
 	const std::string filename = "./Visual_Path.xml";
-	std::ifstream  targetStream(filename,std::ios::binary);
+	std::ifstream  targetStream(filename, std::ios::binary);
 	//如果文件打开失败
 	if (!targetStream.is_open())
 	{
@@ -1180,6 +1326,147 @@ void BesselUI::loadVisualXml()
 		for (Value& _v : TPS.asValueVector())
 		{
 			ValueMap v = _v.asValueMap();
+			float weight = v["weight"].asFloat();
+			CurveType type = (CurveType)v["Type"].asInt();
+			if (weight == 0) { weight = 0.5; }
+			std::vector<CubicBezierRoute::PointInfo>   container;
+			container.reserve(6);
+			if (type == CurveType::CurveType_Bessel)//贝塞尔曲线
+			{
+				for (Value &_vv : v["Position"].asValueVector())
+				{
+					ValueMap &vv = _vv.asValueMap();
+					const float x = vv["x"].asFloat() - 0.5f;
+					const float y = vv["y"].asFloat() - 0.5f;
+					const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+					float speedCoef = vv["speedCoef"].asFloat();
+					speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+					//还原数据
+					CubicBezierRoute::PointInfo info;
+					info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+					info.speedCoef = speedCoef;
+
+					container.push_back(info);
+				}
+			}
+			else if (type == CurveType::CurveType_Spiral)//螺旋线
+			{
+				for (Value &_vv : v["Position"].asValueVector())
+				{
+					ValueMap &vv = _vv.asValueMap();
+					const float x = vv["x"].asFloat();
+					const float y = vv["y"].asFloat();
+					const float z = vv["z"].asFloat();
+					float speedCoef = vv["speedCoef"].asFloat();
+					speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+					//还原数据
+					CubicBezierRoute::PointInfo info;
+					info.position = Vec3(x, y, z);
+					info.speedCoef = speedCoef;
+
+					container.push_back(info);
+				}
+				//更正中心坐标点
+				container[1].position.x -= halfWidth;
+				container[1].position.y -= halfHeight;
+			}
+			ControlPointSet   _controlPointSet(type, container);
+			_controlPointSet.setId(visualId);
+			_controlPointSet.weight = weight;
+			_besselSetData.push_back(_controlPointSet);
+			++visualId;
+		}
+	}
+	else if (temp.getType() == cocos2d::Value::Type::MAP)
+	{
+		ValueMap  &secondaryMap = TPS.asValueMap();
+		float weight = secondaryMap["weight"].asFloat();
+		CurveType  type = (CurveType)secondaryMap["Type"].asInt();
+		if (weight == 0) { weight = 0.5; }
+		std::vector<CubicBezierRoute::PointInfo>   container;
+		container.reserve(6);
+		if (type == CurveType::CurveType_Bessel)
+		{
+			for (Value& _v : secondaryMap["Position"].asValueVector())
+			{
+				ValueMap v = _v.asValueMap();
+				ValueMap &vv = _v.asValueMap();
+				const float x = vv["x"].asFloat() - 0.5f;
+				const float y = vv["y"].asFloat() - 0.5f;
+				const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+				float speedCoef = vv["speedCoef"].asFloat();
+				speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+				//还原数据
+				CubicBezierRoute::PointInfo info;
+				info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+				info.speedCoef = speedCoef;
+
+				container.push_back(info);
+			}
+		}
+		else if (type == CurveType::CurveType_Spiral)
+		{
+			for (Value& _v : secondaryMap["Position"].asValueVector())
+			{
+				ValueMap v = _v.asValueMap();
+				ValueMap &vv = _v.asValueMap();
+				const float x = vv["x"].asFloat();
+				const float y = vv["y"].asFloat();
+				const float z = vv["z"].asFloat();
+				float speedCoef = vv["speedCoef"].asFloat();
+				speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
+				//还原数据
+				CubicBezierRoute::PointInfo info;
+				info.position = Vec3(x, y, z);
+				info.speedCoef = speedCoef;
+
+				container.push_back(info);
+			}
+			//更正中心坐标点
+			container[1].position.x -= halfWidth;
+			container[1].position.y -= halfHeight;
+		}
+		ControlPointSet   _controlPointSet(type, container);
+		_controlPointSet.setId(visualId);
+		_controlPointSet.weight = weight;
+		_besselSetData.push_back(_controlPointSet);
+		++visualId;
+	}
+}
+#else
+void BesselUI::loadVisualXml()
+{
+	const std::string filename = "./Visual_Path.xml";
+	std::ifstream  targetStream(filename,std::ios::binary);
+	//如果文件打开失败
+	if (!targetStream.is_open())
+	{
+		return;
+	}
+	targetStream.close();
+	auto   &winSize = cocos2d::Director::getInstance()->getWinSize();
+	const  float halfWidth = winSize.width / 2.0f;
+	const  float halfHeight = winSize.height / 2.0f;
+	//const  float   zPositive = winSize.height / 1.1566f;
+	//Z轴的总长度
+	//const float    nearPlane = 0.1f;
+	//const float    farPlane = zPositive + winSize.height / 2.0f + 5000;
+	//const  float   zAxis = farPlane - nearPlane;
+	int      visualId = 0;
+
+	//否则读取所有的文件
+	custom::XMLParser* doc = custom::XMLParser::create();
+	ValueMap valueMap = doc->parseXML(filename);
+	Value& temp = valueMap["FishPath"];
+	//为了程序健壮,必须加上的错误处理代码
+	if (temp.getType() != cocos2d::Value::Type::MAP)
+		return;
+	Value& TPS = temp.asValueMap()["Path"];
+	if (TPS.getType() == cocos2d::Value::Type::VECTOR)
+	{
+		for (Value& _v : TPS.asValueVector())
+		{
+			ValueMap v = _v.asValueMap();
             float weight = v["weight"].asFloat();
 			CurveType type = (CurveType)v["Type"].asInt();
             if(weight == 0) {weight = 0.5;}
@@ -1190,15 +1477,17 @@ void BesselUI::loadVisualXml()
 				for (Value &_vv : v["Position"].asValueVector())
 				{
 					ValueMap &vv = _vv.asValueMap();
-					const float x = vv["x"].asFloat() - 0.5f;
-					const float y = vv["y"].asFloat() - 0.5f;
-					const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+					const float x = vv["x"].asFloat() ;
+					const float y = vv["y"].asFloat() ;
+					const float z = vv["z"].asFloat();
                     float speedCoef = vv["speedCoef"].asFloat();
                     speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
 					//还原数据
                     CubicBezierRoute::PointInfo info;
-                    info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+                    info.position = Vec3(x , y, z);
                     info.speedCoef = speedCoef;
+					info.aniIndex = vv["actionIndex"].asInt();
+					info.aniDistance = vv["distance"].asFloat();
                     
 					container.push_back(info);
 				}
@@ -1245,15 +1534,17 @@ void BesselUI::loadVisualXml()
 			{
 				ValueMap v = _v.asValueMap();
 				ValueMap &vv = _v.asValueMap();
-				const float x = vv["x"].asFloat() - 0.5f;
-				const float y = vv["y"].asFloat() - 0.5f;
-				const float z = vv["z"].asFloat() * zAxis + nearPlane - zPositive;
+				const float x = vv["x"].asFloat() ;
+				const float y = vv["y"].asFloat() ;
+				const float z = vv["z"].asFloat()  ;
                 float speedCoef = vv["speedCoef"].asFloat();
                 speedCoef = speedCoef == 0.0 ? 1.0 : speedCoef;
 				//还原数据
                 CubicBezierRoute::PointInfo info;
-                info.position = Vec3(x * 2.0f  * halfWidth, y*2.0f * halfHeight, -z);
+                info.position = Vec3(x , y, z);
                 info.speedCoef = speedCoef;
+				info.aniIndex = vv["actionIndex"].asInt();
+				info.aniDistance = vv["distance"].asFloat();
                 
                 container.push_back(info);
 			}
@@ -1287,6 +1578,8 @@ void BesselUI::loadVisualXml()
 		++visualId;
 	}
 }
+#endif
+
 
 void BesselUI::editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox)
 {
@@ -1296,38 +1589,38 @@ void BesselUI::editBoxEditingDidBegin(cocos2d::ui::EditBox* editBox)
 void BesselUI::editBoxEditingDidEnd(cocos2d::ui::EditBox* editBox)
 {
 	const std::string &name = editBox->getName();
-    if(name == "SpeedSetting")
-    {
-        std::string content = editBox->getText();
-        int speed = 0;
-        std::stringstream converter;
-        converter << content;
-        converter >> speed;
-        
-        speed = speed == 0 ? 100 : speed;
-        
+	if (name == "SpeedSetting")
+	{
+		std::string content = editBox->getText();
+		int speed = 0;
+		std::stringstream converter;
+		converter << content;
+		converter >> speed;
+
+		speed = speed == 0 ? 100 : speed;
+
 		_curveNode->setPreviewSpeed(speed);
-    }
-    else if(name == "WeightSetting")
-    {
-        std::string content = editBox->getText();
-        float weight = 0.5;
-        std::stringstream converter;
-        converter << content;
-        converter >> weight;
-        
-        
-        if(_currentEditPathIndex == -1)
-        {
-            _besselSetData[_besselSetData.size() - 1].weight = weight;
+	}
+	else if (name == "WeightSetting")
+	{
+		std::string content = editBox->getText();
+		float weight = 0.5;
+		std::stringstream converter;
+		converter << content;
+		converter >> weight;
+
+
+		if (_currentEditPathIndex == -1)
+		{
+			_besselSetData[_besselSetData.size() - 1].weight = weight;
 			_curveNode->setWeight(weight);
-        }
-        else
-        {
-            _besselSetData[_currentEditPathIndex].weight = weight;
+		}
+		else
+		{
+			_besselSetData[_currentEditPathIndex].weight = weight;
 			_curveNode->setWeight(weight);
-        }
-    }
+		}
+	}
 	else if (name == "TopRadius")//上半径
 	{
 		//只能对螺旋曲线有效
@@ -1362,10 +1655,12 @@ void BesselUI::editBoxEditingDidEnd(cocos2d::ui::EditBox* editBox)
 			ControlPoint *controlPoint = node->getSelectControlPoint();
 			if (controlPoint != nullptr)//选中的控制点不为空
 			{
-                controlPoint->_speedCoef = speed;
+				controlPoint->_speedCoef = speed;
 			}
 		}
 	}
+	else if (name == "RouteGroup")
+		setRouteGroup(editBox->getText());
 }
 
 void BesselUI::editBoxTextChanged(cocos2d::ui::EditBox* editBox, const std::string& text)
@@ -1390,14 +1685,14 @@ void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
 		auto &controlPointSet = _besselSetData.at(_currentEditPathIndex);
 		changeCurveNode(controlPointSet._type);
         
-        std::vector<Vec3> points;
+        //std::vector<Vec3> points;
+        //
+        //for(int i = 0; i < controlPointSet._realSize; i++)
+        //{
+        //    points.push_back(controlPointSet._pointsSet[i].position);
+        //}
         
-        for(int i = 0; i < controlPointSet._realSize; i++)
-        {
-            points.push_back(controlPointSet._pointsSet[i].position);
-        }
-        
-		_curveNode->initCurveNodeWithPoints(points);
+		_curveNode->initCurveNodeWithPoints(controlPointSet);
 		_curveNode->setWeight(controlPointSet.weight);
 		//将该曲线对应的鱼的id也读入
 		_currentSelectFishIds.clear();
@@ -1421,8 +1716,129 @@ void BesselUI::editBoxReturn(cocos2d::ui::EditBox* editBox)
         
         ((cocos2d::ui::EditBox*)this->getChildByName("WeightSetting"))->setText(converter.str().c_str());
     }
+	else if (editBox == _actionIndexEditBox)
+	{
+		//目前只支持贝塞尔曲线
+		if (_curveNode->getType() != CurveType::CurveType_Bessel)
+			return;
+		BesselNode *node = (BesselNode*)_curveNode;
+		ControlPoint *controlPoint = node->getSelectControlPoint();
+		//返回的值有可能为空
+		if (controlPoint != 0)
+		{
+			//获取文本字符串
+			const char *text = editBox->getText();
+			int actionIndex = atoi(text);
+			//是否需要切换索引,并且需要判断动画索引是否合法
+			if (actionIndex >=0 && actionIndex<node->getFishVisual().fishAniVec.size() && actionIndex != controlPoint->getActionIndex())
+			{
+				controlPoint->setActionIndex(actionIndex);
+				controlPoint->setActionDistance(0);
+			}
+		}
+	}
 }
-
+/*
+  *
+*/
+void  BesselUI::setRouteGroup(const char *syntax)
+{
+	//首先解析文法
+	SyntaxParser   parser(syntax);
+	//中括号可以和单个词法单元共存
+	struct Token  token;
+	parser.getToken(token);
+	//路径id,因为输入可能存在重复
+	std::map<int, int>   pathMap;
+	bool                           syntaxError = true;
+	while (token.syntaxType != SyntaxType::SyntaxType_None)
+	{
+		//每一次都假设存在语法错误
+		syntaxError = true;
+		if (token.syntaxType == SyntaxType::SyntaxType_LeftBracket)//左侧中括号,必须以右中括号收尾
+		{
+			parser.getToken(token);
+			if (token.syntaxType != SyntaxType::SyntaxType_Number)//第一个接壤的必须是数字
+				break;
+			int  startId = atoi(token.syntax.c_str());
+			//中间的词法单元必须是 - 号
+			parser.getToken(token);
+			if (token.syntaxType != SyntaxType::SyntaxType_Minus)
+				break;
+			//其后必须是数字
+			parser.getToken(token);
+			if (token.syntaxType != SyntaxType::SyntaxType_Number)
+				break;
+			int    endId = atoi(token.syntax.c_str());
+			//后面接壤的是右中括号
+			parser.getToken(token);
+			if (token.syntaxType != SyntaxType::SyntaxType_RightBracket)
+				break;
+			syntaxError = false;
+			//将路径id添加到集合中
+			for (int id = startId; id <= endId; ++id)
+				pathMap[id] = id;
+			//移动到下一个词法单元
+			parser.getToken(token);
+		}
+		else if (token.syntaxType == SyntaxType::SyntaxType_Number)
+		{
+			//此时直接将数字存入
+			int id = atoi(token.syntax.c_str());
+			pathMap[id] = id;
+			//并且检测后面的词法单元,要么是逗号,要么就是空,要么是中括号
+			parser.getToken(token);
+			if (token.syntaxType != SyntaxType::SyntaxType_Comma && token.syntaxType != SyntaxType::SyntaxType_None && token.syntaxType!= SyntaxType::SyntaxType_LeftBracket)
+				break;
+			//如果后面是逗号跳过逗号
+			if(token.syntaxType == SyntaxType::SyntaxType_Comma)
+				parser.getToken(token);
+			syntaxError = false;
+		}
+	}
+	if (!syntaxError && pathMap.size())//如果没有词法错误并且有数据,就将数据写入
+	{
+		std::vector<ControlPointSet>  routePointVec;
+		std::vector<int>                        fishIdVec;
+		for (std::map<int, int>::iterator it = pathMap.begin(); it != pathMap.end(); ++it)
+		{
+			//检测是否越界
+			if (it->first >= 0 && it->first < _besselSetData.size())
+			{
+				routePointVec.push_back(_besselSetData.at(it->first));
+				//相关路径的第一条鱼被选中,如果没有相对应的鱼,则直接写入1
+				int   fishId = 1;
+				if (_pathFishMap.find(it->first) != _pathFishMap.end() && _pathFishMap[it->first].fishIdSet.size())
+					fishId = _pathFishMap[it->first].fishIdSet[0];
+				fishIdVec.push_back(fishId);
+			}
+		}
+		//如果有数据,则弹出相关UI
+		if (routePointVec.size() != 0)
+		{
+			//删除原来的
+			if (_routeGroupNode != nullptr)
+				_routeGroupNode->removeFromParent();
+			RouteGroup  *routeGroup = RouteGroup::createWithRoute(routePointVec, fishIdVec, _fishVisualStatic);
+			this->addChild(routeGroup);
+			//routeGroup->setRotationQuat();
+			routeGroup->setCameraMask(short(CameraFlag::USER1));
+			routeGroup->setRotationQuat(_rotateQua);
+			//原来的曲线隐藏
+			_curveNode->setVisible(false);
+			_routeGroupNode = routeGroup;
+		}
+	}
+	else//弹出提示,输入的内容出现语法错误
+	{
+		Label  *label = Label::createWithSystemFont("Input Content Has Syntax Error!", "Arial", 16);
+		label->setAlignment(TextHAlignment::CENTER);
+		auto &winSize = Director::getInstance()->getWinSize();
+		label->setPosition(Vec2(winSize.width/2,winSize.height/2));
+		this->addChild(label);
+		label->runAction(Sequence::create(FadeOut::create(0.5f),RemoveSelf::create(),nullptr));
+	}
+}
 
 void BesselUI::parseControlPoints()
 {
@@ -1492,12 +1908,26 @@ void  BesselUI::loadFishVisualStatic()
 		for (Value& v : TPS.asValueVector())
 		{
 			FishVisual  visualData;
-			ValueMap fishMap = v.asValueMap();
+			ValueMap &fishMap = v.asValueMap();
 			visualData.id = fishMap["id"].asInt();
 			visualData.scale = fishMap["scale"].asFloat();
 			visualData.name = fishMap["name"].asString();
-			visualData.from = fishMap["from"].asFloat();
-			visualData.to = fishMap["to"].asFloat();
+			visualData.label = fishMap["label"].asString();
+			//加载动画集合
+			Value &fishAnimation = fishMap["Animation"];
+			if (fishAnimation.getType() == cocos2d::Value::Type::VECTOR)
+			{
+				for (Value &aV : fishAnimation.asValueVector())
+				{
+					ValueMap &bV = aV.asValueMap();
+					visualData.fishAniVec.push_back(AnimationFrameInfo(bV["from"].asInt(),bV["to"].asInt()));
+				}
+			}
+			else if (fishAnimation.getType() == cocos2d::Value::Type::MAP)
+			{
+				ValueMap &bv = fishAnimation.asValueMap();
+				visualData.fishAniVec.push_back(AnimationFrameInfo(bv["from"].asInt(),bv["to"].asInt()));
+			}
 			//加入到鱼的资料集合中
 			_fishVisualStatic[visualData.id] = visualData;
 		}
@@ -1509,8 +1939,21 @@ void  BesselUI::loadFishVisualStatic()
 		visualData.id = fishMap["id"].asInt();
 		visualData.scale = fishMap["scale"].asFloat();
 		visualData.name = fishMap["name"].asString();
-		visualData.from = fishMap["from"].asFloat();
-		visualData.to = fishMap["to"].asFloat();
+		visualData.label = fishMap["label"].asString();
+		Value &fishAni = fishMap["Animation"];
+		if (fishAni.getType() == cocos2d::Value::Type::VECTOR)
+		{
+			for (Value &aV : fishAni.asValueVector())
+			{
+				ValueMap &bV = aV.asValueMap();
+				visualData.fishAniVec.push_back(AnimationFrameInfo(bV["from"].asInt(),bV["to"].asInt()));
+			}
+		}
+		else if (fishAni.getType() == cocos2d::Value::Type::MAP)
+		{
+			ValueMap &bV = fishAni.asValueMap();
+			visualData.fishAniVec.push_back(AnimationFrameInfo(bV["from"].asInt(),bV["to"].asInt()));
+		}
 		//加入到鱼的资料集合中
 		_fishVisualStatic[visualData.id] = visualData;
 	}

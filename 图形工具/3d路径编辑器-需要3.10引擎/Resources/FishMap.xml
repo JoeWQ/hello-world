@@ -1,24 +1,149 @@
 <?xml version="1.0"?>
 <FishMap>
-	<Fish id="0" name="cheqiyu" scale="0.15" from="0" to="50"/>
-	<Fish id="1" name="bianfuyu" scale="0.15" from="0" to="60"/>
-	<Fish id="2" name="chuitousha" scale="1.75" from="10" to="42"/>
-	<Fish id="3" name="denglongyu" scale="0.15" from="0" to="48"/>
-	<Fish id="4" name="dianmanyu" scale="0.15" from="0" to="20"/>
-	<Fish id="5" name="hetun-1" scale="0.15" from="0" to="90"/>
-	<Fish id="6" name="haigui" scale="0.15" from="0" to="80"/>
-	<Fish id="7" name="hetun-2" scale="0.15" from="0" to="90"/>
-	<Fish id="8" name="jianyu" scale="1.5" from="0" to="11"/>
-	<Fish id="9" name="jinqiangyu" scale="0.15" from="0" to="64"/>
-	<Fish id="10" name="jinqiangyu_blue" scale="0.15" from="0" to="64"/>
-	<Fish id="11" name="jinqiangyu_gold" scale="0.15" from="0" to="64"/>
-	<Fish id="12" name="jinqiangyu_red" scale="0.15" from="0" to="64"/>
-	<Fish id="13" name="long" scale="5.0" from="0" to="48"/>
-	<Fish id="14" name="shayu" scale="0.15" from="0" to="32"/>
-	<Fish id="15" name="shayu_j2" scale="0.15" from="0" to="32"/>
-	<Fish id="16" name="shiziyu" scale="0.15" from="0" to="96"/>
-	<Fish id="17" name="tianshiyu" scale="0.15" from="0" to="16"/>
-	<Fish id="18" name="xiaochouyu" scale="0.15" from="0" to="54"/>
-	<Fish id="19" name="xiaohuangyu" scale="0.15" from="0" to="54"/>
-	<Fish id="20" name="xiaolvyu" scale="0.15" from="0" to="24"/>
+	<Fish id="1" name="xiaohuangyu" label="小黄鱼" scale="0.15">
+		<Animation  from="0" to="160"/>
+        <Animation  from="260" to="282"/>
+        <Animation  from="200" to="240"/>
+	</Fish>
+	<Fish id="2" name="cheqiyu" label="扯旗鱼" scale="0.15">
+		 <Animation from="0" to="50"/>
+	</Fish>
+	<Fish id="3" name="fangyu" label="鲂鱼" scale="0.10" >
+		<Animation  from="280" to="384"/>
+	</Fish>
+	<Fish id="4" name="jinqiangyu" label="金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="5" name="jinqiangyu_red" label="红色金枪鱼" scale="0.2">
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="6" name="jinqiangyu_gold" label="金色金枪鱼" scale="0.2" >
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="7" name="jinqiangyu_blue" label="蓝色金枪鱼" scale="0.2" >
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="8" name="xiaochouyu" label="小丑鱼" scale="0.125" >
+		<Animation from="0" to="54"/>
+	</Fish>
+	<Fish id="9" name="hetun-1" label="河豚" scale="0.125">
+		<Animation from="0" to="90"/>
+	</Fish>
+	<Fish id="10" name="denglongyu" label="灯笼鱼" scale="0.125">
+		<Animation from="0" to="48"/>
+	</Fish>
+	<Fish id="11" name="haigui" label="海龟" scale="0.15">
+		<Animation from="0" to="80"/>
+	</Fish>
+	<Fish id="12" name="tianshiyu" label="天使鱼" scale="0.15">
+		<Animation from="0" to="16"/>
+	</Fish>
+	<Fish id="13" name="shiziyu" label="狮子鱼" scale="0.2">
+		<Animation from="0" to="96"/>
+	</Fish>
+	<Fish id="14" name="dianmanyu" label="电鳗鱼" scale="0.25">
+		<Animation from="0" to="60"/>
+	</Fish>
+	<Fish id="15" name="dinianyu" label="帝鲶鱼" scale="0.125">
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="16" name="jianyu" label="剑鱼" scale="0.15">
+		<Animation from="0" to="80"/>
+	</Fish>
+	<Fish id="17" name="bianfuyu" label="蝙蝠鱼" scale="0.125">
+		<Animation from="0" to="60"/>
+	</Fish>
+	<Fish id="18" name="shayu" label="鲨鱼" scale="0.13">
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="19" name="shayu_j2" label="黄金鲨" scale="0.13">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="20" name="chuitousha" label="金色锤头鲨" scale="2.5">
+		<Animation  from="10" to="42"/>
+	</Fish>
+	<Fish id="201" name="xiaohuangyu" label="闪电连锁小黄鱼" scale="0.15">
+		<Animation  from="0" to="160"/>
+	</Fish>
+	<Fish id="202" name="cheqiyu" label="闪电连锁扯旗鱼" scale="0.15">
+		<Animation  from="0" to="50"/>
+	</Fish>
+	<Fish id="203" name="fangyu" label="闪电连锁鲂鱼" scale="0.10">
+		<Animation  from="280" to="384"/>
+	</Fish>
+	<Fish id="204" name="jinqiangyu" label="闪电连锁金枪鱼" scale="0.2">
+		<Animation from="0" to="32"/>
+	</Fish>
+	<Fish id="205" name="jinqiangyu_red" label="闪电连锁红色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="206" name="tianshiyu" label="闪电连锁天使鱼" scale="0.15">
+		<Animation  from="0" to="16"/>
+	</Fish>
+	<Fish id="207" name="jinqiangyu_gold" label="闪电连锁金色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="208" name="jinqiangyu_blue" label="闪电连锁蓝色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="209" name="dinianyu" label="闪电连锁帝鲶鱼" scale="0.125">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="210" name="xiaochouyu" label="闪电连锁小丑鱼" scale="0.125">
+		<Animation  from="0" to="54"/>
+	</Fish>
+	<Fish id="601" name="xiaohuangyu" label="大闹天宫小黄鱼" scale="0.15">
+		<Animation  from="0" to="160"/>
+	</Fish>
+	<Fish id="602" name="cheqiyu" label="大闹天宫扯旗鱼" scale="0.15">
+		<Animation  from="0" to="50"/>
+	</Fish>
+	<Fish id="603" name="fangyu" label="大闹天宫鲂鱼" scale="0.10">
+		<Animation  from="280" to="384"/>
+	</Fish>
+	<Fish id="604" name="jinqiangyu" label="大闹天宫金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="605" name="jinqiangyu_red" label="大闹天宫红色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="606" name="tianshiyu" label="大闹天宫天使鱼" scale="0.15">
+		<Animation  from="0" to="16"/>
+	</Fish>
+	<Fish id="607" name="jinqiangyu_gold" label="大闹天宫金色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="608" name="jinqiangyu_blue" label="大闹天宫蓝色金枪鱼" scale="0.2">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="609" name="dinianyu" label="大闹天宫帝鲶鱼" scale="0.125">
+		<Animation  from="0" to="32"/>
+	</Fish>
+	<Fish id="610" name="xiaochouyu" label="大闹天宫小丑鱼" scale="0.125">
+		<Animation  from="0" to="54"/>
+	</Fish>
+	<Fish id="901" name="fangyu" label="光环鲂鱼" scale="0.10">
+		<Animation  from="280" to="384"/>
+	</Fish>
+	<Fish id="902" name="fangyu" label="正面光环鲂鱼" scale="0.10">
+		<Animation  from="280" to="384"/>
+	</Fish>
+	<Fish id="910" name="hetun-1" label="冰冻鱼" scale="0.125">
+		<Animation  from="0" to="90"/>
+	</Fish>
+	<Fish id="920" name="yulei" label="炸弹鱼" scale="2.8">
+		<Animation  from="80" to="100"/>
+	</Fish>
+	<Fish id="930" name="faguangyu" label="黑洞旋涡" scale="1.5">
+		<Animation  from="0" to="12"/>
+	</Fish>
+	<Fish id="940" name="dianmanyu" label="闪电鱼" scale="0.25">
+		<Animation  from="0" to="60"/>
+	</Fish>
+	<Fish id="1001" name="xiaochouyu" label="帝王鱼" scale="0.2">
+		<Animation  from="0" to="54"/>
+	</Fish>
+	<Fish id="1101" name="xiaochouyu" label="鱼王" scale="0.125">
+		<Animation  from="0" to="54"/>
+	</Fish>
 </FishMap>

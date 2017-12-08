@@ -11,6 +11,7 @@ _curveType(curveType)
 ,_lineColor(1.0f,1.0f,1.0f,1.0f)
 , _previewSpeed(1.0f)
 , _isSupportedControlPoint(false)
+, _isPauseModel(false)
 , _weight(1.0f)
 {
 
@@ -51,9 +52,10 @@ void   CurveNode::projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3 &
 	 CCASSERT(false, "Unsupported Method:initControlPoint");
  }
 
- void   CurveNode::onTouchBegan(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera  *camera)
+ bool   CurveNode::onTouchBegan(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera  *camera)
  {
 	 CCASSERT(false, "Unsupported Method:CurveNode::onTouchBegan");
+	 return false;
  }
 
  void   CurveNode::onTouchMoved(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera *camera)
@@ -81,6 +83,11 @@ void   CurveNode::projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3 &
 	 printf("not realize function CurveNode::onMouseReleased\n");
  }
 
+void  CurveNode::onMouseClickCtrl(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera)
+ {
+
+ }
+
  void    CurveNode::onCtrlKeyRelease()
  {
 	 CCASSERT(false, "Unsupported Method:CurveNode::onCtrlKeyRelease");
@@ -100,7 +107,7 @@ void   CurveNode::projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3 &
  {
 	 CCASSERT(false, "Unsupported Method:CurveNode::previewCurive");
   }
- void   CurveNode::initCurveNodeWithPoints(const std::vector<cocos2d::Vec3>  &points)
+ void   CurveNode::initCurveNodeWithPoints(const ControlPointSet  &controlPointSet)
  {
 	 CCASSERT(false, "Unsupported Method:CurveNode::initCurveNodeWithPoints");
   }
@@ -126,6 +133,8 @@ void   CurveNode::projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3 &
 //////////////////////////////////////////////////////
 ControlPoint::ControlPoint():
 _drawNode3D(nullptr)
+,_actionIndex(0)
+,_distance(0)
 {
 	_modelSprite = NULL;
 	_sequence = NULL;
@@ -160,6 +169,10 @@ void ControlPoint::initControlPoint(int index)
 	this->addChild(_sequence,10);
 	//设置大小尺寸,在后面的触屏操作中将会被用到
 	this->setContentSize(_iconSprite->getContentSize());
+    
+    _labelPosition = Label::createWithSystemFont("", "", 16);
+    _labelPosition->setPosition(Vec2(50, 50));
+    this->addChild(_labelPosition);
 }
 
 ControlPoint   *ControlPoint::createControlPoint(int index)
@@ -199,4 +212,13 @@ void ControlPoint::drawAxis()
 		_drawNode3D->setLineWidth(4.0f);
 		this->addChild(_drawNode3D);
 	}
+}
+
+void ControlPoint::setLabelPosition(cocos2d::Vec3 position)
+{
+    char str[256];
+    
+    sprintf(str, "(%d, %d, %d)", (int)position.x, (int)position.y, (int)position.z);
+    
+    _labelPosition->setString(str);
 }

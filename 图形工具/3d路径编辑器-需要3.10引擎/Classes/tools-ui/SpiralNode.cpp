@@ -25,6 +25,7 @@ SpiralNode::SpiralNode():CurveNode(CurveType::CurveType_Spiral)
 ,_radius0(_ORIGIN_RADIUS_)
 ,_radius1(_ORIGIN_RADIUS_)
 ,_spiralHeight( _ORIGIN_RADIUS_)
+,_clockwise(1.0f)
 , _windCount(1.0f)
 ,_vertexCount(0)
 , _axisNode(nullptr)
@@ -73,7 +74,12 @@ void SpiralNode::initSpiralNode()
 		this->addChild(_controlPoints[i]);
 		_controlPoints[i]->setCameraMask((short)CameraFlag::USER1);
 	}
-	_glProgram = cocos2d::GLProgram::createWithByteArrays(_static_spiral_Vertex_Shader, _static_spiral_Frag_Shader);
+	_glProgram = GLProgramCache::getInstance()->getGLProgram(_SHADER_TYPE_MODEL_);
+	if (!_glProgram)
+	{
+		_glProgram = cocos2d::GLProgram::createWithByteArrays(_static_spiral_Vertex_Shader, _static_spiral_Frag_Shader);
+		GLProgramCache::getInstance()->addGLProgram(_glProgram, _SHADER_TYPE_MODEL_);
+	}
 	_glProgram->retain();
 	_positionLoc = _glProgram->getAttribLocation("a_position");
 	_colorLoc = _glProgram->getUniformLocation("u_color");
@@ -154,7 +160,7 @@ void  SpiralNode::updateVertexData(bool needUpdateVertex)
 		int  index = 0;
 		//注意半高度是指曲线的高度的一半而非曲线的积分的一半
 		const float halfHeight = height / 2.0f;
-		const float paix2 = 2.0f * M_PI;
+		const float paix2 = 2.0f * M_PI * _clockwise;//此代码决定这整个曲线是否是逆时针旋转
 		const float totalAngle = paix2 * _windCount;
 		for (int k = 0; k < _vertexCount; ++k)
 		{
@@ -208,6 +214,15 @@ void SpiralNode::setTopRadius(float radius)
 	_radius1 = radius;
 }
 
+void  SpiralNode::setCCWValue(float ccwValue)
+{
+	if (ccwValue != _clockwise)
+	{
+		_clockwise = ccwValue;
+		updateVertexData(true);
+	}
+}
+
 void  SpiralNode::initControlPoint(int pointCount)
 {
 
@@ -246,18 +261,20 @@ void SpiralNode::drawSpiralNode(cocos2d::Mat4 &parentTransform, uint32_t parentF
 		glBindBuffer(GL_ARRAY_BUFFER, _defaultVertex);
 }
 
-void SpiralNode::initCurveNodeWithPoints(const std::vector<cocos2d::Vec3> &points)
+void SpiralNode::initCurveNodeWithPoints(const ControlPointSet  &controlPointSet)
 {
-	_rotateAxis = points[0];//旋转轴
-	_controlPoints[_CONTROL_POINT_MOVE_]->setPosition3D(points[1]);//中心坐标
-	const Vec3 &point = points[2];
+	const std::vector<RouteProtocol::PointInfo>  &points = controlPointSet._pointsSet;
+	_rotateAxis = points[0].position;//旋转轴
+	_controlPoints[_CONTROL_POINT_MOVE_]->setPosition3D(points[1].position);//中心坐标
+	const Vec3 &point = points[2].position;
 	//下上半径
 	_radius0 = point.x;
 	_radius1 = point.y;
 	//导程
 	_spiralHeight = point.z;
 	//匝数
-	_windCount = points[3].x;
+	_windCount = points[3].position.x;
+	_clockwise =	points[3].position.y;
 	updateRotateMatrix(_rotateAxis);
 	updateVertexData(true);
 }
@@ -288,9 +305,9 @@ void SpiralNode::previewCurive(std::function<void()> callback)
 	tempModel->setScale(_fishVisual.scale);
 	//UIAnimation3D，播放游动动作
 	cocos2d::Animation3D  *animation = cocos2d::Animation3D::create(filename);
-	float startTime = _fishVisual.from;
-	float endTime = _fishVisual.to;
-	cocos2d::Animate3D      *aniAction = cocos2d::Animate3D::create(animation, startTime / 30.0f, (endTime - startTime) / 30.0f);
+	//选取第一个动画
+	auto &fishAniMap = _fishVisual.fishAniVec[0];
+	cocos2d::Animate3D      *aniAction = cocos2d::Animate3D::create(animation, fishAniMap.startFrame / 30.0f, (fishAniMap.endFrame - fishAniMap.startFrame) / 30.0f);
 	tempModel->runAction(cocos2d::RepeatForever::create(aniAction));
 	tempModel->setName("PreviewModel");
 
@@ -301,7 +318,7 @@ void SpiralNode::previewCurive(std::function<void()> callback)
 	//
 	float timeCost = length / winSize.width * 6.0f;
 	SpiralAction *action = SpiralAction::create(timeCost,_rotateAxis, _controlPoints[_CONTROL_POINT_MOVE_]->getPosition3D(),
-		_radius0,_radius1,_spiralHeight,_windCount);
+		_radius0,_radius1,_spiralHeight,_windCount, _clockwise);
 	tempModel->runAction(cocos2d::Sequence::create(
 		action,
 		CallFuncN::create([=](cocos2d::Node *sender) {
@@ -313,7 +330,7 @@ void SpiralNode::previewCurive(std::function<void()> callback)
 	));
 }
 //触屏回调函数
-void  SpiralNode::onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera)
+bool  SpiralNode::onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera)
 {
 	_lastSelectIndex = -1;
 	float lastZOrder = 0.0f;
@@ -351,6 +368,7 @@ void  SpiralNode::onTouchBegan(const cocos2d::Vec2 &touchPoint, cocos2d::Camera 
 		}
 	}
 	_lastOffsetPoint = touchPoint;
+	return true;
 }
 
 void SpiralNode::onTouchMoved(const cocos2d::Vec2 &touchPoint, cocos2d::Camera *camera)
@@ -478,7 +496,7 @@ void SpiralNode::onCtrlKeyRelease()
   *cpoints[0](x,y,z)===>{旋转轴(单位化)}
   *cpoints[1](x,y,z)===>{中心坐标}
   *cpoints[2](x,y,z)===>{下半径,上半径,导程(一个螺旋曲线周期的高度)}
-  *cpoints[3](x,y,z)===>{匝数,0,0}
+  *cpoints[3](x,y,z)===>{匝数,曲线的方向,0}
   */
 void SpiralNode::getControlPoint(ControlPointSet &cpoints)
 {
@@ -491,10 +509,10 @@ void SpiralNode::getControlPoint(ControlPointSet &cpoints)
 	//数据2
 	cpoints.addNewPoint(Vec3(_radius0,_radius1,_spiralHeight));
 	//数据3
-	cpoints.addNewPoint(Vec3(_windCount,0,0));
+	cpoints.addNewPoint(Vec3(_windCount, _clockwise,0));
 }
 ///////////////////////螺旋曲线动作////////////////////
-void SpiralAction::initWithControlPoint(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount)
+void SpiralAction::initWithControlPoint(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount,float clockwise)
 {
 	_rotateAxis = rotateAxis;
 	_centerPoint = centerPoint;
@@ -502,6 +520,7 @@ void SpiralAction::initWithControlPoint(float duration,const cocos2d::Vec3 &rota
 	_topRadius = topRadius;
 	_spiralHeight = spiralHeight;
 	_windCount = windCount;
+	_clockwise = clockwise;
 	updateRotateMatrix();
 	cocos2d::ActionInterval::initWithDuration(duration);
 }
@@ -515,6 +534,7 @@ void SpiralAction::initWithControlPoint(float duration,const std::vector<cocos2d
 	_topRadius = point.y;
 	_spiralHeight = point.z;
 	_windCount = controlPoints[3].x;
+	_clockwise = controlPoints[3].y;
 	updateRotateMatrix();
 	cocos2d::ActionInterval::initWithDuration(duration);
 }
@@ -533,10 +553,10 @@ void SpiralAction::updateRotateMatrix()
 	_modelMatrix = translateM * rotateM;
 }
 
-SpiralAction *SpiralAction::create(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount)
+SpiralAction *SpiralAction::create(float duration,const cocos2d::Vec3 &rotateAxis, const cocos2d::Vec3 &centerPoint, float bottomRadius, float topRadius, float spiralHeight, float windCount,float clockwise)
 {
 	SpiralAction * action = new SpiralAction();
-	action->initWithControlPoint(duration,rotateAxis, centerPoint, bottomRadius, topRadius, spiralHeight, windCount);
+	action->initWithControlPoint(duration,rotateAxis, centerPoint, bottomRadius, topRadius, spiralHeight, windCount,clockwise);
 	return action;
 }
 
@@ -554,7 +574,7 @@ void SpiralAction::update(float rate)
 	//位置
 	const float height = _spiralHeight *_windCount;
 	const float halfHeight = height *0.5f;
-	const float paix2 = 2.0f *M_PI;
+	const float paix2 = 2.0f *M_PI * _clockwise;
 	const float totalAngle = paix2 * _windCount;
 	float  angle = rate * totalAngle;
 	float  radius = _bottomRadius + (_topRadius - _bottomRadius)*angle / totalAngle;

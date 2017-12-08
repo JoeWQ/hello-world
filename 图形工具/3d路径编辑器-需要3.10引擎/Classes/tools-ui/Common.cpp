@@ -92,3 +92,49 @@ float strtof(const char *str)
 	}
 	return value;
 }
+////////////////////////////////////////////////
+SyntaxParser::SyntaxParser(const std::string &text)
+{
+	_text = text;
+	_index = 0;
+	//添加保留字
+	_reservedSyntax["["] = Token("[",SyntaxType::SyntaxType_LeftBracket);
+	_reservedSyntax["]"] = Token("]",SyntaxType::SyntaxType_RightBracket);
+	_reservedSyntax[","] = Token(",",SyntaxType::SyntaxType_Comma);
+	_reservedSyntax["-"] = Token("-",SyntaxType::SyntaxType_Minus);
+}
+
+void  SyntaxParser::getToken(Token &token)
+{
+	//过滤空白符
+	while (_index<_text.size() && (_text[_index] == ' ' || _text[_index] == '\t'))
+		_index = _index + 1;
+	token.syntaxType = SyntaxType::SyntaxType_None;
+	do
+	{
+		if (_index >= _text.size())
+			break;
+		std::string key;
+		char w = _text[_index];
+		if (w >= '0' && w <= '9')
+		{
+			do
+			{
+				key.append(&w, 1);
+				_index = _index + 1;
+			} while (_index < _text.size() && _text[_index] >= '0' && _text[_index] <= '9');
+			token.syntaxType = SyntaxType::SyntaxType_Number;
+			token.syntax = key;
+			break;
+		}
+		key.append(&w, 1);
+		//保留字都是单字符,可以不用再接着判断了
+		if (_reservedSyntax.find(key) != _reservedSyntax.end())
+		{
+			Token &ctoken = _reservedSyntax[key];
+			token.syntax = ctoken.syntax;
+			token.syntaxType = ctoken.syntaxType;
+			_index = _index + 1;
+		}
+	} while (0);
+}

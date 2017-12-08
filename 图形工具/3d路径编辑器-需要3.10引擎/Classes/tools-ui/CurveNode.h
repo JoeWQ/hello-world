@@ -26,6 +26,8 @@ protected:
 	float _previewSpeed;//预览的速度
 	//是否支持控制点的选择
 	bool              _isSupportedControlPoint;
+	//是否暂停了模型
+	bool              _isPauseModel;
 	float _weight;
 	std::function<void(CurveType type, int param, int param2)> _onUIChangedCallback;
 protected:
@@ -46,7 +48,7 @@ public:
 	*用来控制曲线旋转的触屏回掉函数,此函数都是在Control按键被按下的时候调用
 	*touchPoint:必须是以中心点为屏幕的中心的OpenGL世界坐标系下的点坐标
 	*/
-	virtual void   onTouchBegan(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera  *camera);
+	virtual bool   onTouchBegan(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera  *camera);
 
 	virtual void   onTouchMoved(const   cocos2d::Vec2   &touchPoint, cocos2d::Camera *camera);
 
@@ -71,6 +73,10 @@ public:
 	virtual  void   onMouseMoved(const cocos2d::Vec2 &clickPoint,cocos2d::Camera *camera);
 	virtual  void   onMouseReleased(const cocos2d::Vec2 &clickPoint,cocos2d::Camera *camera);
 	/*
+	  *鼠标右键事件,只有在同时按下Ctrl键的时候才会生效
+	 */
+	virtual   void  onMouseClickCtrl(const cocos2d::Vec2 &clickPoint, cocos2d::Camera *camera);
+	/*
 	*三维投影矩阵变换
 	*/
 	void   projectToOpenGL(cocos2d::Camera *camera, const cocos2d::Vec3  &src, cocos2d::Vec3   &dts);
@@ -83,7 +89,7 @@ public:
 	/*
 	*使用给定的一系列控制点来初始化节点数据,必要的时候需要重新创建节点
 	*/
-	virtual void   initCurveNodeWithPoints(const std::vector<cocos2d::Vec3>  &points);
+	virtual void   initCurveNodeWithPoints(const ControlPointSet  &controlPointSet);
 	/*
 	*恢复当前节点的位置
 	*/
@@ -104,6 +110,10 @@ public:
 	  *是否支持控制点选择,贝赛尔曲线支持,但是螺旋曲线不支持
 	 */
 	bool  isSupportedControlPoint() { return _isSupportedControlPoint; };
+	/*
+	  *获取当前预览的模型的集合
+	 */
+	const FishVisual &getFishVisual()const { return _fishVisual; };
 };
 /*
 *关于曲线控制点的外观标志
@@ -124,7 +134,12 @@ private:
 	cocos2d::Sprite         *_iconSprite;
 	//在控制点上画出坐标轴
 	cocos2d::DrawNode3D *_drawNode3D;
+    cocos2d::Label          *_labelPosition;
 	int                                _index;
+	//动画索引
+	int                               _actionIndex;
+	//控制点在曲线上的距离
+	float                            _distance;
 private:
 	ControlPoint();
 	void      initControlPoint(int index);
@@ -141,5 +156,12 @@ public:
 	void     drawAxis();//画坐标轴
     
     float _speedCoef;
+    
+    void setLabelPosition(cocos2d::Vec3 position);
+
+	void setActionIndex(int actionIndex) { _actionIndex = actionIndex; };
+	void setActionDistance(float distance) { _distance = distance; };
+
+	int getActionIndex()const { return _actionIndex; };
 };
 #endif

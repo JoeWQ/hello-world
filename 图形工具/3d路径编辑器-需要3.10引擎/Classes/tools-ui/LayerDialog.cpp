@@ -24,6 +24,7 @@ LayerDialog::LayerDialog(const std::map<int, FishVisual> &fishVisualStatic, std:
 	,_listAReaSize(_listSize.width,_listSize.height*_AREA_DISPLAY_ROW_)
 	, _currentSprite3D(nullptr)
 	,_listSprite3D(nullptr)
+	, _labelTips(nullptr)
 {
 	_touchEventListener = nullptr;	
 	_onConfirmCallback = nullptr;
@@ -383,11 +384,84 @@ void LayerDialog::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unuseEvent
 					}
 					_currentSprite3D = nullptr;
 				});
-				_currentSprite3D->runAction(cocos2d::Sequence::create(fadeAction,callFunc,nullptr));
+				_currentSprite3D->runAction(cocos2d::Sequence::create(fadeAction,callFunc,RemoveSelf::create() ,nullptr));
 				_removeButton->setEnabled(_currentFishIds.size());
 			}
 		}
 	}
+}
+
+void  LayerDialog::onMouseClick(const cocos2d::Vec2 &touchPoint)
+{
+	//如果弹出的提示还没有消失,防止手贱的人反复的点击
+	if (_labelTips != nullptr)
+		return;
+	//遍历所有的节点
+	cocos2d::Vector<Node*> &children = _displayNode->getChildren();
+	const Vec2 &areaPosition = _clippingDisplayArea->getPosition();
+	//检测child是否在显示区域之内
+	if (touchPoint.x > areaPosition.x && touchPoint.x < areaPosition.x + _displayAreaSize.width
+		&& touchPoint.y >areaPosition.y && touchPoint.y < areaPosition.y + _displayAreaSize.height)
+	{
+		for (cocos2d::Vector<Node*>::iterator it = children.begin(); it != children.end(); ++it)
+		{
+			Sprite3D *targetNode = (Sprite3D *)*it;
+			Vec2    targetPoint = targetNode->convertToWorldSpace(Vec2::ZERO);
+			Vec2    absDistance(fabs(touchPoint.x - targetPoint.x), fabs(touchPoint.y-targetPoint.y));
+			if (targetPoint.x > areaPosition.x && targetPoint.x < areaPosition.x + _displayAreaSize.width
+				&& targetPoint.y >areaPosition.y && targetPoint.y < areaPosition.y + _displayAreaSize.height
+				&& absDistance.x <=_displaySize.width/2 && absDistance.y <= _displaySize.height/2)
+			{
+				auto &fishMap = _fishVisualStatic->find(targetNode->getTag())->second;
+				//在此处创建Label
+				char buffer[256];
+				sprintf(buffer,"%s,%d",fishMap.label.c_str(),targetNode->getTag());
+				Label   *label = Label::createWithSystemFont(buffer, "Arial", 24);
+				label->setAlignment(TextHAlignment::CENTER);
+				label->setPosition(touchPoint);
+				this->addChild(label, 101);
+				//
+				label->runAction(Sequence::create(DelayTime::create(0.5), CallFuncN::create(CC_CALLBACK_1(LayerDialog::delayCallback, this)), DelayTime::create(2),FadeOut::create(1), RemoveSelf::create(), nullptr));
+				_labelTips = label;
+				break;
+			}
+		}
+	}
+	//对于显示列表区域中的Sprite3D
+	const Vec2  &listPosition = _clippingListArea->getPosition();
+	cocos2d::Vector<Node*>    &listChild = _listNode->getChildren();
+	if (touchPoint.x > listPosition.x && touchPoint.x < listPosition.x + _listAReaSize.width
+		&& touchPoint.y >listPosition.y && touchPoint.y < listPosition.y + _listAReaSize.height)
+	{
+		for (cocos2d::Vector<Node*>::iterator it = listChild.begin(); it != listChild.end(); ++it)
+		{
+			Sprite3D *targetNode = (Sprite3D *)*it;
+			Vec2    targetPoint = targetNode->convertToWorldSpace(Vec2::ZERO);
+			Vec2    absDistance(fabs(touchPoint.x - targetPoint.x), fabs(touchPoint.y - targetPoint.y));
+			if (targetPoint.x > listPosition.x && targetPoint.x < listPosition.x + _listAReaSize.width
+				&& targetPoint.y >listPosition.y && targetPoint.y < listPosition.y + _listAReaSize.height
+				&& absDistance.x <= _listSize.width / 2 && absDistance.y <= _listSize.height / 2)
+			{
+				auto &fishMap = _fishVisualStatic->find(targetNode->getTag())->second;
+				//在此处创建Label
+				char buffer[256];
+				sprintf(buffer, "%s,%d", fishMap.label.c_str(), targetNode->getTag());
+				Label   *label = Label::createWithSystemFont(buffer, "Arial", 24);
+				label->setAlignment(TextHAlignment::CENTER);
+				label->setPosition(touchPoint);
+				this->addChild(label, 101);
+				//
+				label->runAction(Sequence::create(DelayTime::create(0.5), CallFuncN::create(CC_CALLBACK_1(LayerDialog::delayCallback, this)), DelayTime::create(2), FadeOut::create(1), RemoveSelf::create(), nullptr));
+				_labelTips = label;
+				break;
+			}
+		}
+	}
+}
+
+void   LayerDialog::delayCallback(cocos2d::Node *target)
+{
+	_labelTips = nullptr;
 }
 
 void LayerDialog::onButtonClick_Remove(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType type)
@@ -559,6 +633,13 @@ Sprite3D *LayerDialog::createSprite3DByVisual(const FishVisual &fishMap, const c
 	const cocos2d::AABB &aabb = model->getAABB();
 	float maxWidth = aabb._max.x - aabb._min.x;
 	model->setScale(showSize.width / maxWidth * fishMap.scale);
-	model->setCameraMask((short)CameraFlag::DEFAULT, true);
+	//model->setCameraMask((short)CameraFlag::DEFAULT, true);
+	//label
+	//Label *label = Label::createWithSystemFont(fishMap.label, "Arial",16);
+	//label->setAlignment(TextHAlignment::CENTER);
+	//label->setAnchorPoint(Vec2(0.5f,0.5f));
+	////label->setCameraMask((short)CameraFlag::DEFAULT);
+	//label->setScale(1.0f / model->getScale());
+	//model->addChild(label);
 	return model;
 }

@@ -105,7 +105,7 @@ void CubicBezierRoute::buildParameters()
     {
         return;
     }
-    
+	_controlPoints.reserve(32);
     for(size_t i = 0; i < pointNumber; i++)
     {
         size_t index_back = (pointNumber + i - 1) % pointNumber;
@@ -120,7 +120,7 @@ void CubicBezierRoute::buildParameters()
         _controlPoints.push_back(control_point_back);
         _controlPoints.push_back(control_point_forward);
     }
-    
+	_caculatedParameters.reserve(64);
     for(size_t i = 0; i < pointNumber; i ++)
     {
         Vec3& p0 = _points[i].position;
@@ -144,7 +144,13 @@ void CubicBezierRoute::buildParameters()
     
     _points[0].segmentDistance = 0;
     _points[pointNumber - 1].segmentDistance = 0;
+	//
+	_pointToDistance.push_back(0);
     
+	_cachedPosition.reserve(3000);
+	_cachedDirection.reserve(3000);
+	_controlPointIndex.reserve(3000);
+	_cachedSpeedCoef.reserve(3000);
     if(pointNumber < 4)
     {
         _distance = 0;
@@ -167,6 +173,7 @@ void CubicBezierRoute::buildParameters()
         Vec3 direction = t * t * p.da + t * p.db + p.dc;
         _distance = 0;
         _points[index].segmentDistance = _distance;
+		_pointToDistance.push_back(_distance);
         _cachedPosition.push_back(position);
         _cachedDirection.push_back(direction);
 		_controlPointIndex.push_back(index);
@@ -180,6 +187,7 @@ void CubicBezierRoute::buildParameters()
             {
                 index++;
                 _points[index].segmentDistance = _distance;
+				_pointToDistance.push_back(_distance);
                 t = 0;
                 p = _caculatedParameters[index];
             }
@@ -193,12 +201,13 @@ void CubicBezierRoute::buildParameters()
         }
         while(index < pointNumber - 2);
     }
+	_pointToDistance.push_back(0);
     
-    for(int i = 0; i < pointNumber; i++)
-    {
-        printf("%d\n", _points[i].segmentDistance);
-    }
-    
+    //for(int i = 0; i < pointNumber; i++)
+    //{
+    //    printf("%d\n", _points[i].segmentDistance);
+    //}
+	_pointToDistance.reserve(pointNumber);
     if(pointNumber < 4)
     {
         _cachedSpeedCoef.push_back(_points[0].speedCoef);
@@ -207,8 +216,9 @@ void CubicBezierRoute::buildParameters()
     {
         int index = 2;
         int distance = 0;
+		int pointIndex = 0;
         _cachedSpeedCoef.push_back(_points[0].speedCoef);
-        
+		//第一个控制点
         do
         {
             distance = distance + 1;
@@ -216,7 +226,7 @@ void CubicBezierRoute::buildParameters()
             if(distance >= _points[index].segmentDistance)
             {
                 _cachedSpeedCoef.push_back(_points[index].speedCoef);
-                index++;
+				index++;
             }
             else
             {
@@ -317,6 +327,7 @@ void CubicBezierRoute::clear()
     _cachedSpeedCoef.clear();
     _cachedDirection.clear();
     _controlPointIndex.clear();
+	_pointToDistance.clear();
     _distance = 0;
     
     reset();
@@ -383,13 +394,14 @@ void CubicBezierRoute::relativeAdvance(int index, float& t, float& deltaDistance
     currentPosition = (t * t * t) * p.a + (t * t) * p.b + (t) * p.c + p.d;
 }
 
-void CubicBezierRoute::retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& speedCoef, float& overflow, float distance)
+void CubicBezierRoute::retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& speedCoef, float& overflow ,int &pointIndex,float distance)
 {
     if(distance == 0)
     {
         position = _cachedPosition[0];
         direction = _cachedDirection[0];
         speedCoef = _cachedSpeedCoef[0];
+		pointIndex = _controlPointIndex[0];
         overflow = 0;
     }
     else if(distance > _distance)
@@ -397,6 +409,7 @@ void CubicBezierRoute::retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& dir
         position = _cachedPosition[_distance];
         direction = _cachedDirection[_distance];
         speedCoef = _cachedSpeedCoef[_distance];
+		pointIndex = _controlPointIndex[_distance];
         overflow = distance - _distance;
     }
     else
@@ -405,6 +418,7 @@ void CubicBezierRoute::retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& dir
         position = _cachedPosition[index];
         direction = _cachedDirection[index];
         speedCoef = _cachedSpeedCoef[index];
+		pointIndex = _controlPointIndex[index];
         overflow = 0;
     }
 }

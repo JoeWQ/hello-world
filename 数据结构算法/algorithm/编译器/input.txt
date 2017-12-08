@@ -1,0 +1,125 @@
+int        number;
+int        count,saiker;
+float     sum;
+char     sank;
+int        dsal;
+ struct      Span
+{
+            int          span;
+            int          jiujiu;
+ };
+  struct     Alex
+ {
+            int         alex;
+            float      salx;
+            char      jibamao;
+            int        yu;
+            int[10][10]       w;
+            struct       Alex*     prev;
+            struct       Span[4]     span;
+  };
+  struct      Alex*          get_alex(struct     Alex*   p,struct  Alex     alex,int[10][10]    w)
+ {
+             int        a;
+             int        b;
+             
+             a=alex.w[b][a+b]*p->yu;
+ 
+             return   p;
+  }
+ int       return_int()
+{
+         int[10][10]        w;
+         int                             y,x,a;
+
+         struct             Alex            alex,alex2;
+         struct             Alex*            p;
+
+         p=get_alex(p,alex,p->w);
+         a=*(*(w+2)+1);
+        (*p).salx=0;
+        y=(p+1)->w[2][3]*x;
+        
+         return            p->span[y+x].jiujiu*y;
+ }
+void*        maomao()
+{
+          return    (void*)0;
+}
+
+int       get_cross_number(int   a,int   rc,bool   ww,int   p)
+{
+           int       it=4+5,x=8,y=9*7+8/4;
+           bool     b,c;
+           bool     e;
+           int[10][10][10]        w;
+           int       i;
+           int       j;
+           float    sum;
+           it=2+number;
+           x=7;
+           y=it+x;
+           y=it=x=0;
+           w[x=1+1][4+5+(y=78-42/2+5%2)][2*4]=9+y;
+           if(y>7+9)
+                   x=17-it;
+           else
+                    x=y*it;
+           while(y-x<x+it || y>9   && 7+y<x)
+          {
+                       do
+                      {
+                                 w[2][i][j]=i+j;
+                                 y=y-8+x;
+                                 it=y*x;
+                                 j=j+1;
+                       }while(y-x<x+it || y>9   && 7+y<x*100/it);
+                       y=y+1;
+                       if( y == 0)
+                      {
+                              x=x+1;
+                              break;
+                       }
+                       i=i+1;
+                       if(x==y)
+                               y=1;
+           }
+           b=y>7 || 9<x && it>(x+y);
+           c=y-x<x+it || y>9   && 7+y<x;
+           
+           do
+          { 
+                   if( x==0 )
+                           continue;
+                    x=x+1;
+           }while(y-x<x+it || y>9   && 7+y<x);
+           
+           while(       y-x<x+it || y>9   && 7+y<x )
+                    x=x+1;
+           sum=0;
+           it=i+j*y/x+(x-y*5)/9;
+           sum=(int)(9.0*12+y);
+           it=(int)sum+x+y;
+           it=(int)(108.0+7);
+           e=!!!!!!!(7>8);
+           it=-------7;
+           it=--------7;
+           return   9*12+y;
+}
+int           yycc;
+int          uucy;
+   int         number(int  b)
+  {
+            char[12][14][10]      x;
+            x[2][5][8+8%7+4]=(char)7;
+            return   x[9][4][2+10*5]+uucy*yycc;
+   }
+   void        display_result()
+  {
+                   int             x,y;
+                   
+                   x=x*y+7+8/y;
+                   y=x*x+y%7+9;
+                   x=get_cross_number(x*y+7+8/y,y/(x*y+7+8/y),true,number(y));
+   }
+   

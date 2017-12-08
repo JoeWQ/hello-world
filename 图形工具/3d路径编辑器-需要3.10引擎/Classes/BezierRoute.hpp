@@ -17,14 +17,19 @@ public:
     struct PointInfo
     {
         PointInfo():
-        position(cocos2d::Vec3(0, 0, 0)),
-        speedCoef(1.0),
-        segmentDistance(0)
+        position(cocos2d::Vec3(0, 0, 0))
+       , speedCoef(1.0)
+        ,segmentDistance(0)
+		,aniIndex(0)
+		,aniDistance(0)
         {}
         
         cocos2d::Vec3 position;
-        float speedCoef;
-        int segmentDistance;
+        float		 speedCoef;
+        int		segmentDistance;
+		//动画数据
+		int        aniIndex;
+		float     aniDistance;
     };
     
     RouteProtocol() {}
@@ -99,7 +104,7 @@ public:
     void setWeight(float weight);
     void setPrecision(float precision);
     void relativeAdvance(int index, float& tCurrent, float& deltaDistance, cocos2d::Vec3& currentPosition, cocos2d::Vec3& currentDirection);
-    void retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& speedCoef, float& overflow, float distance);
+    void retrieveState(cocos2d::Vec3& position, cocos2d::Vec3& direction, float& speedCoef, float& overflow,int &pointIndex, float distance);
     
     std::vector<CaculatedParameter>& getParameters();
     
@@ -110,6 +115,7 @@ public:
     virtual float getDistance() override;
 	const  std::vector<cocos2d::Vec3>   &getCachedPosition()const { return _cachedPosition; };
 	const std::vector<int>                        &getCachedIndex()const { return _controlPointIndex; };
+	const std::vector<float>&                   getPointToDistance()const { return _pointToDistance; };
 protected:
     virtual void buildParameters() override;
     virtual cocos2d::Vec3 caculateTangent(float position) override;
@@ -123,6 +129,7 @@ private:
 	std::vector<int>                    _controlPointIndex;
     std::vector<cocos2d::Vec3> _cachedDirection;
     std::vector<float> _cachedSpeedCoef;
+	std::vector<float>  _pointToDistance;//控制点与控制点所在的曲线的距离之间的映射表
     int _currentStartIndex;
     float _weight;
 };

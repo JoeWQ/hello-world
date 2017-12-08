@@ -21,6 +21,7 @@
 #include<vector>
 #include"Common.h"
 #include "CurveNode.h"
+#include "TextFieldEx.hpp"
 //键盘掩码,目前只是用了一个,以后随着工具的扩展,将会引入更多的按键掩码
 #define _KEY_CTRL_MASK_      0x01
 //如果W键被按下
@@ -42,6 +43,10 @@ private:
 	cocos2d::Layer     *_settingLayer;
 	//ScrollView
 	cocos2d::ui::ScrollView  *_scrollView;
+	//装载顺时针(CW),逆时针(CCW)的选项的组件的容器,此组件供螺旋曲线专用
+	cocos2d::Node                 *_ccwComponentPanel;
+	//当前是否正在预览已经编辑的曲线
+	cocos2d::Node                 *_routeGroupNode;
 	//摄像机参数
 	cocos2d::Camera	*_viewCamera;
 	//
@@ -52,6 +57,8 @@ private:
 	cocos2d::Vec2        _originVec2;
 	//记录x,y方向上的偏移
 	cocos2d::Vec2        _xyOffset;
+	//当前场景旋转的角度
+	cocos2d::Quaternion     _rotateQua;
 	/*
 	  *3d场景下的摄像机
 	 */
@@ -66,6 +73,10 @@ private:
 	cocos2d::ui::EditBox     *_bottomRadiusEditBox;
 	//编辑每一个曲线控制点的速度
 	cocos2d::ui::EditBox     *_speedEditBox;
+	//编辑动画索引的编辑框
+	cocos2d::ui::EditBox     *_actionIndexEditBox;
+	//控制当前将要预览的曲线的编辑框,可以支持多种文法
+	cocos2d::ui::EditBox     *_routeGroupEditBox;
 	/*
 	  *与摄像机相关的参数,摄像机可以拉伸的最远,最近距离
 	  *此数据域作用于视图矩阵之上
@@ -75,6 +86,8 @@ private:
 	  *曲线类型
 	 */
 	CurveNode                        *_curveNode;
+	//当前曲线对象调用触屏函数返回的值
+	bool                                     _curveNodeReturnValue;
 	//关于3个方向的坐标轴
 	cocos2d::DrawNode3D   *_axisNode;
 	//3d空间的网格,用来使整个场景具有空间感
@@ -127,6 +140,11 @@ private:
 	  *所有鱼相关的资料,键为鱼的id
 	  */
 	std::map<int, FishVisual>                 _fishVisualStatic;
+    
+    TextFieldEx* textFieldX;
+    TextFieldEx* textFieldY;
+    TextFieldEx* textFieldZ;
+    
 private:
 	BesselUI();
 	void   initBesselLayer();
@@ -185,6 +203,10 @@ public:
 	  *切换曲线类型
 	 */
 	void          onChangeRadioButtonSelect_ChangeCurve(cocos2d::ui::RadioButton *radioButton,cocos2d::ui::RadioButton::EventType type);
+	/*
+	  *切换螺旋曲线的方向
+	 */
+	void         onChangeRadioButtonSelect_ChangeCCW(cocos2d::ui::RadioButton *radioButton,cocos2d::ui::RadioButton::EventType type);
 	/*
 	  *删除上一条记录
 	 */
@@ -247,5 +269,14 @@ public:
 	  *切换当前曲线
 	 */
 	void       changeCurveNode(CurveType curveType);
+	/*
+	  *设置当前需要预览的曲线,因为函数比较复杂,所以需要单独摘出来
+	  *需要解析文法
+	 */
+	void      setRouteGroup(const char *syntax);
+	/*
+	  *贝塞尔曲线的某一个控制点被选中的时候,底层向上层传递的消息
+	 */
+	void      notifyBesselNodeSelected(int selectedIndex);
 };
 #endif

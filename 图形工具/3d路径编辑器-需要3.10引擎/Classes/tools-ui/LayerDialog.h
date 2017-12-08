@@ -44,6 +44,8 @@ class LayerDialog :public cocos2d::LayerColor
 	//删除按钮
 	cocos2d::ui::Button                                            *_removeButton;
 	std::vector<int>                                                    _currentFishIds;
+	//当前是否有弹出提示的Label出现
+	cocos2d::Label                                                    *_labelTips;
 private:
 	LayerDialog(const std::map<int, FishVisual> &fishVisualStatic, std::vector<int> &fishMapVector);
 	LayerDialog(LayerDialog &);
@@ -67,6 +69,10 @@ public:
 	bool        onTouchBegan(cocos2d::Touch *touch,cocos2d::Event *unuseEvent);
 	void        onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unuseEvent);
 	void        onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unuseEvent);
+	/*
+	  *鼠标右键响应函数,当右键点击的时候调用
+	 */
+	void         onMouseClick(const cocos2d::Vec2   &touchPoint);
 	//事件派发,设置确认按钮以及取消按钮被按下之后的回调函数
 	void         setConfirmCallback(std::function<void(std::vector<int> &)> confirmCallback);
 	void         setCancelCallback(std::function<void()> cancelCallback);
@@ -87,5 +93,9 @@ public:
 	  *给定资料,加载一个鱼的模型
 	 */
 	cocos2d::Sprite3D *createSprite3DByVisual(const FishVisual &fishMap,const cocos2d::Size &showSize);
+	/*
+	  *回调函数
+	 */
+	void      delayCallback(cocos2d::Node *target);
  };
 #endif
