@@ -87,6 +87,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\Camera.cpp" />
+    <ClCompile Include="..\..\engine\Camera2.cpp" />
     <ClCompile Include="..\..\engine\event\EventManager.cpp" />
     <ClCompile Include="..\..\engine\event\KeyEventListener.cpp" />
     <ClCompile Include="..\..\engine\event\MouseEventListener.cpp" />
@@ -109,15 +110,14 @@
     <ClCompile Include="..\..\engine\Sprite.cpp" />
     <ClCompile Include="..\..\engine\TGAImage.cpp" />
     <ClCompile Include="..\..\engine\Tools.cpp" />
-    <ClCompile Include="..\..\other\vbm.cpp" />
-    <ClCompile Include="..\ComputeWater.cpp" />
+    <ClCompile Include="..\CollisionDetector.cpp" />
     <ClCompile Include="..\OpenGL.cpp" />
-    <ClCompile Include="..\RenderShader.cpp" />
-    <ClCompile Include="..\WaterComputeShader.cpp" />
-    <ClCompile Include="..\WaterNormalShader.cpp" />
+    <ClCompile Include="..\SceneBuilding.cpp" />
+    <ClCompile Include="..\Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\engine\Camera.h" />
+    <ClInclude Include="..\..\include\engine\Camera2.h" />
     <ClInclude Include="..\..\include\engine\event\EventListener.h" />
     <ClInclude Include="..\..\include\engine\event\EventManager.h" />
     <ClInclude Include="..\..\include\engine\event\KeyCode.h" />
@@ -142,14 +142,29 @@
     <ClInclude Include="..\..\include\engine\ShadowMap.h" />
     <ClInclude Include="..\..\include\engine\Shape.h" />
     <ClInclude Include="..\..\include\engine\Sprite.h" />
-    <ClInclude Include="..\..\include\engine\Tools.h" />
     <ClInclude Include="..\..\include\engine\TGAImage.h" />
+    <ClInclude Include="..\..\include\engine\Tools.h" />
     <ClInclude Include="..\..\include\engine\Types.h" />
-    <ClInclude Include="..\..\other\vbm.h" />
-    <ClInclude Include="..\ComputeWater.h" />
-    <ClInclude Include="..\RenderShader.h" />
-    <ClInclude Include="..\WaterComputeShader.h" />
-    <ClInclude Include="..\WaterNormalShader.h" />
+    <ClInclude Include="..\CollisionDetector.h" />
+    <ClInclude Include="..\SceneBuilding.h" />
+    <ClInclude Include="..\Triangle.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\bin\shader\WaterGPU\Normal_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Normal_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Photon_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Photon_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Pool_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Pool_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_GS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_VS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Water_FS.glsl" />
+    <None Include="..\..\bin\shader\WaterGPU\Water_VS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
