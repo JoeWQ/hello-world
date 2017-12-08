@@ -19,7 +19,7 @@
 #include<string.h>
 #include<assert.h>
 #define PI 3.1415926535f
-#define    __EPS__  0.0001f
+#define    __EPS__  0.000001f
 #define    __SIGN(sign)   (-(  ((sign)&0x1)<<1)+1)
 __NS_GLK_BEGIN
 //新引入切线的计算
@@ -544,6 +544,67 @@ GLVector3   GLVector3::operator/(const GLVector3 &_factor)const
 {
 	return   GLVector3(x/_factor.x,y/_factor.y,z/_factor.z);
 }
+GLVector3& GLVector3::operator+=(const GLVector3 &offset)
+{
+	x += offset.x;
+	y += offset.y;
+	z += offset.z;
+	return *this;
+}
+
+GLVector3& GLVector3::operator+=(float f)
+{
+	x += f;
+	y += f;
+	z += f;
+	return *this;
+}
+
+GLVector3& GLVector3::operator-=(const GLVector3 &factor)
+{
+	x -= factor.x;
+	y -= factor.y;
+	z -= factor.z;
+	return *this;
+}
+GLVector3& GLVector3::operator-=(float f)
+{
+	x -= f;
+	y -= f;
+	z -= f;
+	return *this;
+}
+
+GLVector3& GLVector3::operator*=(const GLVector3 &factor)
+{
+	x *= factor.x;
+	y *= factor.y;
+	z *= factor.z;
+	return *this;
+}
+GLVector3& GLVector3::operator*=(float f)
+{
+	x *= f;
+	y *= f;
+	z *= f;
+	return *this;
+}
+
+GLVector3& GLVector3::operator/=(const GLVector3 &factor)
+{
+	x /= factor.x;
+	y /= factor.y;
+	z /= factor.z;
+	return *this;
+}
+GLVector3& GLVector3::operator/=(float f)
+{
+	x /= f;
+	y /= f;
+	z /= f;
+	return *this;
+}
+
 GLVector3   GLVector3::normalize()const
 {
 	float      _length = sqrtf(x*x+y*y+z*z);
@@ -581,6 +642,38 @@ GLVector3 GLVector3::max(const GLVector3 &other)const
 	const float ny = y > other.y ? y : other.y;
 	const float nz = z > other.z ? z : other.z;
 	return GLVector3(nx, ny, nz);
+}
+
+void GLVector3::generateViewXY(const GLVector3 &Z, GLVector3 &X, GLVector3 &Y)
+{
+	GLVector3 upVector(0,1,0);
+	GLVector3 rightVector(1,0,0);
+	GLVector3 forwardVector(0,0,1);
+	if (Z.y == -1.0f)
+	{
+		X = rightVector;
+		Y = forwardVector;
+	}
+	else if (Z.y > -1 && Z.y < 0)
+	{
+		X = upVector.cross(Z);
+		Y = Z.cross(X);
+	}
+	else if (Z.y == 0)
+	{
+		Y = upVector;
+		X = Y.cross(Z);
+	}
+	else if (Z.y > 0 && Z.y < 1)
+	{
+		X = upVector.cross(Z);
+		Y = Z.cross(X);
+	}
+	else if (Z.y ==1)//此时无法确定摄像机X/Y的方向
+	{
+		X = rightVector;
+		Y = GLVector3(0,0,-1);
+	}
 }
 
 /////////////////////////4444444444444444///////////////////////////////////////
@@ -624,6 +717,24 @@ GLVector4 GLVector4::operator/(const GLVector4 &other)const
 	return GLVector4(x/other.x,y/other.y,z/other.z,w/other.w);
 }
 
+const GLVector4& GLVector4::operator/=(const float factor)
+{
+	x /= factor;
+	y /= factor;
+	z /= factor;
+	w /= factor;
+	return *this;
+}
+
+const GLVector4& GLVector4::operator*=(const float factor)
+{
+	x *= factor;
+	y *= factor;
+	z *= factor;
+	w *= factor;
+	return *this;
+}
+
 GLVector4 GLVector4::operator/(const float factor)const
 {
 	return GLVector4(x/factor,y/factor,z/factor,w/factor);
@@ -659,6 +770,15 @@ Matrix::Matrix()
 	m[2][0] = 0.0f, m[2][1] = 0.0f, m[2][2] = 1.0f, m[2][3] = 0.0f;
 	m[3][0] = 0.0f, m[3][1] = 0.0f, m[3][2] = 0.0f, m[3][3] = 1.0f;
 }
+
+Matrix::Matrix(const GLVector4 &row0, const GLVector4 &row1, const GLVector4 &row2, const GLVector4 &row3)
+{
+	m[0][0] = row0.x, m[0][1] = row0.y, m[0][2] = row0.z, m[0][3] = row0.w;
+	m[1][0] = row1.x, m[1][1] = row1.y, m[1][2] = row1.z, m[1][3] = row1.w;
+	m[2][0] = row2.x, m[2][1] = row2.y, m[2][2] = row2.z, m[2][3] = row2.w;
+	m[3][0] = row3.x, m[3][1] = row3.y, m[3][2] = row3.z, m[3][3] = row3.w;
+}
+
 void     Matrix::identity()
 {
 	m[0][0] = 1.0f, m[0][1] = 0.0f, m[0][2] = 0.0f, m[0][3] = 0.0f;
@@ -905,35 +1025,22 @@ void    Matrix::multiply(const Matrix &srcA)
 //二次矩阵乘法
 void     Matrix::multiply(Matrix &srcA, Matrix &srcB)
 {
-	Matrix    tmp;
-	Matrix    *p = &tmp;
+	float    mm[4][4];
+	float		(*p)[4]=mm;
 	if (this != &srcA && this != &srcB)
-		p = this;
-	int         i;
+		p = m;
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; ++i)
 	{
-		p->m[i][0] = (srcA.m[i][0] * srcB.m[0][0]) +
-			(srcA.m[i][1] * srcB.m[1][0]) +
-			(srcA.m[i][2] * srcB.m[2][0]) +
-			(srcA.m[i][3] * srcB.m[3][0]);
+		p[i][0] = (srcA.m[i][0] * srcB.m[0][0]) +(srcA.m[i][1] * srcB.m[1][0]) +(srcA.m[i][2] * srcB.m[2][0]) +(srcA.m[i][3] * srcB.m[3][0]);
 
-		p->m[i][1] = (srcA.m[i][0] * srcB.m[0][1]) +
-			(srcA.m[i][1] * srcB.m[1][1]) +
-			(srcA.m[i][2] * srcB.m[2][1]) +
-			(srcA.m[i][3] * srcB.m[3][1]);
+		p[i][1] = (srcA.m[i][0] * srcB.m[0][1]) +(srcA.m[i][1] * srcB.m[1][1]) +(srcA.m[i][2] * srcB.m[2][1]) +(srcA.m[i][3] * srcB.m[3][1]);
 
-		p->m[i][2] = (srcA.m[i][0] * srcB.m[0][2]) +
-			(srcA.m[i][1] * srcB.m[1][2]) +
-			(srcA.m[i][2] * srcB.m[2][2]) +
-			(srcA.m[i][3] * srcB.m[3][2]);
+		p[i][2] = (srcA.m[i][0] * srcB.m[0][2]) +(srcA.m[i][1] * srcB.m[1][2]) +(srcA.m[i][2] * srcB.m[2][2]) +(srcA.m[i][3] * srcB.m[3][2]);
 
-		p->m[i][3] = (srcA.m[i][0] * srcB.m[0][3]) +
-			(srcA.m[i][1] * srcB.m[1][3]) +
-			(srcA.m[i][2] * srcB.m[2][3]) +
-			(srcA.m[i][3] * srcB.m[3][3]);
+		p[i][3] = (srcA.m[i][0] * srcB.m[0][3]) +(srcA.m[i][1] * srcB.m[1][3]) +(srcA.m[i][2] * srcB.m[2][3]) +(srcA.m[i][3] * srcB.m[3][3]);
 	}
-	if( p != this)
+	if( p != m)
 		memcpy(m, p, sizeof(Matrix));
 }
 //运算符重载
@@ -1000,6 +1107,21 @@ void    Matrix::orthoProject(float  left, float right, float  bottom, float  top
 
 	this->multiply(ortho);
 }
+
+void    Matrix::createOrtho(float left, float right, float bottom, float top, float nearZ, float farZ, Matrix &proj)
+{
+	float       deltaX = right - left;
+	float       deltaY = top - bottom;
+	float       deltaZ = farZ - nearZ;
+	assert(deltaX > 0.0f && deltaY > 0.0f && deltaZ > 0.0f);
+
+	proj.m[0][0] = 2.0f / deltaX;
+	proj.m[3][0] = -(right + left) / deltaX;
+	proj.m[1][1] = 2.0f / deltaY;
+	proj.m[3][1] = -(top + bottom) / deltaY;
+	proj.m[2][2] = -2.0f / deltaZ;
+	proj.m[3][2] = -(nearZ + farZ) / deltaZ;
+}
 void    Matrix::frustum(float left, float right, float bottom, float top, float nearZ, float farZ)
 {
 	float       deltaX = right - left;
@@ -1036,6 +1158,36 @@ void    Matrix::perspective(float fovy, float aspect, float nearZ, float farZ)
 	this->frustum(-frustumW, frustumW, -frustumH, frustumH, nearZ, farZ);
 }
 
+void Matrix::createPerspective(float fov, float aspect, float nearZ, float farZ,Matrix &proj)
+{
+	float frustumH = tanf(fov / 360.0f * PI) * nearZ;
+	float frustumW = frustumH * aspect;
+	float       left = -frustumW;
+	float       right = frustumW;
+	float	   bottom = -frustumH	;
+	float      top = frustumH;
+	//
+	float       deltaX = 2* frustumW;
+	float       deltaY = 2* frustumH;
+	float       deltaZ = farZ - nearZ;
+
+	assert(deltaX > 0.0f && deltaY > 0.0f && deltaZ > 0.0f && nearZ > 0.0f);
+
+	proj.m[0][0] = 2.0f * nearZ / deltaX;
+	proj.m[0][1] = proj.m[0][2] = proj.m[0][3] = 0.0f;
+
+	proj.m[1][1] = 2.0f * nearZ / deltaY;
+	proj.m[1][0] = proj.m[1][2] = proj.m[1][3] = 0.0f;
+
+	proj.m[2][0] = 0;
+	proj.m[2][1] = 0;
+	proj.m[2][2] = -(nearZ + farZ) / deltaZ;
+	proj.m[2][3] = -1.0f;
+
+	proj.m[3][2] = -2.0f * nearZ * farZ / deltaZ;
+	proj.m[3][0] = proj.m[3][1] = proj.m[3][3] = 0.0f;
+}
+
 Matrix             Matrix::reverse()const
 {
 	Matrix     tmp;
@@ -1069,6 +1221,39 @@ Matrix             Matrix::reverse()const
 		tmp.m[3][i] = __SIGN(i + 3)*detVector3(&row1, &row2, &row3);
 	}
 	return   tmp;
+}
+
+void Matrix::reverse(Matrix &rm)const
+{
+	float             _det = this->det();
+	assert(fabs(_det) > __EPS__);
+	GLVector3    row1, row2, row3;
+	int        _index[4];
+	for (int i = 0; i < 4; ++i)
+	{
+		__fix__(_index, i);
+		int     a = _index[0], b = _index[1], c = _index[2];
+		//i,0
+		row1 = GLVector3(m[a][1], m[a][2], m[a][3]);
+		row2 = GLVector3(m[b][1], m[b][2], m[b][3]);
+		row3 = GLVector3(m[c][1], m[c][2], m[c][3]);
+		rm.m[0][i] = __SIGN(i + 0)*detVector3(&row1, &row2, &row3);
+		//i,1
+		row1 = GLVector3(m[a][0], m[a][2], m[a][3]);
+		row2 = GLVector3(m[b][0], m[b][2], m[b][3]);
+		row3 = GLVector3(m[c][0], m[c][2], m[c][3]);
+		rm.m[1][i] = __SIGN(i + 1)*detVector3(&row1, &row2, &row3);
+		//i,2
+		row1 = GLVector3(m[a][0], m[a][1], m[a][3]);
+		row2 = GLVector3(m[b][0], m[b][1], m[b][3]);
+		row3 = GLVector3(m[c][0], m[c][1], m[c][3]);
+		rm.m[2][i] = __SIGN(i + 2)*detVector3(&row1, &row2, &row3);
+		//i,3
+		row1 = GLVector3(m[a][0], m[a][1], m[a][2]);
+		row2 = GLVector3(m[b][0], m[b][1], m[b][2]);
+		row3 = GLVector3(m[c][0], m[c][1], m[c][2]);
+		rm.m[3][i] = __SIGN(i + 3)*detVector3(&row1, &row2, &row3);
+	}
 }
 //行列式
 float           Matrix::det()const
@@ -1174,6 +1359,14 @@ Matrix3::Matrix3()
 	m[1][0] = 0.0f, m[1][1] = 1.0f, m[1][2] = 0.0f;
 	m[2][0] = 0.0f, m[2][1] = 0.0f, m[2][2] = 1.0f;
 }
+
+Matrix3::Matrix3(const GLVector3 &row0, const GLVector3 &row1, const GLVector3 &row2)
+{
+	m[0][0] = row0.x, m[0][1] = row0.y, m[0][2] = row0.z;
+	m[1][0] = row1.x, m[1][1] = row1.y, m[1][2] = row1.z;
+	m[2][0] = row2.x, m[2][1] = row2.y, m[2][2] = row2.z;
+}
+
 Matrix3     Matrix3::reverse()const
 {
 	Matrix3    tmp;
@@ -1192,6 +1385,24 @@ Matrix3     Matrix3::reverse()const
 	tmp.m[1][2] = -detFloat(m[0][0], m[0][2], m[1][0], m[1][2]) / _det;
 	tmp.m[2][2] = detFloat(m[0][0], m[0][1], m[1][0], m[1][1]) / _det;
 	return  tmp;
+}
+
+void Matrix3::reverse(Matrix3 &tmp)const
+{
+	float     _det = this->det();
+	assert(fabs(_det) > __EPS__);
+
+	tmp.m[0][0] = detFloat(m[1][1], m[1][2], m[2][1], m[2][2]) / _det;
+	tmp.m[1][0] = -detFloat(m[1][0], m[1][2], m[2][0], m[2][2]) / _det;
+	tmp.m[2][0] = detFloat(m[1][0], m[1][1], m[2][0], m[2][1]) / _det;
+
+	tmp.m[0][1] = -detFloat(m[0][1], m[0][2], m[2][1], m[2][2]) / _det;
+	tmp.m[1][1] = detFloat(m[0][0], m[0][2], m[2][0], m[2][2]) / _det;
+	tmp.m[2][1] = -detFloat(m[0][0], m[0][1], m[2][0], m[2][1]) / _det;
+
+	tmp.m[0][2] = detFloat(m[0][1], m[0][2], m[1][1], m[1][2]) / _det;
+	tmp.m[1][2] = -detFloat(m[0][0], m[0][2], m[1][0], m[1][2]) / _det;
+	tmp.m[2][2] = detFloat(m[0][0], m[0][1], m[1][0], m[1][1]) / _det;
 }
 
 void     Matrix3::rotate(float angle, float x, float y, float z)
@@ -1287,6 +1498,34 @@ float     Matrix3::det()const
 	_result += m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 	return _result;
 }
+
+void Matrix3::tbn(const GLVector3 &normal, Matrix3 &tbn)
+{
+	GLVector3 X, Y;
+	GLVector3::generateViewXY(normal, X, Y);
+	//组合成tbn矩阵
+	tbn.m[0][0] = X.x; tbn.m[0][1] = X.y; tbn.m[0][2] = X.z;
+	tbn.m[1][0] = Y.x; tbn.m[1][1] = Y.y; tbn.m[1][2] = Y.z;
+	tbn.m[2][0] = normal.x; tbn.m[2][1] = normal.y; tbn.m[2][2] = normal.z;
+}
+
+void Matrix3::reverseTBN(const GLVector3 &normal, Matrix3 &tbnr)
+{
+	GLVector3 X, Y;
+	//float           mm[3][3];
+	//Matrix3   &tmp = *(Matrix3*)mm;
+	GLVector3::generateViewXY(normal, X, Y);
+	//
+	//tmp.m[0][0] = X.x; tmp.m[0][1] = X.y; tmp.m[0][2] = X.z;
+	//tmp.m[1][0] = Y.x; tmp.m[1][1] = Y.y; tmp.m[1][2] = Y.z;
+	//tmp.m[2][0] = normal.x; tmp.m[2][1] = normal.y; tmp.m[2][2] = normal.z;
+	//组合成TBN矩阵的逆矩阵
+	tbnr.m[0][0] = X.x; tbnr.m[0][1] = Y.x; tbnr.m[0][2] = normal.x;
+	tbnr.m[1][0] = X.y; tbnr.m[1][1] = Y.y; tbnr.m[1][2] = normal.y;
+	tbnr.m[2][0] = X.z; tbnr.m[2][1] = Y.z; tbnr.m[2][2] = normal.z;
+
+	//tmp.reverse(tbnr);
+}
 //右乘三维向量
 GLVector3     Matrix3::operator*(const GLVector3 &vec)const
 {
@@ -1316,13 +1555,40 @@ Matrix3&    Matrix3::operator=(Matrix3  &src)
 		memcpy(m,src.m,sizeof(Matrix3));
 	return src;
 }
-///////////////////////////////////平面方程////////////////////////////////
-Plane::Plane(const GLVector3 &normal, const float distance)
+////////////////////////////***空间射线方程式***///////////////////////////
+Ray::Ray(const GLVector3 &direction, const GLVector3 &point, bool needNormalize)
 {
-	const float length = normal.length();
-	assert(length>__EPS__);
-	_normal = GLVector3(normal.x/length,normal.y/length,normal.z/length);
-	_distance = distance / length;
+	init(direction,point,needNormalize);
+}
+
+void Ray::init(const GLVector3 &direction, const GLVector3 &point, bool needNormalize)
+{
+	if (needNormalize)
+		_direction = direction.normalize();
+	else
+		_direction=direction;
+	_point = point;
+}
+///////////////////////////////////平面方程////////////////////////////////
+Plane::Plane(const GLVector3 &normal, const float distance, bool needNormalize):
+	_normal(normal)
+	,_distance(distance)
+{
+	if (needNormalize)
+	{
+		 float length = normal.length()*100;
+		assert(length > __EPS__);
+		_normal = GLVector3(normal.x*100 / length, normal.y *100/ length, normal.z*100 / length);
+		_distance = distance / length;
+	}
+}
+
+Plane::Plane(const GLVector3 &normal, const GLVector3 &vertex, bool needNormalize):
+	_normal(normal)
+{
+	if (needNormalize)
+		_normal/=normal.length();
+	_distance = _normal.dot(vertex);
 }
 
 Plane::Plane()
@@ -1340,12 +1606,42 @@ float Plane::getDistance()const
 	return _distance;
 }
 
-void Plane::init(const GLVector3 &normal, const float distance)
+void Plane::init(const GLVector3 &normal, const float distance, bool needNormalize)
 {
-	const float length = normal.length();
-	assert(length > __EPS__);
-	_normal = GLVector3(normal.x / length, normal.y / length, normal.z / length);
-	_distance = distance / length;
+	if (needNormalize)
+	{
+		float scaleFactor = 100;
+		float length = normal.length()*scaleFactor;
+		if (length < __EPS__)
+		{
+			assert(length > __EPS__);
+		}
+		
+		_normal = GLVector3(scaleFactor*normal.x / length, scaleFactor*normal.y / length, scaleFactor*normal.z / length);
+		_distance = scaleFactor*distance / length;
+	}
+	else
+	{
+		_normal = normal;
+		_distance = distance;
+	}
+}
+
+void Plane::init(const GLVector3 &normal, const GLVector3 &vertex, bool needNormalize/* =true */)
+{
+	if (needNormalize)
+	{
+		float scaleFactor = 100;
+		float length = normal.length()*scaleFactor;
+		assert(length>=__EPS__);
+		_normal = GLVector3(normal.x*scaleFactor/length,normal.y*scaleFactor/length,normal.z*scaleFactor/length);
+		_distance = _normal.dot(vertex);
+	}
+	else
+	{
+		_normal = normal;
+		_distance = normal.dot(vertex);
+	}
 }
 
 float Plane::distance(const GLVector3 &p3d)const

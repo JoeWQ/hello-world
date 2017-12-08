@@ -11,5 +11,5 @@ void main()
 
 	float d = distance(gl_TexCoord[0].st, Position);
 
-	gl_FragColor = vec4(vh.r, vh.g - 4.0f * max(DropRadius - d, 0.0), 0.0, 0.0);
+	gl_FragColor = vec4( vh.r - 4.0f * max(DropRadius - d, 0.0), vh.g ,0.0, 0.0);
 }

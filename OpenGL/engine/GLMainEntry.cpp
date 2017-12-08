@@ -30,6 +30,7 @@
 #include "engine/event//EventManager.h"
 #include "engine/event/KeyCode.h"
 #include<map>
+#include<algorithm>
 ///////////////////////////////////////////////////////////////////
 //declare function
 void   Init(glk::GLContext   *);
@@ -40,22 +41,59 @@ void   ShutDown(glk::GLContext *);
 __NS_GLK_BEGIN
 //glut中的键盘按键编码与引擎中的按键编码之间的转换
 static  std::map<int, KeyCodeType> _staticKeyCodeMap;
-
+//记录程序的帧率
+static int  _static_opengl_fps = 0;
+static int  _static_time_elapse = 0;
 static void   _staicKeyCodeTranslate()
 {
-	_staticKeyCodeMap['w'] = KeyCode_W;
-	_staticKeyCodeMap['W'] = KeyCode_W;
-	_staticKeyCodeMap['s'] = KeyCode_S;
-	_staticKeyCodeMap['S'] = KeyCode_S;
 	_staticKeyCodeMap['a'] = KeyCode_A;
 	_staticKeyCodeMap['A'] = KeyCode_A;
-	_staticKeyCodeMap['d'] = KeyCode_D;
-	_staticKeyCodeMap['D'] = KeyCode_D;
+	int   minorKey = 'a';
+	int   mainKey = 'A';
+	for (int k = 0; k < 26; ++k)
+	{
+		_staticKeyCodeMap[minorKey + k] = (KeyCodeType)(KeyCode_A + k);
+		_staticKeyCodeMap[mainKey + k] = (KeyCodeType)(KeyCode_A+k);
+	}
+	//特殊按键
+	_staticKeyCodeMap[GLUT_KEY_LEFT + 256] = KeyCode_LEFT;
+	_staticKeyCodeMap[GLUT_KEY_RIGHT + 256] = KeyCode_RIGHT;
+	_staticKeyCodeMap[GLUT_KEY_UP + 256] = KeyCode_UP;
+	_staticKeyCodeMap[GLUT_KEY_DOWN + 256] = KeyCode_DOWN;
+	_staticKeyCodeMap[GLUT_KEY_ALT_L+256] = KeyCode_ALT;
+	_staticKeyCodeMap[GLUT_KEY_ALT_R + 256] = KeyCode_ALT;
 	_staticKeyCodeMap[GLUT_KEY_CTRL_L+256] = KeyCode_CTRL;
 	_staticKeyCodeMap[GLUT_KEY_CTRL_R+256] = KeyCode_CTRL;
 	_staticKeyCodeMap[GLUT_KEY_SHIFT_L+256] = KeyCode_SHIFT;
 	_staticKeyCodeMap[GLUT_KEY_SHIFT_R+256] = KeyCode_SHIFT;
+	//function key
+	_staticKeyCodeMap[GLUT_KEY_F1 + 256] = KeyCode_F1;
+	_staticKeyCodeMap[GLUT_KEY_F2 + 256] = KeyCode_F2;
+	_staticKeyCodeMap[GLUT_KEY_F3 + 256] = KeyCode_F3;
+	_staticKeyCodeMap[GLUT_KEY_F4 + 256] = KeyCode_F4;
+	_staticKeyCodeMap[GLUT_KEY_F5 + 256] = KeyCode_F5;
+	_staticKeyCodeMap[GLUT_KEY_F6 + 256] = KeyCode_F6;
+	_staticKeyCodeMap[GLUT_KEY_F7 + 256] = KeyCode_F7;
+	_staticKeyCodeMap[GLUT_KEY_F8 + 256] = KeyCode_F8;
+	_staticKeyCodeMap[GLUT_KEY_F9 + 256] = KeyCode_F9;
+	_staticKeyCodeMap[GLUT_KEY_F10 + 256] = KeyCode_F10;
+	_staticKeyCodeMap[GLUT_KEY_F11 + 256] = KeyCode_F11;
+	_staticKeyCodeMap[GLUT_KEY_F12 + 256] = KeyCode_F12;
+	//Number Key
+	_staticKeyCodeMap['0'] = KeyCode_0;
+	_staticKeyCodeMap['1'] = KeyCode_1;
+	_staticKeyCodeMap['2'] = KeyCode_2;
+	_staticKeyCodeMap['3'] = KeyCode_3;
+	_staticKeyCodeMap['4'] = KeyCode_4;
+	_staticKeyCodeMap['5'] = KeyCode_5;
+	_staticKeyCodeMap['6'] = KeyCode_6;
+	_staticKeyCodeMap['7'] = KeyCode_7;
+	_staticKeyCodeMap['8'] = KeyCode_8;
+	_staticKeyCodeMap['9'] = KeyCode_9;
+	//Other Key
 	_staticKeyCodeMap[' '] = KeyCode_SPACE;
+	_staticKeyCodeMap['\t'] = KeyCode_TAB;
+	_staticKeyCodeMap['\n'] = KeyCode_ENTER;
 }
 
 //callback for event window size changed
@@ -83,46 +121,56 @@ static    void         _static_OnDraw()
 }
 static   void         _static_OnUpdate(int   _tag)
 {
-		glk::GLContext		*_context = glk::GLContext::getInstance();
-		int                     _newTickCount = 0;
+	glk::GLContext		*_context = glk::GLContext::getInstance();
+	int                     newTickCount = 0;
+	int                     lastTick = _context->_lastTickCount;
+	int                     timeElapse = 0;
 #ifdef _WINDOWS_
-		_newTickCount = GetTickCount();
+	newTickCount = GetTickCount();
 #else
-		struct     timeval     val;
-		gettimeofday(&val, NULL);
-		_newTickCount = (val.tv_sec - _context->baseTickCount) * 1000 + val.tv_usec / 1000;
+	struct     timeval     val;
+	gettimeofday(&val, NULL);
+	newTickCount = (val.tv_sec - _context->_baseTickCount) * 1000 + val.tv_usec / 1000;
 #endif
-		if (_context->update)
-		{
+	if (_context->update)
+	{
 #ifdef _WINDOWS_
-			_context->update(_context, (_newTickCount - _context->lastTickCount) / 1000.0f);
-			_context->lastTickCount = _newTickCount;
+		timeElapse = newTickCount - lastTick;
+		//时间间隔不宜过大,否则出现难以预料的结果
+		if (timeElapse > 33)
+			timeElapse = 33;
+		_context->update(_context, timeElapse / 1000.0f);
+		_context->_lastTickCount = newTickCount;
 #else
-			_context->update(_context,(_newTickCount-_context->lastTickCount)/1000.0f);
-			_context->lastTickCount = _newTickCount;
+		timeElapse = newTickCount - lastTick;
+		_context->update(_context, timeElapse / 1000.0f);
+		_context->_lastTickCount = newTickCount;
 #endif
-		}
+	}
 #ifdef __USE_GLFW_MM__
 
 #else
-		glutPostRedisplay();
+	glutPostRedisplay();
 #endif
-		int       _time = 0;
-#ifdef  _WINDOWS_
-		_time = GetTickCount() - _newTickCount;
-#else
-		struct    timeval     _val;
-		gettimeofday(&_val,NULL);
-		_time = (_val.tv_sec - _context->baseTickCount) * 1000 + _val.tv_usec / 1000 - _newTickCount;
-#endif
-//如果执行回调函数的时间大于33.3毫秒
-		int        _delayTime = 34 - _time;
-		if (_delayTime <= 20)//修正时间,不至于让间隔变得太小
-			          _delayTime = 20;
+	//如果执行回调函数的时间大于33.3毫秒
+	//int        delayTime = 8 - timeElapse;
+	//if (delayTime <= 8)//修正时间,不至于让间隔变得太小
+	int delayTime = 5;
+	_static_time_elapse += timeElapse;
+	++_static_opengl_fps;
+	//如果大于1秒
+	if (_static_time_elapse > 1000)
+	{
+		char buffer[128];
+		sprintf(buffer,"FPS: %.1f",1000.0f*_static_opengl_fps/_static_time_elapse);
+		glutSetWindowTitle(buffer);
+		_static_opengl_fps = 0;
+		_static_time_elapse = 0;  
+	}
 #ifdef __USE_GLFW_MM__
 
 #else
-		glutTimerFunc(_delayTime, _static_OnUpdate, 0);
+		glutTimerFunc(delayTime, _static_OnUpdate, 0);
 #endif
 }
 
@@ -210,8 +258,8 @@ static void _static_mousePressCallback(int button, int buttonState, int x, int y
 		break;
 	}
 	if (mouseType == MouseType_Left)
-		glk::EventManager::getInstance()->dispatchTouchEvent(touchState, &mouseClickPosition);
-	glk::EventManager::getInstance()->dispatchMouseEvent(mouseType, mouseState, &mouseClickPosition);
+		glk::EventManager::getInstance()->dispatchTouchEvent(touchState, mouseClickPosition);
+	glk::EventManager::getInstance()->dispatchMouseEvent(mouseType, mouseState, mouseClickPosition);
 	__static_mouseButtonType = mouseType;
 }
 //
@@ -220,8 +268,8 @@ static void _static_mouseMotionCallback(int x,int y)
 	glk::GLVector2 mouseMotionPosition(x,glk::GLContext::getInstance()->getWinSize().height-y);
 	//
 	if (__static_mouseButtonType == MouseType_Left)
-		glk::EventManager::getInstance()->dispatchTouchEvent(TouchState_Moved,&mouseMotionPosition);
-	glk::EventManager::getInstance()->dispatchMouseEvent(__static_mouseButtonType, MouseState_Moved, &mouseMotionPosition);
+		glk::EventManager::getInstance()->dispatchTouchEvent(TouchState_Moved,mouseMotionPosition);
+	glk::EventManager::getInstance()->dispatchMouseEvent(__static_mouseButtonType, MouseState_Moved, mouseMotionPosition);
 }
 #endif
 
@@ -279,7 +327,7 @@ int      main(int argc, char* argv[])
 	glutInitDisplayMode(_context->displayMode);
 	glutInitWindowSize((int)_context->winSize.width,(int)_context->winSize.height);
 	glutInitWindowPosition((int)_context->winPosition.x,(int)_context->winPosition.y);
-	glutCreateWindow(_context->winTitle);
+	glutCreateWindow("FPS: 0");
 	glutReshapeFunc(glk::_static_onChangeSize);
 	glutDisplayFunc(glk::_static_OnDraw);
 	//鼠标按下释放事件

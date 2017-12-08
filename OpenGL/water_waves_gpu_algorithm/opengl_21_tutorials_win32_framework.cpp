@@ -98,8 +98,8 @@ bool CTexture::LoadTexture2D(char *FileName)
 
 	GLenum Format = 0;
 
-	if(BPP == 32) Format = GL_BGRA;
-	if(BPP == 24) Format = GL_BGR;
+	if (BPP == 32) Format = GL_BGRA;
+	if (BPP == 24) Format = GL_BGR;
 
 	if(Format == 0)
 	{
@@ -619,7 +619,7 @@ bool COpenGLRenderer::Init()
 
 	// ------------------------------------------------------------------------------------------------------------------------
 
-	char *PoolSkyCubeMapFileNames[] = {"pool\\right.jpg", "pool\\left.jpg", "pool\\bottom.jpg", "pool\\top.jpg", "pool\\front.jpg", "pool\\back.jpg"};
+	char *PoolSkyCubeMapFileNames[] = {"pool/right.jpg", "pool/left.jpg", "pool/bottom.jpg", "pool/top.jpg", "pool/front.jpg", "pool/back.jpg"};
 
 	Error |= !PoolSkyCubeMap.LoadTextureCubeMap(PoolSkyCubeMapFileNames);
 
@@ -654,19 +654,23 @@ bool COpenGLRenderer::Init()
 	// ------------------------------------------------------------------------------------------------------------------------
 
 	glUseProgram(WaterHeightMapProgram);
-	glUniform1f(glGetUniformLocation(WaterHeightMapProgram, "ODWHMR"), 1.0f / (float)WHMR);
+	glUniform1f(glGetUniformLocation(WaterHeightMapProgram, "ODWHMR"), 1.0f / WHMR);
 	glUseProgram(0);
 
 	glUseProgram(WaterNormalMapProgram);
-	glUniform1f(glGetUniformLocation(WaterNormalMapProgram, "ODWNMR"), 1.0f / (float)WNMR);
-	glUniform1f(glGetUniformLocation(WaterNormalMapProgram, "WMSDWNMRM2"), 2.0f / (float)WNMR * 2.0f);
+	glUniform1f(glGetUniformLocation(WaterNormalMapProgram, "ODWNMR"), 1.0f / WNMR);
+	glUniform1f(glGetUniformLocation(WaterNormalMapProgram, "WMSDWNMRM2"), 1.0f / WNMR * 2.0f);
 	glUseProgram(0);
 
 	glUseProgram(WaterProgram);
 	glUniform1i(glGetUniformLocation(WaterProgram, "WaterHeightMap"), 0);
 	glUniform1i(glGetUniformLocation(WaterProgram, "WaterNormalMap"), 1);
 	glUniform1i(glGetUniformLocation(WaterProgram, "PoolSkyCubeMap"), 2);
-	glUniform1f(glGetUniformLocation(WaterProgram, "ODWMS"), 1.0f / 2.0f);
+	int loc = glGetUniformLocation(WaterProgram, "ODWMS");
+	if (loc >= 0)
+	{
+		glUniform1f(loc, 1.0f / 2.0f);
+	}
 	glUniform3fv(glGetUniformLocation(WaterProgram, "LightPosition"), 1, &LightPosition);
 	glUniform3fv(glGetUniformLocation(WaterProgram, "CubeMapNormals"), 6, (float*)CubeMapNormals);
 	glUseProgram(0);
@@ -676,6 +680,7 @@ bool COpenGLRenderer::Init()
 	WaterAddDropProgram.UniformLocations = new GLuint[2];
 	WaterAddDropProgram.UniformLocations[0] = glGetUniformLocation(WaterAddDropProgram, "DropRadius");
 	WaterAddDropProgram.UniformLocations[1] = glGetUniformLocation(WaterAddDropProgram, "Position");
+	WaterAddDropProgram.UniformLocations[2] = glGetUniformLocation(WaterAddDropProgram,"g_WaterParam");
 
 	WaterProgram.UniformLocations = new GLuint[1];
 	WaterProgram.UniformLocations[0] = glGetUniformLocation(WaterProgram, "CameraPosition");
@@ -684,50 +689,28 @@ bool COpenGLRenderer::Init()
 
 	glGenTextures(2, WaterHeightMaps);
 
-	vec4 *Heights = new vec4[WHMR * WHMR];
-
-	for(int i = 0; i < WHMR * WHMR; i++)
-	{
-		Heights[i] = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-	}
-
 	for(int i = 0; i < 2; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[i]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, WHMR, WHMR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_max_texture_max_anisotropy_ext);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WHMR, WHMR, 0, GL_RGBA, GL_FLOAT, Heights);
-		glGenerateMipmapEXT(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	delete [] Heights;
+	//delete [] Heights;
 
 	// ------------------------------------------------------------------------------------------------------------------------
 
 	glGenTextures(1, &WaterNormalMap);
-
-	vec4 *Normals = new vec4[WNMR * WNMR];
-
-	for(int i = 0; i < WNMR * WNMR; i++)
-	{
-		Normals[i] = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-	}
-
 	glBindTexture(GL_TEXTURE_2D, WaterNormalMap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, WNMR, WNMR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_max_texture_max_anisotropy_ext);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WNMR, WNMR, 0, GL_RGBA, GL_FLOAT, Normals);
-	glGenerateMipmapEXT(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	delete [] Normals;
 
 	// ------------------------------------------------------------------------------------------------------------------------
 
@@ -744,22 +727,22 @@ bool COpenGLRenderer::Init()
 	};
 
 	glBindBuffer(GL_ARRAY_BUFFER, PoolSkyVBO);
-	glBufferData(GL_ARRAY_BUFFER, 288, PoolSkyVertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(PoolSkyVertices), PoolSkyVertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// ------------------------------------------------------------------------------------------------------------------------
 
 	glGenBuffers(1, &WaterVBO);
 
-	int WMRP1 = WMR + 1;
+	const int WMRP1 = WMR ;
 
 	vec3 *Vertices = new vec3[WMRP1 * WMRP1];
 
-	float WMSDWMR = 2.0f / (float)WMR;
+	const float WMSDWMR = 2.0f / (WMR-1);
 
-	for(int y = 0; y <= WMR; y++)
+	for(int y = 0; y < WMR; y++)
 	{
-		for(int x = 0; x <= WMR; x++)
+		for(int x = 0; x < WMR; x++)
 		{
 			Vertices[WMRP1 * y + x].x = x * WMSDWMR - 1.0f;
 			Vertices[WMRP1 * y + x].y = 0.0f;
@@ -768,12 +751,12 @@ bool COpenGLRenderer::Init()
 	}
 
 	CBuffer Quads;
-
-	for(int y = 0; y < WMR; y++)
+	//计算三角形序列
+	for(int y = 0; y < WMR-1; y++)
 	{
 		int yp1 = y + 1;
 
-		for(int x = 0; x < WMR; x++)
+		for(int x = 0; x < WMR-1; x++)
 		{
 			int xp1 = x + 1;
 
@@ -830,7 +813,7 @@ void COpenGLRenderer::Render(float FrameTime)
 		{
 			LastTime = Time;
 
-			AddDrop(2.0f * (float)rand() / (float)RAND_MAX - 1.0f, 1.0f - 2.0f * (float)rand() / (float)RAND_MAX, 4.0f / 128.0f * (float)rand() / (float)RAND_MAX);
+			//AddDrop(2.0f * (float)rand() / (float)RAND_MAX - 1.0f, 1.0f - 2.0f * (float)rand() / (float)RAND_MAX, 4.0f / 128.0f * (float)rand() / (float)RAND_MAX);
 		}
 	}
 
@@ -848,14 +831,19 @@ void COpenGLRenderer::Render(float FrameTime)
 
 		glViewport(0, 0, WHMR, WHMR);
 
-		GLuint whmid = (WHMID + 1) % 2;
+		GLuint whmid = (WHMID+1)%2 ;
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBO);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, WaterHeightMaps[whmid], 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, WaterHeightMaps[WHMID], 0);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 
-		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[WHMID]);
+		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[whmid]);
 		glUseProgram(WaterHeightMapProgram);
+		int waterParamLoc = glGetUniformLocation(WaterHeightMapProgram, "g_WaterParam");
+		if (waterParamLoc >= 0)
+		{
+			glUniform4fv(waterParamLoc, 1, &WaterParamVec4.x);
+		}
 		glBegin(GL_QUADS);
 			glVertex2f(0.0f, 0.0f);
 			glVertex2f(1.0f, 0.0f);
@@ -866,21 +854,16 @@ void COpenGLRenderer::Render(float FrameTime)
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
-		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[whmid]);
-		glGenerateMipmapEXT(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		++WHMID %= 2;
+		WaterParamVec4.w = 0.0f;
 
 		// update water normal map --------------------------------------------------------------------------------------------
-
-		glViewport(0, 0, WNMR, WNMR);
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBO);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, WaterNormalMap, 0);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
-
+		/*
+		  *使用新产生的高度图计算法线
+		 */
 		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[WHMID]);
 		glUseProgram(WaterNormalMapProgram);
 		glBegin(GL_QUADS);
@@ -894,9 +877,7 @@ void COpenGLRenderer::Render(float FrameTime)
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-		glBindTexture(GL_TEXTURE_2D, WaterNormalMap);
-		glGenerateMipmapEXT(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		WHMID = whmid;
 	}
 
 	// render pool sky mesh ---------------------------------------------------------------------------------------------------
@@ -923,7 +904,7 @@ void COpenGLRenderer::Render(float FrameTime)
 	glUseProgram(PoolSkyProgram);
 	glBindBuffer(GL_ARRAY_BUFFER, PoolSkyVBO);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 12, (void*)0);
+	glVertexPointer(3, GL_FLOAT, 12, nullptr);
 	glDrawArrays(GL_QUADS, 0, 24);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -941,9 +922,12 @@ void COpenGLRenderer::Render(float FrameTime)
 	glUniform3fv(WaterProgram.UniformLocations[0], 1, &Camera.Position);
 	glBindBuffer(GL_ARRAY_BUFFER, WaterVBO);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 12, (void*)0);
+	glVertexPointer(3, GL_FLOAT, 12, nullptr);
+	glEnable(GL_CULL_FACE);
 	glDrawArrays(GL_QUADS, 0, QuadsVerticesCount);
 	glDisableClientState(GL_VERTEX_ARRAY);
+	//glDisable(GL_CULL_FACE);
+	//glCullFace(cullFace);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
 	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -954,7 +938,7 @@ void COpenGLRenderer::Render(float FrameTime)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-
+	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 }
 
@@ -963,7 +947,7 @@ void COpenGLRenderer::Resize(int Width, int Height)
 	this->Width = Width;
 	this->Height = Height;
 
-	ProjectionMatrix = perspective(45.0f, (float)Width / (float)Height, 0.125f, 512.0f);
+	ProjectionMatrix = perspective(60.0f, (float)Width / (float)Height, 0.125f, 512.0f);
 	ProjectionBiasMatrixInverse = inverse(ProjectionMatrix) * BiasMatrixInverse;
 }
 
@@ -993,28 +977,31 @@ void COpenGLRenderer::AddDrop(float x, float y, float DropRadius)
 {
 	if(x >= -1.0f && x <= 1.0f && y >= -1.0f && y <= 1.0f)
 	{
-		glViewport(0, 0, WMR, WMR);
+		//glViewport(0, 0, WMR, WMR);
 
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBO);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, WaterHeightMaps[(WHMID + 1) % 2], 0);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
+		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBO);
+		//glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, WaterHeightMaps[(WHMID + 1) % 2], 0);
+		//glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 
-		glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[WHMID]);
-		glUseProgram(WaterAddDropProgram);
-		glUniform1f(WaterAddDropProgram.UniformLocations[0], DropRadius);
-		glUniform2fv(WaterAddDropProgram.UniformLocations[1], 1, &vec2(x * 0.5f + 0.5f, 0.5f - y * 0.5f));
-		glBegin(GL_QUADS);
-			glVertex2f(0.0f, 0.0f);
-			glVertex2f(1.0f, 0.0f);
-			glVertex2f(1.0f, 1.0f);
-			glVertex2f(0.0f, 1.0f);
-		glEnd();
-		glUseProgram(0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		//glBindTexture(GL_TEXTURE_2D, WaterHeightMaps[WHMID]);
+		//glUseProgram(WaterAddDropProgram);
+		//glUniform1f(WaterAddDropProgram.UniformLocations[0], DropRadius);
+		//glUniform2fv(WaterAddDropProgram.UniformLocations[1], 1, &vec2(x * 0.5f + 0.5f, 0.5f - y * 0.5f));
+		//glBegin(GL_QUADS);
+		//	glVertex2f(0.0f, 0.0f);
+		//	glVertex2f(1.0f, 0.0f);
+		//	glVertex2f(1.0f, 1.0f);
+		//	glVertex2f(0.0f, 1.0f);
+		//glEnd();
+		//glUseProgram(0);
+		//glBindTexture(GL_TEXTURE_2D, 0);
 
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-		++WHMID %= 2;
+		WaterParamVec4.x = x * 0.5f + 0.5f;
+		WaterParamVec4.y = 0.5f - y*0.5f;
+		WaterParamVec4.z = DropRadius;
+		WaterParamVec4.w = 1.5f;
 	}
 }
 

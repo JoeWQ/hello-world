@@ -52,7 +52,7 @@ EventManager *EventManager::getInstance()
 	return &_static_eventManager;
 }
 
-void EventManager::dispatchTouchEvent(TouchState touchState, const GLVector2 *touchPoint)
+void EventManager::dispatchTouchEvent(TouchState touchState, const GLVector2 &touchPoint)
 {
 	if (!_touchEventArrays.size())
 		return;
@@ -95,7 +95,7 @@ void EventManager::dispatchTouchEvent(TouchState touchState, const GLVector2 *to
 	_isInTouchEventDispatch = false;
 }
 
-void EventManager::dispatchMouseEvent(MouseType mouseType, MouseState mouseState, const GLVector2 *mousePoint)
+void EventManager::dispatchMouseEvent(MouseType mouseType, MouseState mouseState, const GLVector2 &mousePoint)
 {
 	if (!_mouseEventArrays.size())
 		return;

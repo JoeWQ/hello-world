@@ -54,19 +54,19 @@ bool MouseEventListener::isResponseEvent()const
 	return _isResponseEvent;
 }
 
-void  MouseEventListener::onMousePressed(const MouseType mouseType,const GLVector2 *position)
+void  MouseEventListener::onMousePressed( MouseType mouseType,const GLVector2 &position)
 {
 	_isResponseEvent = false;
 	if (_mousePressCallback)
 		_isResponseEvent=(_eventTarget->*_mousePressCallback)(mouseType,position);
 }
-void MouseEventListener::onMouseMoved(const MouseType mouseType, const GLVector2 *position)
+void MouseEventListener::onMouseMoved( MouseType mouseType, const GLVector2 &position)
 {
 	if (_isResponseEvent && _mouseMoveCallback)
 		(_eventTarget->*_mouseMoveCallback)(mouseType,position);
 }
 
-void MouseEventListener::onMouseReleased(const MouseType mouseType, const GLVector2 *position)
+void MouseEventListener::onMouseReleased( MouseType mouseType, const GLVector2 &position)
 {
 	if (_isResponseEvent && _mouseReleaseCallback)
 		(_eventTarget->*_mouseReleaseCallback)(mouseType,position);

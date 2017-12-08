@@ -9,13 +9,13 @@ in		vec2	v_fragCoord;
 
 void	main()
 {
-	vec2	pixelSize = 1.0/vec2(128.0);//textureSize(g_BaseMap,0);
-	float	y = texture(g_BaseMap,v_fragCoord).x;
+	vec2	pixelSize = 1.0/textureSize(g_BaseMap,0);
+	float	r = texture(g_BaseMap,v_fragCoord).r;
 
 	outColor = vec4(
-				y - texture(g_BaseMap,v_fragCoord - vec2(pixelSize.x,0.0)).x,
+				r - texture(g_BaseMap,v_fragCoord - vec2(pixelSize.x,0.0)).r,
 				g_MeshInterval,
-				y - texture(g_BaseMap,v_fragCoord - vec2(0.0,pixelSize.y)).x,
+				r - texture(g_BaseMap,v_fragCoord - vec2(0.0,pixelSize.y)).r,
 				0.0
 			);
 }

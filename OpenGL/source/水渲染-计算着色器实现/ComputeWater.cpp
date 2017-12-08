@@ -269,7 +269,7 @@ void ComputeWater::onTouchWaterWave(const glk::GLVector2 *touchPoint)
 	if (sinValue != 0.0f)
 	{
 		//目标点与水平面之间的距离
-		float  distance = normal.dot(OpenGLCoord.xyz()) - D;
+		float  distance = normal.dot(cameraPosition) - D;
 		//斜边的长度
 		float  slopDistance = distance / sinValue;
 		//射线最终指向的目标点

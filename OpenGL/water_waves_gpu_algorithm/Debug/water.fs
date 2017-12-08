@@ -22,11 +22,6 @@ vec3 IntersectCubeMap(vec3 Position, vec3 Direction)
 			if(Distance > -0.03)
 			{
 				Point = Direction * Distance + Position;
-
-				if(Point.x > -1.001 && Point.x < 1.001 && Point.y > -1.001 && Point.y < 1.001 && Point.z > -1.001 && Point.z < 1.001)
-				{
-					break;
-				}
 			}
 		}
 	}
@@ -57,7 +52,8 @@ void main()
 		vec3 ReflectedColor = textureCube(PoolSkyCubeMap, IntersectCubeMap(Position, reflect(Direction, Normal))).rgb;
 		vec3 DirectionRefracted = refract(Direction, Normal, 1.332631);
 
-		if(DirectionRefracted.x == 0.0 && DirectionRefracted.y == 0.0 && DirectionRefracted.z == 0.0)
+		float L = dot(DirectionRefracted,DirectionRefracted);
+		if(L == 0.0)
 		{
 			gl_FragColor.rgb = ReflectedColor;
 		}

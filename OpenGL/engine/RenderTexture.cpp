@@ -31,6 +31,17 @@ RenderTexture::~RenderTexture()
 		glDeleteTextures(1, &_stencilbufferId);
 }
 
+RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigned genType, const int *formatTable)
+{
+	RenderTexture *rtt = new RenderTexture();
+	if (!rtt->initWithRender(frameSize, genType, formatTable))
+	{
+		rtt->release();
+		rtt = nullptr;
+	}
+	return rtt;
+}
+
 RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigned genType)
 {
 	RenderTexture *render = new RenderTexture();
@@ -41,10 +52,22 @@ RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigne
 	}
 	return render;
 }
-
-bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType)
+bool  RenderTexture::initWithRender(const Size &frameSize, unsigned genType)
+{
+	int  formatTable[3];
+	int  index = 0;
+	if (genType & RenderType::ColorBuffer)
+		formatTable[index++] = GL_RGBA8;
+	if (genType & RenderType::DepthBuffer)
+		formatTable[index++]= GL_DEPTH_COMPONENT32F;
+	if (genType & RenderType::StencilBuffer)
+		formatTable[index++]= GL_STENCIL_COMPONENTS;
+	return initWithRender(frameSize,genType,formatTable);
+}
+bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType, const int *formatTable)
 {
 	_frameSize = frameSize;
+	int    index = 0;
 	assert(frameSize.width>0 && frameSize.height>0);
 	int defaultFramebufferId,colorbufferId;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &defaultFramebufferId);
@@ -58,7 +81,7 @@ bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType)
 	{
 		glGenTextures(1, &_colorbufferId);
 		glBindTexture(GL_TEXTURE_2D, _colorbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -69,18 +92,22 @@ bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType)
 	{
 		glGenTextures(1, &_depthbufferId);
 		glBindTexture(GL_TEXTURE_2D, _depthbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depthbufferId, 0);
 	}
+	else
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+	}
 	if (genType & RenderType::StencilBuffer)
 	{
 		glGenTextures(1, &_stencilbufferId);
 		glBindTexture(GL_TEXTURE_2D, _stencilbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_STENCIL_COMPONENTS, frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

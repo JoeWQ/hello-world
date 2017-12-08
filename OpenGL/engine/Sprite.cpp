@@ -97,7 +97,7 @@ void     Sprite::render()
 	glBindVertexArray(_vertexArrayBufferId);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _glTexture->name());
+	glBindTexture(GL_TEXTURE_2D, _glTexture->getName());
 	glUniform1i(_baseMapLoc,0);
 //ÑÕÉ«
 	glUniform4fv(_renderColorLoc, 1, (float*)&_renderColor);
@@ -121,7 +121,7 @@ void  Sprite::render(Matrix *_affineMatrix,unsigned   otherTextureId)
 	glVertexAttribPointer(GLAttribTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, otherTextureId?otherTextureId:_glTexture->name());
+	glBindTexture(GL_TEXTURE_2D, otherTextureId?otherTextureId:_glTexture->getName());
 	glUniform1i(_baseMapLoc, 0);
 //ÑÕÉ«
 	glUniform4fv(_renderColorLoc, 1, (float*)&_renderColor);

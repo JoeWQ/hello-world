@@ -46,10 +46,21 @@ int    Shape::numberOfVertex()
 {
 	return _numberOfVertex;
 }
-int      Shape::getVertexBufferId()
+int      Shape::getVertexBufferId()const
 {
 	return _vertexVBO;
 }
+
+int     Shape::getTexBufferId()const
+{
+	return _texCoordVBO;
+}
+
+int    Shape::getNormalBufferId()const
+{
+	return _normalVBO;
+}
+
 void    Shape::bindIndiceObject()
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indiceVBO);
@@ -547,7 +558,12 @@ Mesh::~Mesh()
 {
 }
 
-void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float texIntensity)
+void          Mesh::initWithMesh(int grid_size, float scaleX, float scaleY, float texIntensity)
+{
+	initWithMesh(grid_size, scaleX, scaleY, texIntensity, MeshType::MeshType_XOY);
+}
+
+void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float texIntensity,MeshType meshType)
 {
 	int i, j;
 	int numIndices = (size - 1) * (size - 1) * 2 * 3;
@@ -556,19 +572,52 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 	_numberOfVertex = numVertices;
 	_numberOfIndice = numIndices;
 	float   stepSize = ((float)(size - 1)) / 2.0f;
-	float   *_vertex = new float[3 * numVertices];
+	float   *vertex = new float[3 * numVertices];
 
+	int  index = 0;
 	for (i = 0; i < size; ++i) // row
 	{
 		const    float     locX = scaleY*(i / stepSize - 1.0f);
 		for (j = 0; j < size; ++j) // column
 		{
-			int   _index = (i*size + j) * 3;
-			_vertex[_index] = scaleX*(j / stepSize - 1.0f);
-			_vertex[_index + 1] = locX;
-			_vertex[_index + 2] = 0.0f;
+			if (meshType == MeshType::MeshType_XOY)
+			{
+				vertex[index] = scaleX*(j / stepSize - 1.0f);
+				vertex[index + 1] = locX;
+				vertex[index + 2] = 0.0f;
+			}
+			else if (meshType == MeshType::MeshType_XOZ)
+			{
+				vertex[index] = (j/stepSize -1.0f )*scaleX ;
+				vertex[index+1] = 0.0f;
+				vertex[index + 2] =-locX ;
+			}
+			else if (meshType == MeshType::MeshType_YOZ)
+			{
+				vertex[index] = 0.0f;
+				vertex[index + 1] = locX;
+				vertex[index + 2] = (1.0f - j/stepSize)*scaleX;
+			}
+			index += 3;
 		}
 	}
+	//计算切线鱼与法线
+	if (meshType == MeshType::MeshType_XOY)
+	{
+		_normal = GLVector3(0,0,1.0f);
+		_tangent = GLVector3(1.0f,0.0f,0.0f);
+	}
+	else if (meshType ==MeshType::MeshType_XOZ)
+	{
+		_normal = GLVector3(0.0f,1.0f,0.0f);
+		_tangent = GLVector3(1.0f,0,0);
+	}
+	else if (meshType==MeshType::MeshType_YOZ)
+	{
+		_normal = GLVector3(1,0,0);
+		_tangent = GLVector3(0,0,-1);
+	}
+
 // Generate the indices
 	int   *_indice = new int[numIndices];
 	for (i = 0; i < size - 1; ++i)
@@ -589,13 +638,13 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 //Gen Buffers
 	glGenBuffers(1, &_vertexVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float)*_numberOfVertex, _vertex,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float)*_numberOfVertex, vertex,GL_STATIC_DRAW);
 //
 	glGenBuffers(1, &_indiceVBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indiceVBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*_numberOfIndice, _indice, GL_STATIC_DRAW);
 //tex coord
-	float     *texCoord = _vertex;
+	float     *texCoord = vertex;
 	const   float      _factor = size - 1;
 	for (int i = 0; i < _numberOfVertex; ++i)
 	{
@@ -608,7 +657,7 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 	glBindBuffer(GL_ARRAY_BUFFER, _texCoordVBO);
 	glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(float)*_numberOfVertex, texCoord, GL_STATIC_DRAW);
 
-	delete  _vertex;
+	delete  vertex;
 	delete  _indice;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -617,7 +666,13 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 void       Mesh::bindNormalObject(int _loc)
 {
 	glDisableVertexAttribArray(_loc);
-	glVertexAttrib3f(_loc, 0.0f, 0.0f, 1.0f);
+	glVertexAttrib3fv(_loc, &_normal.x);
+}
+
+void Mesh::bindTangentObject(int _loc)
+{
+	glDisableVertexAttribArray(_loc);
+	glVertexAttrib3fv(_loc,&_tangent.x);
 }
 
 Mesh         *Mesh::createWithIntensity(int grid_size, float scaleX, float scaleY, float texIntensity)
@@ -625,5 +680,12 @@ Mesh         *Mesh::createWithIntensity(int grid_size, float scaleX, float scale
 	Mesh		*_mesh = new   Mesh();
 	_mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity);
 	return  _mesh;
+}
+
+Mesh  *Mesh::createWithIntensity(int grid_size, float scaleX, float scaleY, float texIntensity, MeshType meshType)
+{
+	Mesh *mesh = new Mesh();
+	mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity, meshType);
+	return mesh;
 }
 __NS_GLK_END

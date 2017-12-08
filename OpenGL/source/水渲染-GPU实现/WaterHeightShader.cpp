@@ -58,9 +58,9 @@ void WaterHeightShader::setWaterParam(const glk::GLVector4 &waterParam)
 
 void WaterHeightShader::setMeshSize(glk::GLVector2 &meshSize)
 {
-	if (_waterParamLoc >= 0)
+	if (_meshSizeLoc >= 0)
 	{
-		glUniform2fv(_waterParamLoc,1,&meshSize.x);
+		glUniform2fv(_meshSizeLoc,1,&meshSize.x);
 	}
 }
 

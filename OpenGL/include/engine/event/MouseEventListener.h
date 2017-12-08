@@ -26,9 +26,9 @@ private:
 	MouseEventListener(MouseEventListener &);
 	void         initWithTarget(Object *target,GLKMousePressCallback pressCallback,GLKMouseMotionCallback motionCallback, GLKMouseReleaseCallback releaseCallback);
 	//一下函数只能在EventManager中使用
-	void         onMousePressed(const MouseType mouseType,const GLVector2 *position);
-	void         onMouseMoved(const MouseType mouseType,const GLVector2 *position);
-	void         onMouseReleased(const MouseType mouseType,const GLVector2 *position);
+	void         onMousePressed( MouseType mouseType,const GLVector2 &position);
+	void         onMouseMoved( MouseType mouseType,const GLVector2 &position);
+	void         onMouseReleased( MouseType mouseType,const GLVector2 &position);
 	bool         isResponseEvent()const;
 public:
 	~MouseEventListener();

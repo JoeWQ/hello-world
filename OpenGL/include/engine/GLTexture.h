@@ -7,6 +7,13 @@
 #include<engine/Object.h>
 #include<engine/Geometry.h>
 __NS_GLK_BEGIN
+struct TexParam
+{
+	int     minFilter;
+	int     magFilter;
+	int     wrapS;
+	int     wrapT;
+};
 class  GLTexture:public Object
 {
 private:
@@ -20,12 +27,13 @@ public:
 	~GLTexture();
 	static   GLTexture    *createWithFile(const char  *_file_name);
 	void         setWrapParam(unsigned wrap_param,unsigned _param);
+	void         setTexParam(const TexParam &texParam);
 //获取纹理的尺寸
 	Size&      getContentSize();
 	float     getWidth();
 	float     getHeight();
 //纹理的名字
-	unsigned int  name();
+	unsigned int  getName();
 //设置Mipmap
 	void        genMipmap();
 };
@@ -47,7 +55,7 @@ public:
 	~GLCubeMap();
 	static     GLCubeMap	      *createWithFiles(const char **file_list);
 	static     GLCubeMap      *createEmptyMap(Size    &contentSize);
-	unsigned       name();
+	unsigned       getName();
 };
 __NS_GLK_END
 #endif

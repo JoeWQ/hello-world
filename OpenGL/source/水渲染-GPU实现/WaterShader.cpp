@@ -42,7 +42,7 @@ void WaterShader::initWithFile(const char *vsFile, const char *fsFile)
 	_glProgram = glk::GLProgram::createWithFile(vsFile, fsFile);
 	_modelMatrixLoc = _glProgram->getUniformLocation("g_ModelMatrix");
 	_viewProjMatrixLoc = _glProgram->getUniformLocation("g_ViewProjMatrix");
-	_normalMapLoc = _glProgram->getUniformLocation("g_NormalMatrix");
+	_normalMatrixLoc = _glProgram->getUniformLocation("g_NormalMatrix");
 	_heightMapLoc = _glProgram->getUniformLocation("g_HeightMap");
 	_normalMapLoc = _glProgram->getUniformLocation("g_NormalMap");
 	_texCubeMapLoc = _glProgram->getUniformLocation("g_TexCubeMap");

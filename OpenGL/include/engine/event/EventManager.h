@@ -51,9 +51,9 @@ private:
 	static EventManager   _static_eventManager;
 //friend
 	//派发触屏事件
-	void        dispatchTouchEvent(TouchState  touchState,const GLVector2 *touchPoint);
+	void        dispatchTouchEvent(TouchState  touchState,const GLVector2 &touchPoint);
 	//派发鼠标事件
-	void        dispatchMouseEvent(MouseType mouseType,MouseState mouseState,const GLVector2 *mousePoint);
+	void        dispatchMouseEvent(MouseType mouseType,MouseState mouseState,const GLVector2 &mousePoint);
 	//派发键盘事件
 	void        dispatchKeyEvent(KeyCodeType keyCode,KeyCodeState keyState);
 public:

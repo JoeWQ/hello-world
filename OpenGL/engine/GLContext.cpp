@@ -30,17 +30,15 @@ GLContext::GLContext()
 	this->init = NULL;
 	this->finalize = NULL;
 #ifdef  _WIN32
-	lastTickCount = GetTickCount();
+	_lastTickCount = GetTickCount();
 #else
 	struct     timeval      tv;
 	gettimeofday(&tv, NULL);
-	baseTickCount = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-	lastTickCount = 0;
+	_baseTickCount = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	_lastTickCount = 0;
 #endif
 	winSize.width = 960;
 	winSize.height = 640;
-	//          displayMode=GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL;
-	winTitle = "OpenGL-Sprite";
 }
 //
 void    GLContext::registerUpdateFunc(void(*_update)(GLContext *, float))
@@ -87,16 +85,6 @@ int          GLContext::getDisplayMode()
 {
 	return     this->displayMode;
 }
-//
-//void       GLContext::setWindowTitle(char  *_title)
-//{
-//	this->winTitle = _title;
-//}
-////
-//const  char       *GLContext::getWindowTitle()const
-//{
-//	return  this->winTitle;
-//}
 
 void          GLContext::setNearFarPlane(GLVector2 &near_far)
 {

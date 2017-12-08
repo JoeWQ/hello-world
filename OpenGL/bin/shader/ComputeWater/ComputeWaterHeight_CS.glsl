@@ -41,7 +41,7 @@ void    main()
 	if(g_WaveParam.w > 0.0 )
 	{
 		float d = distance(	vec2( float(x)+1.0 ,float(y) +1.0 ), g_WaveParam.xy);
-		d = d / g_WaveParam.z * 3.0;
+		d = d / g_WaveParam.z * 3.0 + 1.0;
 		nowHeight -= exp(- d*d ) * g_WaveParam.w;
 	}
 	field[index] = nowHeight;

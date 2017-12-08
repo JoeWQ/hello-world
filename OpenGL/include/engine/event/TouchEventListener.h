@@ -32,9 +32,9 @@ private:
 	void   initWithTarget(Object *eventTarget, GLKTouchCallback touchBegin, GLKTouchMotionCallback touchMoved, GLKTouchReleaseCallback touchRelease);
 
 	//ÅÉ·¢ÊÂ¼þ
-	bool    onTouchBegin(const GLVector2 *touchPoint);
-	void    onTouchMoved(const GLVector2 *touchPoint);
-	void    onTouchEnded(const GLVector2 *touchPoint);
+	bool    onTouchBegin(const GLVector2 &touchPoint);
+	void    onTouchMoved(const GLVector2 &touchPoint);
+	void    onTouchEnded(const GLVector2 &touchPoint);
 public:
 	~TouchEventListener();
 	static TouchEventListener *createTouchListener(Object *eventTarget);

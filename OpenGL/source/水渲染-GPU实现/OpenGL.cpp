@@ -25,6 +25,7 @@ void        Init(glk::GLContext    *_context)
 	//¿ªÆôÑÕÉ«»ìÈÜ
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
+	glEnable(GL_POINT_SPRITE);
 }
 //
 void         Update(glk::GLContext   *_context, float   _deltaTime)

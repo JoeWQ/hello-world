@@ -14,6 +14,8 @@ class PoolShader :public glk::Object
 	glk::GLProgram		*_glProgram;
 	int							_mVPMatrixLoc;
 	int                           _texCubeMapLoc;
+	int                           _photonCubeMapLoc;
+	int                           _kernelLoc;
 	int                           _positionLoc;
 	int                           _fragCoordLoc;
 private:
@@ -31,6 +33,14 @@ public:
 	  *Á¢·½ÌåÌùÍ¼
 	 */
 	void   setTexCubeMap(int texCubeMapId,int unit);
+	/*
+	  *CausticÌùÍ¼
+	 */
+	void    setCausticCubeMap(int texCubeMapId,int unit);
+	/*
+	  *blur kernel
+	 */
+	void    setKernel(const glk::GLVector3 *kernel,int size);
 	/*
 	  *perform
 	 */

@@ -10,22 +10,22 @@
 #include "engine/event/KeyCode.h"
 #include "engine/event/Mouse.h"
 //回调函数类型定义,周期回调函数
-typedef void (glk::Object::*GLKUpdateCallback)(const float );
+typedef void (glk::Object::*GLKUpdateCallback)(float );
 //触屏起始
-typedef bool (glk::Object::*GLKTouchCallback)(const glk::GLVector2 *);
+typedef bool (glk::Object::*GLKTouchCallback)(const glk::GLVector2 &);
 //移动
-typedef void (glk::Object::*GLKTouchMotionCallback)(const glk::GLVector2 *);
+typedef void (glk::Object::*GLKTouchMotionCallback)(const glk::GLVector2 &);
 //结束
-typedef void (glk::Object::*GLKTouchReleaseCallback)(const glk::GLVector2 *);
+typedef void (glk::Object::*GLKTouchReleaseCallback)(const glk::GLVector2 &);
 
 ////////////////键盘按键事件回调函数////////////////
-typedef bool (glk::Object::*GLKKeyPressCallback)(const glk::KeyCodeType keyCode);
-typedef void (glk::Object::*GLKKeyReleaseCallback)(const glk::KeyCodeType keyCode);
+typedef bool (glk::Object::*GLKKeyPressCallback)( glk::KeyCodeType keyCode);
+typedef void (glk::Object::*GLKKeyReleaseCallback)( glk::KeyCodeType keyCode);
 
 ////////////////鼠标事件//////////////////////
-typedef bool (glk::Object::*GLKMousePressCallback)(const glk::MouseType mouseType,const glk::GLVector2 *position);
-typedef void (glk::Object::*GLKMouseMotionCallback)(const glk::MouseType mouseType,const glk::GLVector2 *position);
-typedef void (glk::Object::*GLKMouseReleaseCallback)(const glk::MouseType mouseType,const glk::GLVector2 *position);
+typedef bool (glk::Object::*GLKMousePressCallback)( glk::MouseType mouseType,const glk::GLVector2 &position);
+typedef void (glk::Object::*GLKMouseMotionCallback)( glk::MouseType mouseType,const glk::GLVector2 &position);
+typedef void (glk::Object::*GLKMouseReleaseCallback)( glk::MouseType mouseType,const glk::GLVector2 &position);
 //////////////////////////宏/////////////////////////////////////////////
 #define  glk_touch_selector(selector)     static_cast<GLKTouchCallback >(&selector)
 #define  glk_move_selector(selector)     static_cast<GLKTouchMotionCallback >(&selector)
@@ -47,5 +47,7 @@ enum CameraType
 	CameraType_Perspertive = 1,//透视矩阵
 	CameraType_Ortho =2,//正交矩阵
 };
+//
+typedef unsigned char byte;
 __NS_GLK_END
 #endif

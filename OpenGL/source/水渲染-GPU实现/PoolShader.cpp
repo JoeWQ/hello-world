@@ -33,6 +33,8 @@ void		PoolShader::initWithFile(const char *vsFile, const char *fsFile)
 	_glProgram = glk::GLProgram::createWithFile(vsFile, fsFile);
 	_mVPMatrixLoc = _glProgram->getUniformLocation("g_MVPMatrix");
 	_texCubeMapLoc = _glProgram->getUniformLocation("g_TexCubeMap");
+	_photonCubeMapLoc = _glProgram->getUniformLocation("g_PhotonCubeMap");
+	_kernelLoc = _glProgram->getUniformLocation("g_Kernel");
 	_positionLoc = _glProgram->getAttribLocation("a_position");
 	_fragCoordLoc = _glProgram->getAttribLocation("a_fragCoord");
 }
@@ -52,6 +54,24 @@ void		PoolShader::setTexCubeMap(int texCubeMapId, int unit)
 		glActiveTexture(GL_TEXTURE0+unit);
 		glBindTexture(GL_TEXTURE_CUBE_MAP,texCubeMapId);
 		glUniform1i(_texCubeMapLoc,unit);
+	}
+}
+
+void PoolShader::setCausticCubeMap(int texCubeMapId, int unit)
+{
+	if (_photonCubeMapLoc >= 0)
+	{
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_CUBE_MAP,texCubeMapId);
+		glUniform1i(_photonCubeMapLoc, unit);
+	}
+}
+
+void PoolShader::setKernel(const glk::GLVector3 *kernel, int size)
+{
+	if (_kernelLoc >= 0)
+	{
+		glUniform3fv(_kernelLoc,size,&kernel->x);
 	}
 }
 

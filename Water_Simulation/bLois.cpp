@@ -175,7 +175,7 @@ HRESULT CMyD3DApplication::OneTimeSceneInit()
 	D3DXMatrixLookAtLH(&m_matView, 
 		&D3DXVECTOR3(0.f, -150.f, 50.f),
 		&D3DXVECTOR3(0.f, 0.f, 0.f),
-		&D3DXVECTOR3(0.f, 0.f, 1.f));
+		&D3DXVECTOR3(0.f, 1.f, 0.f));
 
     D3DXMatrixInverse(&m_matPosition, NULL, &m_matView);
 

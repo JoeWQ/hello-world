@@ -127,7 +127,7 @@ private:
 
 #define WMR 128 // water mesh resolution
 #define WHMR 128 // water height map resolution
-#define WNMR 256 // water normal map resolution
+#define WNMR 128 // water normal map resolution
 
 class COpenGLRenderer
 {
@@ -145,7 +145,7 @@ protected:
 public:
 	bool WireFrame, Pause;
 	float DropRadius;
-
+	vec4     WaterParamVec4;
 public:
 	CString Text;
 

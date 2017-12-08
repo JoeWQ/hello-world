@@ -36,7 +36,7 @@
 //i为起始索引
                                 for(i=0;i<size;i+=_step)
                                {
-                                               const  int    j=i+_step>size?i+_step:size;
+                                               const  int    j=i+_step>size?size:i+_step;
                                                for(int   a=i+1;a<j;++a)
                                               {
                                                                int      b=a-1;

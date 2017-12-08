@@ -88,7 +88,7 @@ void TouchEventListener::registerReleaseCallback(GLKTouchReleaseCallback touchRe
 }
 
 //事件派发
-bool TouchEventListener::onTouchBegin(const GLVector2 *touchPoint)
+bool TouchEventListener::onTouchBegin(const GLVector2 &touchPoint)
 {
 	_isInteractTouch = false;
 	if (_touchBegan)
@@ -96,7 +96,7 @@ bool TouchEventListener::onTouchBegin(const GLVector2 *touchPoint)
 	return _isInteractTouch;
 }
 
-void TouchEventListener::onTouchMoved(const GLVector2 *touchPoint)
+void TouchEventListener::onTouchMoved(const GLVector2 &touchPoint)
 {
 	//只有经过了触发事件标志通过之后才能调用该函数
 	if (_isInteractTouch && _touchMotion)
@@ -105,7 +105,7 @@ void TouchEventListener::onTouchMoved(const GLVector2 *touchPoint)
 	}
 }
 
-void TouchEventListener::onTouchEnded(const GLVector2 *touchPoint)
+void TouchEventListener::onTouchEnded(const GLVector2 &touchPoint)
 {
 	if (_isInteractTouch && _touchRelease)
 	{

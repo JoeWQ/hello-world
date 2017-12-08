@@ -12,6 +12,10 @@
 #include "engine/Shape.h"
 #include "engine/GLTexture.h"
 
+#include "engine/event/TouchEventListener.h"
+#include "engine/event/MouseEventListener.h"
+#include "engine/event/KeyEventListener.h"
+
 #include "WaterHeightShader.h"
 #include "WaterNormalShader.h"
 #include "WaterShader.h"
@@ -28,7 +32,6 @@ class WaterGPU :public glk::Object
 	glk::RenderTexture      *_heightTexture0;
 	glk::RenderTexture      *_heightTexture1;
 	glk::RenderTexture      *_normalTexture;
-	glk::GLProgram            *_renderNormal;
 	//Camera
 	glk::Camera                 *_camera;
 	//Mesh
@@ -51,6 +54,34 @@ class WaterGPU :public glk::Object
 	//关于水网格的扰动参数
 	glk::GLVector4           _waterParam;
 	float                             _deltaTime;
+
+	glk::TouchEventListener   *_touchEventListener;
+	glk::KeyEventListener       *_keyEventListener;
+	glk::MouseEventListener  *_mouseEventListener;
+	int                                        _keyMask;
+	glk::GLVector2                   _offsetVec2;
+	//帧缓冲区对象
+	unsigned								_frameBufferId;
+	//立方体贴图
+	unsigned                            _photonTextureCubeMap[2];
+	//平面贴图
+	unsigned                            _photonTexture;
+	//Photon Shader
+	glk::GLProgram               *_photonProgram;
+	//Photon Blur Shader
+	glk::GLProgram              *_photonBlurProgram;
+	//Photon顶点缓冲区对象
+	unsigned                           _photonVertexbufferId;
+	//Photon 像素坐标缓冲区对象
+	unsigned                           _photonFragCoordbufferId;
+	//像素缓冲区对象
+	unsigned                           _pixelbufferId;
+	//画测试图
+	glk::GLProgram              *_normalProgram;
+	//立方体贴图的纹理坐标
+	unsigned                           _cubeMapfragCoordVertex;
+	unsigned                           _cubeMapVertex;
+	glk::Skybox                      *_skyboxVertex;
 private:
 	WaterGPU();
 	WaterGPU(const WaterGPU &);
@@ -60,20 +91,44 @@ public:
 	static WaterGPU *create();
 	//初始化摄像机
 	void          initCamera(const glk::GLVector3 &eyePosition,const glk::GLVector3 &targetPosition);
+	//初始化Photon相关参数,以及先关的shader，shader参数
+	void          initPhotonParam();
 	//设置关于水的参数
 	void          initWaterParam();
 	//渲染水高度纹理
 	void          drawWaterHeightTexture();
 	//渲染水面网格法线
 	void          drawWaterNormalTexture();
+	//渲染Caustic
+	void          drawCaustic();
 	//渲染天空盒
 	void         drawSkybox();
+	//测试
+	void         drawTexture(int textureId);
 	//draw
 	void         draw();
 	//update()
 	void         update(float deltaTime);
 	/*
+	  *触屏回调函数
 	 */
-	void         drawTest(int   textureId);
+	bool   onTouchBegan(const glk::GLVector2 *touchPoint);
+	void   onTouchMoved(const glk::GLVector2 *touchPoint);
+	void   onTouchEnded(const glk::GLVector2 *touchPoint);
+	/*
+	  *按键回调函数
+	 */
+	bool   onKeyPressed(const glk::KeyCodeType keyCode);
+	void   onKeyReleased(const glk::KeyCodeType keyCode);
+	/* 
+	  *鼠标右键回调函数
+	 */
+	bool   onMouseClick(glk::MouseType mouseType,const glk::GLVector2 *clickPoint);
+	void   onMouseMoved(glk::MouseType mouseType,const glk::GLVector2 *clickPoint);
+	void   onMouseEnded(glk::MouseType mouseType,const glk::GLVector2 *clickPoint);
+	/*
+	  *在屏幕坐标点处出发水面波纹
+	*/
+	void   addWaterDrop(const glk::GLVector2 &touchPoint);
 };
 #endif
