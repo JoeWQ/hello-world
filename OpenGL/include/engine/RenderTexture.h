@@ -30,8 +30,9 @@ private:
 	Size               _frameSize;//帧缓冲区对象大小
 	bool              _isRestoreLastFramebuffer;//在结束当前缓冲区的绑定的时候,是否需要还原到原来的缓冲区绑定
 	bool              _isNeedClearBuffer;//是否需要在使用当前帧缓冲区对象的时候同时清除颜色,深度,模板缓冲区,如果绑定了的话
+	int                 _bufferBit;
 private:
-	bool             initWithRender(const Size &frameSize,unsigned  genType,const int *formatTable);
+	bool             initWithRender(const Size &frameSize,unsigned  genType, bool useFloat);
 	bool             initWithRender(const Size &frameSize, unsigned  genType);
 	RenderTexture();
 	RenderTexture(RenderTexture &);
@@ -46,7 +47,7 @@ public:
 	  *以给定的格式创建帧缓冲区对象,formatTable的长度与genType里面给出的类型相对应
 	  *并且顺序按照颜色,深度,模板的顺序设定,如果某一个缓冲区没有,后面的紧接着跟上
 	 */
-	static RenderTexture *createRenderTexture(const Size &frameSize, unsigned genType,const int *formatTable);
+	static RenderTexture *createRenderTexture(const Size &frameSize, unsigned genType,bool useFloat);
 	/*
 	  *切换到当前的缓冲区对象,当前缓冲区对象会记录上次的帧缓冲区对象的使用 情况
 	 */

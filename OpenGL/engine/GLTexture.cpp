@@ -58,13 +58,13 @@ GLTexture     *GLTexture::createWithFile(const char *_file_name)
 	return  _texture;
 }
 //用给定的文件创建纹理
-void        GLTexture::initWithFile(const char *_file_name)
+void        GLTexture::initWithFile(const char *filename)
 {
 	int   width, height, depth;
-	char  *buffer =Tools::loadImage(_file_name, &width, &height, &depth);
+	char  *buffer =Tools::loadImage(filename, &width, &height, &depth);
 	if (!buffer)
 	{
-		printf("file '%s' do not exist,please check it.",_file_name);
+		printf("file '%s' do not exist,please check it.",filename);
 		assert(0);
 	}
 	_contentSize.width = width;

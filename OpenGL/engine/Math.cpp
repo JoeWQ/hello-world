@@ -55,7 +55,7 @@ float     phillips(const float a, const float k[2], const float wind[2])
 	if (k2 == 0)
 		return 0;
 	float v2 = wind[0] * wind[0] + wind[1] * wind[1];//风的方向
-	float EL = v2 / __GRAVITY_CONSTANT;//重力加速度
+	float EL = v2 / GLK_GRAVITY_CONSTANT;//重力加速度
 	// the factor *exp(-sqrt(k2)*1.0) can get rid of small waves by increasing 1.0
 	float    w = k[0] * wind[0] + k[1] * wind[1];
 	//具体的公式,请参见simulating-ocean-water-01.pdf Page 9

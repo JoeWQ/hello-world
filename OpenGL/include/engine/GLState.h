@@ -6,21 +6,14 @@
 #define  __GL_STATE_H__
 
 /////////////////////////////////宏开关////////////////////////////////////////////////////////////////
-typedef 
-enum     _tDrawFlag{
-	kFlag_OrthoMatrix = 1,//如果该位不为0,则表示该矩阵是正交矩阵,否则是透视矩阵
-	kFlag_Shadow = 2,//如果该位不为0,表示引擎启用了阴影功能
-	kFlag_Geometry = 4,//表示开启了几何着色器功能
-	kFlag_OpenGLVersion=8,//表示该版本是OpenGL,否则为OpenGLES
-	kFlag_ShaderVersion30=16,//表示shader的版本至少为3.0或者以上,否则表示2.0
-	kFlag_DefferedRender = 1 << 16,//如果该位不为0,则表示引擎启用了延迟着色功能
-} tDrawFlagType;
 //OpenGL的版本控制,是否是OpenGL版本,或者是OpenGLES版本
 #if defined _WIN32 || defined _LINUX || defined _APPLE
 #define      __OPENGL_VERSION__
 #endif
 //是否开启几何着色器,默认是不开启的,在OpenGLES版本中,必须禁止这个宏
+#ifdef __OPENGL_VERSION__
 #define      __GEOMETRY_SHADER__
+#endif
 //是否开启缓存,着色器缓存,纹理缓存
 #define     __ENABLE_PROGRAM_CACHE__    
 //开启纹理缓存
@@ -31,32 +24,28 @@ enum     _tDrawFlag{
 #define      GLAttribTexCoord          1   //纹理坐标
 #define      GLAttribNormal             2  //法线
 
-//最常用的着色器对象名字,在SpriteSprite使用
-#define      OpenGLSpriteProgram                     "OpenGLSpriteProgram"
+//最常用的着色器对象名字,在Sprite使用
+#define      OpenGLSpriteProgram                     "GLK_OpenGLSpriteProgram"
 //一般光照着色器
-#define      OpenGLNormalLightProgram          "OpenGLLightProgram"
+#define      OpenGLNormalLightProgram          "GLK_OpenGLLightProgram"
 //点光源着色器
-#define      OpenGLPointLightProgram             "OpenGLPointLightProgram"
+#define      OpenGLPointLightProgram             "GLK_OpenGLPointLightProgram"
 //结构体内偏移
 #define   __offsetof(s,m)           (char *)(&((s *)NULL)->m)
-
-//关于点阴影的选择
-//#define   __GEOMETRY_SHADOW__
-
-//代替GLUT_宏常量
-#define   GLSTATE_RGBA           0x0000
-#define   GLSTATE_DOUBLE      0x0002
-#define   GLSTATE_DEPTH        0x0010
-#define   GLSTATE_STENCIL     0x0020
+//是否启用 tsb_image库,如果开启了这个宏,则程序将会使用该库加载所有的图片
+#define _USE_STB_IMAGE_    1
 #ifndef  NULL
 #define  NULL  0
 #endif
-
-#define    __MATH_PI__        3.1415926535873f
-#define    _RADIUS_FACTOR_ (__MATH_PI__/180.0f)
-#define    _ANGLE_FACTOR_  (180.0f/__MATH_PI__)
+#ifndef MATH_PI
+#define MATH_PI 4.14159265358
+#endif
+//弧度与角度之间的转换
+#define    GLK_RADIUS_TO_ANGLE(radius)  ((radius)*180/MATH_PI)
+//角度与弧度之间的转换
+#define    GLK_ANGLE_TO_RADIUS(angle) ((angle)*MATH_PI/180)
 //重力系数
-#define    __GRAVITY_CONSTANT		9.810f
+#define    GLK_GRAVITY_CONSTANT		9.810f
 //引擎的命名空间名字
 #define	 __NS_GLK_BEGIN                 namespace glk {
 #define    __NS_GLK_END                     }

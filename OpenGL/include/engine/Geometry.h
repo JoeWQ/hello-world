@@ -226,6 +226,8 @@ __NS_GLK_BEGIN
 		friend   class      Camera;
 		Matrix();
 		Matrix(const GLVector4 &row0,const GLVector4 &row1,const GLVector4 &row2,const GLVector4 &row3);
+		//创建视图矩阵使用
+		Matrix(const GLVector3 &row1,const GLVector3 &row2,const GLVector3 &row3,const GLVector3 &eyePosition);
 		//返回指向矩阵内容的指针,浮点型指针
 		inline    const float     *pointer() const { return (float*)m; };
 		//加载单位矩阵
@@ -298,5 +300,10 @@ __NS_GLK_BEGIN
 	float     detVector2(GLVector2  *a, GLVector2  *b);
 	float     detVector3(GLVector3   *a, GLVector3   *b, GLVector3   *c);
 	//////////////////////////////////////////////////////////////////////////////
+	typedef GLVector3 Vec3;
+	typedef GLVector4 Vec4;
+	typedef GLVector2 Vec2;
+	typedef Matrix       Mat4;
+	typedef Matrix3     Mat3;
 __NS_GLK_END
 #endif

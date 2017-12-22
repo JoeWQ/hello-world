@@ -31,8 +31,8 @@ void   Camera::initCamera(const GLVector3 &eyePosition, const GLVector3 &targetP
 	typedef float(*MatrixArray)[4];
 	MatrixArray array = (MatrixArray)_viewMatrix.pointer();
 	//绕X轴旋转的角度
-	float pitch = atan2f(-array[2][1],array[2][2]) * _ANGLE_FACTOR_;
-	float yaw = atan2f(array[2][0],GLVector2(-array[2][1],array[2][2]).length()) * _ANGLE_FACTOR_;
+	float pitch = GLK_RADIUS_TO_ANGLE(atan2f(-array[2][1],array[2][2])) ;
+	float yaw = GLK_RADIUS_TO_ANGLE(atan2f(array[2][0],GLVector2(-array[2][1],array[2][2]).length()));
 	//计算旋转向量
 	_rotateVec = GLVector3(pitch,yaw,0.0f);
 	//计算平移坐标系,首先需要求出视图矩阵中的旋转矩阵的逆矩阵

@@ -779,6 +779,17 @@ Matrix::Matrix(const GLVector4 &row0, const GLVector4 &row1, const GLVector4 &ro
 	m[3][0] = row3.x, m[3][1] = row3.y, m[3][2] = row3.z, m[3][3] = row3.w;
 }
 
+Matrix::Matrix(const GLVector3 &row1, const GLVector3 &row2, const GLVector3 &row3, const GLVector3 &eyePosition)
+{
+	m[0][0] = row1.x; m[0][1] = row2.x; m[0][2] = row3.x; m[0][3] = 0;
+	m[1][0] = row1.y; m[1][1] = row2.y; m[1][2] = row3.y; m[1][3] = 0;
+	m[2][0] = row1.z; m[2][1] = row2.z; m[2][2] = row3.z; m[2][3] = 0;
+	m[3][0] = -row1.dot(eyePosition);
+	m[3][1] = -row2.dot(eyePosition);
+	m[3][2] = -row3.dot(eyePosition);
+	m[3][3] = 1;
+}
+
 void     Matrix::identity()
 {
 	m[0][0] = 1.0f, m[0][1] = 0.0f, m[0][2] = 0.0f, m[0][3] = 0.0f;
@@ -844,8 +855,8 @@ void    Matrix::rotateX(float pitch)
 {
 	Matrix  matX;
 
-	const float sinX = sinf(pitch*_RADIUS_FACTOR_);
-	const float cosX = cosf(pitch * _RADIUS_FACTOR_);
+	const float sinX = sinf(GLK_ANGLE_TO_RADIUS(pitch));
+	const float cosX = cosf(GLK_RADIUS_TO_ANGLE(pitch));
 
 	matX.m[1][1] = cosX;
 	matX.m[1][2] = sinX;
@@ -859,8 +870,8 @@ void Matrix::rotateY(float yaw)
 {
 	Matrix matY;
 
-	const float sinY = sinf(yaw*_RADIUS_FACTOR_);
-	const float cosY = cosf(yaw*_RADIUS_FACTOR_);
+	const float sinY = sinf(GLK_ANGLE_TO_RADIUS(yaw));
+	const float cosY = cosf(GLK_ANGLE_TO_RADIUS(yaw));
 
 	matY.m[0][0] = cosY;
 	matY.m[0][2] = -sinY;
@@ -873,8 +884,8 @@ void Matrix::rotateY(float yaw)
 void Matrix::rotateZ(float roll)
 {
 	Matrix matZ;
-	const float sinZ = sinf(roll*_RADIUS_FACTOR_);
-	const float cosZ = cosf(roll*_RADIUS_FACTOR_);
+	const float sinZ = sinf(GLK_ANGLE_TO_RADIUS(roll));
+	const float cosZ = cosf(GLK_ANGLE_TO_RADIUS(roll));
 
 	matZ.m[0][0] = cosZ;
 	matZ.m[0][1] = sinZ;

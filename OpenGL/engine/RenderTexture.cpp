@@ -17,6 +17,7 @@ RenderTexture::RenderTexture()
 	_lastFramebufferId = 0;
 	_isRestoreLastFramebuffer = true;
 	_isNeedClearBuffer = true;
+	_bufferBit = 0;
 }
 
 RenderTexture::~RenderTexture()
@@ -31,10 +32,10 @@ RenderTexture::~RenderTexture()
 		glDeleteTextures(1, &_stencilbufferId);
 }
 
-RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigned genType, const int *formatTable)
+RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigned genType, bool useFloat)
 {
 	RenderTexture *rtt = new RenderTexture();
-	if (!rtt->initWithRender(frameSize, genType, formatTable))
+	if (!rtt->initWithRender(frameSize, genType, useFloat))
 	{
 		rtt->release();
 		rtt = nullptr;
@@ -54,20 +55,11 @@ RenderTexture *RenderTexture::createRenderTexture(const Size &frameSize, unsigne
 }
 bool  RenderTexture::initWithRender(const Size &frameSize, unsigned genType)
 {
-	int  formatTable[3];
-	int  index = 0;
-	if (genType & RenderType::ColorBuffer)
-		formatTable[index++] = GL_RGBA8;
-	if (genType & RenderType::DepthBuffer)
-		formatTable[index++]= GL_DEPTH_COMPONENT32F;
-	if (genType & RenderType::StencilBuffer)
-		formatTable[index++]= GL_STENCIL_COMPONENTS;
-	return initWithRender(frameSize,genType,formatTable);
+	return initWithRender(frameSize,genType,false);
 }
-bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType, const int *formatTable)
+bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType, bool useFloat)
 {
 	_frameSize = frameSize;
-	int    index = 0;
 	assert(frameSize.width>0 && frameSize.height>0);
 	int defaultFramebufferId,colorbufferId;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &defaultFramebufferId);
@@ -81,23 +73,25 @@ bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType, cons
 	{
 		glGenTextures(1, &_colorbufferId);
 		glBindTexture(GL_TEXTURE_2D, _colorbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1, useFloat?GL_RGBA16:GL_RGBA8, frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colorbufferId, 0);
+		_bufferBit |= GL_COLOR_BUFFER_BIT;
 	}
 	if (genType & RenderType::DepthBuffer)
 	{
 		glGenTextures(1, &_depthbufferId);
 		glBindTexture(GL_TEXTURE_2D, _depthbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1,GL_DEPTH_COMPONENT32F, frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depthbufferId, 0);
+		_bufferBit |= GL_DEPTH_BUFFER_BIT;
 	}
 	else
 	{
@@ -107,12 +101,13 @@ bool RenderTexture::initWithRender(const Size &frameSize, unsigned genType, cons
 	{
 		glGenTextures(1, &_stencilbufferId);
 		glBindTexture(GL_TEXTURE_2D, _stencilbufferId);
-		glTexStorage2D(GL_TEXTURE_2D, 1, formatTable[index++], frameSize.width, frameSize.height);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_STENCIL_COMPONENTS, frameSize.width, frameSize.height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_TEXTURE_2D, GL_STENCIL_COMPONENTS, GL_TEXTURE_2D, _stencilbufferId, 0);
+		_bufferBit |= GL_STENCIL_BUFFER_BIT;
 	}
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	//检查帧缓冲区对象的完整性
@@ -130,16 +125,7 @@ void RenderTexture::activeFramebuffer()
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_lastFramebufferId);
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebufferId);
 	if (_isNeedClearBuffer)
-	{
-		int flag = 0;
-		if (_colorbufferId)
-			flag |= GL_COLOR_BUFFER_BIT;
-		if (_depthbufferId)
-			flag |= GL_DEPTH_BUFFER_BIT;
-		if (_stencilbufferId)
-			flag |= GL_STENCIL_BUFFER_BIT;
-		glClear(flag);
-	}
+		glClear(_bufferBit);
 }
 
 void RenderTexture::disableFramebuffer()const
