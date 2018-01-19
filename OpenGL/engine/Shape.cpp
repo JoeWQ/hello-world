@@ -429,7 +429,7 @@ Chest::~Chest()
 
 }
 //
-void     Chest::initWithScale(float scale)
+void     Chest::initWithScale(float scaleX,float scaleY,float scaleZ)
 {
 	//从立方体的外面观察,所有的三角形都是正方向的
 	float cubeVerts[] =
@@ -516,8 +516,15 @@ void     Chest::initWithScale(float scale)
 		1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 	};
 	_numberOfVertex = sizeof(cubeVerts)/(sizeof(float)*3);
-	for (int i = 0; i < sizeof(cubeVerts) / sizeof(float); ++i)
-		cubeVerts[i] *= scale;
+	int index = 0;
+	//缩放不同的面
+	for (int i = 0; i < _numberOfVertex; ++i)
+	{
+		cubeVerts[index] *= scaleX;
+		cubeVerts[index + 1] *= scaleY;
+		cubeVerts[index + 2] *= scaleZ;
+		index += 3;
+	}
 
 	glGenBuffers(1, &_vertexVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
@@ -536,11 +543,11 @@ void     Chest::initWithScale(float scale)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(tangent), tangent, GL_STATIC_DRAW);
 }
 //
-Chest     *Chest::createWithScale(float scale)
+Chest     *Chest::createWithScale(float scaleX,float scaleY,float scaleZ)
 {
-	Chest    *_glChest = new  Chest();
-	_glChest->initWithScale(scale);
-	return _glChest;
+	Chest    *glChest = new  Chest();
+	glChest->initWithScale(scaleX,scaleY,scaleZ);
+	return glChest;
 }
 void    Chest::drawShape()
 {

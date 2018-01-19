@@ -77,6 +77,10 @@ public:
 	 */
 	const Matrix&       getViewMatrix()const { return _viewMatrix; };
 	/*
+	  *获取投影矩阵
+	 */
+	const Matrix&      getProjMatrix()const { return _projMatrix; };
+	/*
 	  *获取视图投影矩阵
 	 */
 	const Matrix&       getViewProjMatrix();

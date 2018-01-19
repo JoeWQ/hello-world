@@ -114,12 +114,12 @@ public:
 class  Chest :public Shape
 {
 private:
-	Chest();
+	explicit Chest();
 	Chest(Chest  &);
-	void      initWithScale(float scale);
+	void      initWithScale(float scaleX,float scaleY,float scaleZ);
 public:
 	~Chest();
-	static    Chest     *createWithScale(float scale);
+	static    Chest     *createWithScale(float scaleX, float scaleY, float Z);
 	virtual   void       drawShape();
 	virtual   void       bindIndiceObject();
 };

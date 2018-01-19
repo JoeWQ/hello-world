@@ -486,6 +486,34 @@ GLVector2& GLVector2::operator=(const GLVector2 &src)
 	return *this;
 }
 
+GLVector2& GLVector2::operator+=(const GLVector2 &src)
+{
+	x += src.x;
+	y += src.y;
+	return *this;
+}
+
+GLVector2& GLVector2::operator-=(const GLVector2 &src)
+{
+	x += src.x;
+	y += src.y;
+	return *this;
+}
+
+GLVector2& GLVector2::operator*=(const GLVector2 &src)
+{
+	x += src.x;
+	y += src.y;
+	return *this;
+}
+
+GLVector2& GLVector2::operator/=(const GLVector2 &src)
+{
+	x+=src.x;
+	y += src.y;
+	return *this;
+}
+
 GLVector2   GLVector2::normalize()const
 {
 	float  _length = sqrtf(x*x+y*y);
@@ -1376,6 +1404,21 @@ Matrix3::Matrix3(const GLVector3 &row0, const GLVector3 &row1, const GLVector3 &
 	m[0][0] = row0.x, m[0][1] = row0.y, m[0][2] = row0.z;
 	m[1][0] = row1.x, m[1][1] = row1.y, m[1][2] = row1.z;
 	m[2][0] = row2.x, m[2][1] = row2.y, m[2][2] = row2.z;
+}
+
+Matrix3::Matrix3(const Matrix &mat4)
+{
+	m[0][0] = mat4.m[0][0];
+	m[0][1] = mat4.m[0][1];
+	m[0][2] = mat4.m[0][2];
+
+	m[1][0] = mat4.m[1][0];
+	m[1][1] = mat4.m[1][1];
+	m[1][2] = mat4.m[1][2];
+
+	m[2][0] = mat4.m[2][0];
+	m[2][1] = mat4.m[2][1];
+	m[2][2] = mat4.m[2][2];
 }
 
 Matrix3     Matrix3::reverse()const

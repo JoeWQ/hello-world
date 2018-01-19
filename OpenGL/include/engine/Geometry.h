@@ -30,6 +30,10 @@ __NS_GLK_BEGIN
 		GLVector2     operator/(float)const;
 		GLVector2     operator/(const GLVector2 &)const;
 		GLVector2&  operator=(const GLVector2 &src);
+		GLVector2&  operator+=(const GLVector2 &src);
+		GLVector2&  operator-=(const GLVector2 &src);
+		GLVector2& operator*=(const GLVector2 &src);
+		GLVector2& operator/=(const GLVector2 &src);
 		GLVector2     normalize()const;
 		const float     length()const;
 		float               dot(const GLVector2 &other)const;
@@ -189,6 +193,7 @@ __NS_GLK_BEGIN
 		friend    struct GLVector3;
 		Matrix3();
 		Matrix3(const GLVector3 &row0,const GLVector3 &row1,const GLVector3 &row2);
+		Matrix3(const Matrix &);
 		inline     const float    *pointer() const { return  (float*)m; };
 		//求逆矩阵
 		Matrix3         reverse()const;
@@ -217,6 +222,7 @@ __NS_GLK_BEGIN
 	//四维矩阵,全新的实现
 	class Matrix
 	{
+		friend class Matrix3;
 	private:
 		float   m[4][4];
 	public:

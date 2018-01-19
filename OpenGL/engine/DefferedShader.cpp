@@ -68,6 +68,7 @@ bool DefferedShader::init(const Size &framebufferSize, int colorbufferCount)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + k, GL_TEXTURE_2D, _colorbufferId[k], 0);
 		drawBuffer[k] = GL_COLOR_ATTACHMENT0 + k;
 	}
+	glDrawBuffers(_colorbufferCount, drawBuffer);
 	//深度缓冲区对象
 	glGenTextures(1, &_depthbufferId);
 	glBindTexture(GL_TEXTURE_2D,_depthbufferId);
@@ -78,9 +79,8 @@ bool DefferedShader::init(const Size &framebufferSize, int colorbufferCount)
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, framebufferSize.width, framebufferSize.height);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depthbufferId, 0);
 	//模板缓冲区对象,暂时没有实现
-	glDrawBuffers(_colorbufferCount,drawBuffer);
 	//check
-	int checkStatus = glCheckFramebufferStatus(GL_TEXTURE_2D);
+	int checkStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 #if _DEBUG
 	assert(checkStatus == GL_FRAMEBUFFER_COMPLETE);
 #else
@@ -103,6 +103,7 @@ DefferedShader *DefferedShader::create(const Size &framebufferSize, int colorbuf
 		return shader;
 	shader->release();
 	shader = nullptr;
+	return shader;
 }
 
 void DefferedShader::active()

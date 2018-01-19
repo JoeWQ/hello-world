@@ -32,7 +32,7 @@ private:
 	DefferedShader();
 	DefferedShader(const DefferedShader &);
 	bool     init(const Size &framebufferSize,int colorbufferCount);
-private:
+public:
 	~DefferedShader();
 	static DefferedShader *create(const Size &framebufferSize,int colorbufferCount);
 	/*
