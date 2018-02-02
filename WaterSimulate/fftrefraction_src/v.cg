@@ -25,29 +25,27 @@ void vert (float4 position		:	POSITION,
 
 	oPosition= mul(ModelViewProj, position);
 
-// Compute position and normal in world space
+	// Compute position and normal in world space
 	
 	float3 positionW = mul(modelToWorld,position).xyz; //find world position
 	float3 N = mul((float3x3)modelToWorld,normal);		//find world normals	
 	N=normalize(N);//normalization
 	NNN=N;
 
-// specular bumpmapping stuff
+	// specular bumpmapping stuff
 	lightDirection=lightPosition-position.xyz;
-	float3 eyeDirection=eyePositionW-positionW;
-	float3 _eyeDirectionN = normalize(eyeDirection);
+	float3 eyeDirection=eyePositionW-position.xyz;
+	halfAngle=normalize(normalize(lightDirection)+normalize(eyeDirection));
+	postoeyevec= normalize(positionW.xyz-eyePositionW);
 
-	halfAngle=normalize( normalize(lightDirection) + _eyeDirectionN) ;
-	postoeyevec= -_eyeDirectionN;//normalize(positionW.xyz-eyePositionW);
-
-// compute the incident, reflected and refracted vectors
-	float3 I = -eyeDirection;//(positionW-eyePositionW);	//Incident vector from eye to surface	
+	// compute the incident, reflected and refracted vectors
+	float3 I = (positionW-eyePositionW);	//Incident vector from eye to surface	
 	R = reflect(I,N);						//reflection vector
-//I = normalize(I);
+	I = normalize(I);
 	Tcolors = refract(I,N,etaRatio);		//refracted vector
 
-// Compute the reflection factor
-	reflectionFactor= fresnelBias + fresnelScale * pow(1.0 + dot(I,N), fresnelPower);
+	// Compute the reflection factor
+	reflectionFactor= fresnelBias + fresnelScale * pow(1 + dot(I,N), fresnelPower);
 //	RF = max(dot(float3(55,55,-160),N),0);
 }
 
