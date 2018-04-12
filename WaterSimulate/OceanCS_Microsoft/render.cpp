@@ -37,16 +37,20 @@ struct ocean_vertex
 
 // Mesh properties:
 
-// Mesh grid dimension, must be 2^n. 4x4 ~ 256x256
-int g_MeshDim = 128;
-// Side length of square shaped mesh patch
-float g_PatchLength;
-// Dimension of displacement map
+// Mesh grid dimension, must be 2^n. 4x4 ~ 256x256//128
+const int g_MeshDim = 128;
+// Side length of square shaped mesh patch//2000
+//2000
+float g_PatchLength = 2000;
+// Dimension of displacement map//512
+//512
 int g_DisplaceMapDim;
-// Subdivision thredshold. Any quad covers more pixels than this value needs to be subdivided.
-float g_UpperGridCoverage = 100.0f;
+// Subdivision threshold. Any quad covers more pixels than this value needs to be subdivided.
+//100
+const float g_UpperGridCoverage = 100.0f;
 // Draw distance = g_PatchLength * 2^g_FurthestCover
-int g_FurthestCover = 9;
+//9
+const int g_FurthestCover = 9;
 
 
 // Shading properties:
@@ -54,23 +58,27 @@ int g_FurthestCover = 9;
 D3DXVECTOR3 g_SkyColor= D3DXVECTOR3(0.38f, 0.45f, 0.56f);
 D3DXVECTOR3 g_WaterbodyColor = D3DXVECTOR3(0.07f, 0.15f, 0.2f);
 // Blending term for sky cubemap
-float g_SkyBlending = 16.0f;
+const float g_SkyBlending = 16.0f;
 
-// Perlin wave parameters
-float g_PerlinSize = 1.0f;
-float g_PerlinSpeed = 0.06f;
-D3DXVECTOR3 g_PerlinAmplitude = D3DXVECTOR3(35, 42, 57);
-D3DXVECTOR3 g_PerlinGradient = D3DXVECTOR3(1.4f, 1.6f, 2.2f);
-D3DXVECTOR3 g_PerlinOctave = D3DXVECTOR3(1.12f, 0.59f, 0.23f);
-D3DXVECTOR2 g_WindDir;
+// Perlin wave parameters//1.0f
+const float g_PerlinSize = 1.0f;
+//Perlin Speed 0.06f
+const float g_PerlinSpeed = 0.06f;
+//35, 42, 57
+const D3DXVECTOR3 g_PerlinAmplitude = D3DXVECTOR3(35, 42, 57);
+//1.4f, 1.6f, 2.2f
+const D3DXVECTOR3 g_PerlinGradient = D3DXVECTOR3(1.4f, 1.6f, 2.2f);
+//1.12f, 0.59f, 0.23f
+const D3DXVECTOR3 g_PerlinOctave = D3DXVECTOR3(1.12f, 0.59f, 0.23f);
+D3DXVECTOR2 g_WindDir;//(0.8,0.6)
+//0.1f, -0.4f, 0.2f
+const D3DXVECTOR3 g_BendParam = D3DXVECTOR3(0.1f, -0.4f, 0.2f);
 
-D3DXVECTOR3 g_BendParam = D3DXVECTOR3(0.1f, -0.4f, 0.2f);
-
-// Sunspot parameters
-D3DXVECTOR3 g_SunDir = D3DXVECTOR3(0.936016f, -0.343206f, 0.0780013f);
-D3DXVECTOR3 g_SunColor = D3DXVECTOR3(1.0f, 1.0f, 0.6f);
-float g_Shineness = 400.0f;
-
+// Sunspot parameters//0.936016f, -0.343206f, 0.0780013f
+const D3DXVECTOR3 g_SunDir = D3DXVECTOR3(0.936016f, -0.343206f, 0.0780013f);
+//1.0f, 1.0f, 0.6f
+const D3DXVECTOR3 g_SunColor = D3DXVECTOR3(1.0f, 1.0f, 0.6f);
+const float g_Shineness = 400.0f;//400.0f
 
 // Quadtree structures & routines
 struct QuadNode
@@ -81,7 +89,7 @@ struct QuadNode
 
     int sub_node[4];
 };
-
+//四叉树渲染模型
 struct QuadRenderParam
 {
     UINT num_inner_verts;
@@ -94,15 +102,17 @@ struct QuadRenderParam
 };
 
 // Quad-tree LOD, 0 to 9 (1x1 ~ 512x512) 
+//final ==> 7
 int g_Lods = 0;
 // Pattern lookup array. Filled at init time.
+//关于该数据结构的说明,请参考 createSurfaceMesh 函数
 QuadRenderParam g_mesh_patterns[9][3][3][3][3];
 // Pick a proper mesh pattern according to the adjacent patches.
 QuadRenderParam& selectMeshPattern(const QuadNode& quad_node);
 
 // Rendering list
 vector<QuadNode> g_render_list;
-int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera);
+int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera,int *visibilitys);
 
 // D3D11 buffers and layout
 ID3D11Buffer* g_pMeshVB = NULL;
@@ -141,11 +151,13 @@ ID3D11SamplerState* g_pCubeSampler = NULL;
 // Constant buffer
 struct Const_Per_Call
 {
-    D3DXMATRIX	g_matLocal;
+    D3DXMATRIX	g_matLocal;//模型的局部坐标系变换,将XOY平面转换到XOZ平面
     D3DXMATRIX	g_matWorldViewProj;
     D3DXVECTOR2 g_UVBase;
     D3DXVECTOR2 g_PerlinMovement;
     D3DXVECTOR3	g_LocalEye;
+	float                        unuse;
+	D3DXCOLOR      g_WireColor;
 };
 
 struct Const_Per_Frame
@@ -156,20 +168,20 @@ struct Const_Per_Frame
 struct Const_Shading
 {
     D3DXVECTOR3	g_SkyColor;
-    float		g_TexelLength_x2;
+    float		g_TexelLength_x2;//2000/512 x 2
     D3DXVECTOR3	g_WaterbodyColor;
-    float		g_UVScale;
-    D3DXVECTOR3	g_PerlinAmplitude;
-    float		g_UVOffset;
-    D3DXVECTOR3	g_PerlinOctave;
-    float		g_PerlinSize;
-    D3DXVECTOR3	g_PerlinGradient;
-    float		g_Shineness;
-    D3DXVECTOR3	g_BendParam;
+    float		g_UVScale;//1.0f/2000
+    D3DXVECTOR3	g_PerlinAmplitude;//35, 42, 57
+    float		g_UVOffset;//1.0f/512
+    D3DXVECTOR3	g_PerlinOctave;//1.12f, 0.59f, 0.23f
+    float		g_PerlinSize;//1.0f
+    D3DXVECTOR3	g_PerlinGradient;//1.4f, 1.6f, 2.2f
+    float		g_Shineness;////400.0f
+    D3DXVECTOR3	g_BendParam;//0.1f, -0.4f, 0.2f
     float		unused0;
-    D3DXVECTOR3	g_SunDir;
+    D3DXVECTOR3	g_SunDir;//0.936016f, -0.343206f, 0.0780013f
     float		unused1;
-    D3DXVECTOR3	g_SunColor;
+    D3DXVECTOR3	g_SunColor;//1.0f, 1.0f, 0.6f
     float		unused2;
 };
 
@@ -212,11 +224,11 @@ void initRenderResource(const ocean_parameter& ocean_param, ID3D11Device* pd3dDe
 
     // HLSL
     // Vertex & pixel shaders
-    ID3DBlob* pBlobOceanSurfVS = NULL;
-    ID3DBlob* pBlobOceanSurfPS = NULL;
-    ID3DBlob* pBlobWireframePS = NULL;
-    ID3DBlob* pBlobLogoVS = NULL;
-    ID3DBlob* pBlobLogoPS = NULL;
+    ID3DBlob* pBlobOceanSurfVS = nullptr;
+    ID3DBlob* pBlobOceanSurfPS = nullptr;
+    ID3DBlob* pBlobWireframePS = nullptr;
+    ID3DBlob* pBlobLogoVS = nullptr;
+    ID3DBlob* pBlobLogoPS = nullptr;
 
     tstring filePath = GetFilePath::GetFilePath(_T("ocean_shading.hlsl"));
 
@@ -272,14 +284,14 @@ void initRenderResource(const ocean_parameter& ocean_param, ID3D11Device* pd3dDe
     assert(g_pPerFrameCB);
 
     Const_Shading shading_data;
-    // Grid side length * 2
+    // Grid side length * 2 g_PatchLength==>2000 ,g_DisplaceMapDim==>512
     shading_data.g_TexelLength_x2 = g_PatchLength / g_DisplaceMapDim * 2;;
     // Color
     shading_data.g_SkyColor = g_SkyColor;
     shading_data.g_WaterbodyColor = g_WaterbodyColor;
     // Texcoord
     shading_data.g_UVScale = 1.0f / g_PatchLength;
-    shading_data.g_UVOffset = 0.5f / g_DisplaceMapDim;
+    shading_data.g_UVOffset = 1.0f / g_DisplaceMapDim;
     // Perlin
     shading_data.g_PerlinSize = g_PerlinSize;
     shading_data.g_PerlinAmplitude = g_PerlinAmplitude;
@@ -421,24 +433,29 @@ void cleanupRenderResource()
 
     g_render_list.clear();
 }
-
+//计算子空间索引,用于四叉树的子区间划分
 #define MESH_INDEX_2D(x, y)	(((y) + vert_rect.bottom) * (g_MeshDim + 1) + (x) + vert_rect.left)
-
+/*
+  *目前猜测该函数的功能是 对四叉树的每个子节点进行空间网格划分,找出属于目标子空间的网格顶点索引
+  *
+ */
 // Generate boundary mesh for a patch. Return the number of generated indices
 int generateBoundaryMesh(int left_degree, int right_degree, int bottom_degree, int top_degree,
-    RECT vert_rect, int g_MeshDim, DWORD* output)
+    RECT &vert_rect, int g_MeshDim, DWORD* output)
 {
     // Triangle list for bottom boundary
     int i, j;
     int counter = 0;
     int width = vert_rect.right - vert_rect.left;
-
+	//判断,是否需要在四边形的下方建立三角形序列来衔接其邻接四边形
     if (bottom_degree > 0)
     {
+		//此两个数值之间的除法运算一定会整除
         int b_step = width / bottom_degree;
 
         for (i = 0; i < width; i += b_step)
         {
+			//边界平滑过渡
             output[counter++] = MESH_INDEX_2D(i, 0);
             output[counter++] = MESH_INDEX_2D(i + b_step / 2, 1);
             output[counter++] = MESH_INDEX_2D(i + b_step, 0);
@@ -569,8 +586,8 @@ int generateBoundaryMesh(int left_degree, int right_degree, int bottom_degree, i
     return counter;
 }
 
-// Generate boundary mesh for a patch. Return the number of generated indices
-int generateInnerMesh(RECT vert_rect, int g_MeshDim, DWORD* output)
+// Generate inner mesh for a patch. Return the number of generated indices
+int generateInnerMesh(RECT &vert_rect, int g_MeshDim, DWORD* output)
 {
     int i, j;
     int counter = 0;
@@ -578,6 +595,9 @@ int generateInnerMesh(RECT vert_rect, int g_MeshDim, DWORD* output)
     int height = vert_rect.top - vert_rect.bottom;
 
     bool reverse = false;
+	//Triangle Strip
+	//对于空间的网格做一系列的Triangle Strip 分解,分解的过程中会出现三角形顶点顺序的顺时针
+	//与逆时针相互交替的行为
     for (i = 0; i < height; i++)
     {
         if (reverse == false)
@@ -590,7 +610,8 @@ int generateInnerMesh(RECT vert_rect, int g_MeshDim, DWORD* output)
                 output[counter++] = MESH_INDEX_2D(j + 1, i + 1);
             }
         }
-        else
+        else//严格来说,此算法并不严格正确,因为在两个行间距产生了无效的三角形顶点序列
+			//因为DirectX的三角形裁剪算法,将会把生成的衔接处的直线裁剪掉,因此渲染后的结果是正确的
         {
             output[counter++] = MESH_INDEX_2D(width, i);
             output[counter++] = MESH_INDEX_2D(width, i + 1);
@@ -615,12 +636,15 @@ void createSurfaceMesh(ID3D11Device* pd3dDevice)
     assert(pV);
 
     int i, j;
+	int index = 0;
     for (i = 0; i <= g_MeshDim; i++)
     {
         for (j = 0; j <= g_MeshDim; j++)
         {
-            pV[i * (g_MeshDim + 1) + j].index_x = (float)j;
-            pV[i * (g_MeshDim + 1) + j].index_y = (float)i;
+            pV[index].index_x = (float)j;
+            pV[index].index_y = (float)i;
+
+			index += 1;
         }
     }
 
@@ -648,43 +672,50 @@ void createSurfaceMesh(ID3D11Device* pd3dDevice)
     // The index numbers for all mesh LODs (up to 256x256)
     const int index_size_lookup[] = {0, 0, 4284, 18828, 69444, 254412, 956916, 3689820, 14464836};
 
-    memset(&g_mesh_patterns[0][0][0][0][0], 0, sizeof(g_mesh_patterns));
+    memset(g_mesh_patterns, 0, sizeof(g_mesh_patterns));
 
     g_Lods = 0;
     for (i = g_MeshDim; i > 1; i >>= 1)
         g_Lods ++;
 
     // Generate patch meshes. Each patch contains two parts: the inner mesh which is a regular
-    // grids in a triangle strip. The boundary mesh is constructed w.r.t. the edge degrees to
+    // grids in a triangle strip. The boundary mesh is constructed w.r.t.
+	//(with regard to with reference to ) the edge degrees to
     // meet water-tight requirement.
+	//边界,关于边的度,满足水网格的边界紧凑衔接需要
+	//这里所谓的边的度,指代的是再给定宽高的区域内,横向/纵向的网格的数目
     DWORD* index_array = new DWORD[index_size_lookup[g_Lods]];
     assert(index_array);
 
     int offset = 0;
+	//from 128==>1,final ==> 4
     int level_size = g_MeshDim;
-
+	/*
+	  *关于渲染模型的说明
+	  *在创建的模型中,对于任意一个数组元素g_mesh_patterns[level][l][r][b][t]
+	  *代表着在细节层次level上,与该模型相邻的四个Patch,他们的细节层次边长倍数分别为目标模型的
+	  *2的l/r/b/t 次幂倍数
+	  *在实际的细节计算应用中,程序只是用了头三个(0,1,2)
+	 */
     // Enumerate patterns
-    for (int level = 0; level <= g_Lods - 2; level ++)
+    for (int level = 0; level <= g_Lods - 2; level ++)//lod,丢弃掉了 1x1,2x2网格
     {
         int left_degree = level_size;
-
         for (int left_type = 0; left_type < 3; left_type ++)
         {
             int right_degree = level_size;
-
             for (int right_type = 0; right_type < 3; right_type ++)
             {
                 int bottom_degree = level_size;
-
                 for (int bottom_type = 0; bottom_type < 3; bottom_type ++)
                 {
                     int top_degree = level_size;
-
                     for (int top_type = 0; top_type < 3; top_type ++)
                     {
                         QuadRenderParam* pattern = &g_mesh_patterns[level][left_type][right_type][bottom_type][top_type];
-
                         // Inner mesh (triangle strip)
+						//检查边界条件,如果四边形的邻接四边形与该四边形具有相同的边宽度,则
+						//周围的四边形就不需要与该四边形形成无缝的邻接边
                         RECT inner_rect;
                         inner_rect.left   = (left_degree   == level_size) ? 0 : 1;
                         inner_rect.right  = (right_degree  == level_size) ? level_size : level_size - 1;
@@ -744,7 +775,7 @@ void createSurfaceMesh(ID3D11Device* pd3dDevice)
 
 void createFresnelMap(ID3D11Device* pd3dDevice)
 {
-    DWORD* buffer = new DWORD[FRESNEL_TEX_SIZE];
+    DWORD buffer[FRESNEL_TEX_SIZE];
     for (int i = 0; i < FRESNEL_TEX_SIZE; i++)
     {
         float cos_a = i / (FLOAT)FRESNEL_TEX_SIZE;
@@ -774,7 +805,7 @@ void createFresnelMap(ID3D11Device* pd3dDevice)
     pd3dDevice->CreateTexture1D(&tex_desc, &init_data, &g_pFresnelMap);
     assert(g_pFresnelMap);
 
-    SAFE_DELETE_ARRAY(buffer);
+    //SAFE_DELETE_ARRAY(buffer);
 
     // Create shader resource
     D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -799,80 +830,134 @@ void loadTextures(ID3D11Device* pd3dDevice)
     assert(g_pSRV_ReflectCube);
 }
 
-bool checkNodeVisibility(const QuadNode& quad_node, const CBaseCamera& camera)
+bool checkNodeVisibility(const QuadNode& quad_node, const CBaseCamera& camera,int *visibility)
 {
-    // Plane equation setup
+//    // Plane equation setup
+//    const D3DXMATRIX &matProj = *camera.GetProjMatrix();
+//
+//    // Left plane
+//    float fov_x = atan(1.0f / matProj(0, 0));
+//	*visibility = false;
+//#ifdef NV_STEREO
+//    // Expand the frustum a little for stereo vision
+//    fov_x += 0.1745329278f;
+//#endif
+//	/*
+//	  *在下面的平面方程的推导中用到了标准视锥体的一些隐含的性质
+//	  *matProj[0][0] = nearZ/width
+//	  *matProj[1][1] = nearZ/height
+//	  *经过(0,0,0)点
+//	 */
+//    D3DXVECTOR4 plane_left(cos(fov_x), 0, sin(fov_x), 0);
+//    // Right plane
+//    D3DXVECTOR4 plane_right(-cos(fov_x), 0, sin(fov_x), 0);
+//
+//    // Bottom plane
+//    float fov_y = atan(1.0f / matProj(1, 1));
+//    D3DXVECTOR4 plane_bottom(0, cos(fov_y), sin(fov_y), 0);
+//    // Top plane
+//    D3DXVECTOR4 plane_top(0, -cos(fov_y), sin(fov_y), 0);
+//
+//    // Test quad corners against view frustum in view space
+//    D3DXVECTOR4 corner_verts[4];
+//    corner_verts[0] = D3DXVECTOR4(quad_node.bottom_left.x, quad_node.bottom_left.y, 0, 1);
+//    corner_verts[1] = corner_verts[0] + D3DXVECTOR4(quad_node.length, 0, 0, 0);
+//    corner_verts[2] = corner_verts[0] + D3DXVECTOR4(quad_node.length, quad_node.length, 0, 0);
+//    corner_verts[3] = corner_verts[0] + D3DXVECTOR4(0, quad_node.length, 0, 0);
+//	//乘以模型矩阵,Y/Z坐标交换,变换到XOZ平面
+//    const D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * *camera.GetViewMatrix();
+//    D3DXVec4Transform(&corner_verts[0], &corner_verts[0], &matView);
+//    D3DXVec4Transform(&corner_verts[1], &corner_verts[1], &matView);
+//    D3DXVec4Transform(&corner_verts[2], &corner_verts[2], &matView);
+//    D3DXVec4Transform(&corner_verts[3], &corner_verts[3], &matView);
+//
+//    // Test against eye plane
+//    if (corner_verts[0].z < 0 && corner_verts[1].z < 0 && corner_verts[2].z < 0 && corner_verts[3].z < 0)
+//        return false;
+//
+//    // Test against left plane
+//    float dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_left);
+//    float dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_left);
+//    float dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_left);
+//    float dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_left);
+//    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
+//        return false;
+//
+//    // Test against right plane
+//    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_right);
+//    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_right);
+//    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_right);
+//    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_right);
+//    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
+//        return false;
+//
+//    // Test against bottom plane
+//    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_bottom);
+//    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_bottom);
+//    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_bottom);
+//    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_bottom);
+//    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
+//        return false;
+//
+//    // Test against top plane
+//    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_top);
+//    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_top);
+//    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_top);
+//    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_top);
+//    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
+//        return false;
+//
+//	*visibility = 1;
+//    return true;
 
-    D3DXMATRIX matProj = *camera.GetProjMatrix();
-
-    // Left plane
-    float fov_x = atan(1.0f / matProj(0, 0));
-#ifdef NV_STEREO
-    // Expand the frustum a little for stereo vision
-    fov_x += 0.1745329278f;
-#endif
-    D3DXVECTOR4 plane_left(cos(fov_x), 0, sin(fov_x), 0);
-    // Right plane
-    D3DXVECTOR4 plane_right(-cos(fov_x), 0, sin(fov_x), 0);
-
-    // Bottom plane
-    float fov_y = atan(1.0f / matProj(1, 1));
-    D3DXVECTOR4 plane_bottom(0, cos(fov_y), sin(fov_y), 0);
-    // Top plane
-    D3DXVECTOR4 plane_top(0, -cos(fov_y), sin(fov_y), 0);
-
-    // Test quad corners against view frustum in view space
-    D3DXVECTOR4 corner_verts[4];
-    corner_verts[0] = D3DXVECTOR4(quad_node.bottom_left.x, quad_node.bottom_left.y, 0, 1);
-    corner_verts[1] = corner_verts[0] + D3DXVECTOR4(quad_node.length, 0, 0, 0);
-    corner_verts[2] = corner_verts[0] + D3DXVECTOR4(quad_node.length, quad_node.length, 0, 0);
-    corner_verts[3] = corner_verts[0] + D3DXVECTOR4(0, quad_node.length, 0, 0);
-
-    D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * *camera.GetViewMatrix();
-    D3DXVec4Transform(&corner_verts[0], &corner_verts[0], &matView);
-    D3DXVec4Transform(&corner_verts[1], &corner_verts[1], &matView);
-    D3DXVec4Transform(&corner_verts[2], &corner_verts[2], &matView);
-    D3DXVec4Transform(&corner_verts[3], &corner_verts[3], &matView);
-
-    // Test against eye plane
-    if (corner_verts[0].z < 0 && corner_verts[1].z < 0 && corner_verts[2].z < 0 && corner_verts[3].z < 0)
-        return false;
-
-    // Test against left plane
-    float dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_left);
-    float dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_left);
-    float dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_left);
-    float dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_left);
-    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-        return false;
-
-    // Test against right plane
-    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_right);
-    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_right);
-    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_right);
-    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_right);
-    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-        return false;
-
-    // Test against bottom plane
-    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_bottom);
-    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_bottom);
-    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_bottom);
-    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_bottom);
-    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-        return false;
-
-    // Test against top plane
-    dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_top);
-    dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_top);
-    dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_top);
-    dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_top);
-    if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-        return false;
-
-    return true;
+	*visibility = 0;
+	const D3DXMATRIX   matView = D3DXMATRIX(1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1) * *camera.GetViewMatrix();
+	//节点的四个顶点
+	D3DXVECTOR3  quad_vertex[4] = {
+		D3DXVECTOR3(quad_node.bottom_left.x,quad_node.bottom_left.y,0),
+		D3DXVECTOR3(quad_node.bottom_left.x + quad_node.length,quad_node.bottom_left.y,0),
+		D3DXVECTOR3(quad_node.bottom_left.x + quad_node.length,quad_node.bottom_left.y + quad_node.length,0),
+		D3DXVECTOR3(quad_node.bottom_left.x,quad_node.bottom_left.y + quad_node.length,0),
+	};
+	//变换到摄像机空间
+	for (int k = 0; k < 4; ++k)
+		D3DXVec3TransformCoord(quad_vertex + k, quad_vertex + k, &matView);
+	//初步检测是否在摄像机之后
+	if (quad_vertex[0].z < 0 && quad_vertex[1].z < 0 && quad_vertex[2].z < 0 && quad_vertex[3].z < 0)
+		return false;
+	//视锥体裁剪
+	const float *matrix_array = reinterpret_cast<const float*>(camera.GetProjMatrix());
+	//视锥体左侧平面裁剪
+	float   f = 1.0f / sqrtf(1 + matrix_array[0] * matrix_array[0]);
+	D3DXVECTOR3     l_plane(f *matrix_array[0], 0, f);
+	float  distance[4];
+	for (int k = 0; k < 4; ++k)
+		distance[k] = l_plane.x *quad_vertex[k].x + l_plane.y *quad_vertex[k].y + l_plane.z * quad_vertex[k].z;
+	if (distance[0] < 0 && distance[1] < 0 && distance[2] < 0 && distance[3] < 0)
+		return false;
+	//右侧的平面
+	D3DXVECTOR3     r_plane(-f*matrix_array[0], 0, f);
+	for (int k = 0; k < 4; ++k)
+		distance[k] = r_plane.x * quad_vertex[k].x + r_plane.y * quad_vertex[k].y + r_plane.z* quad_vertex[k].z;
+	if (distance[0] < 0 && distance[1] < 0 && distance[2] < 0 && distance[3] < 0)
+		return false;
+	//下侧的平面裁剪
+	f = 1.0f / sqrtf(1 + matrix_array[5] * matrix_array[5]);
+	D3DXVECTOR3   b_plane(0, f*matrix_array[5], f);
+	for (int k = 0; k < 4; ++k)
+		distance[k] = b_plane.x*quad_vertex[k].x + b_plane.y*quad_vertex[k].y + b_plane.z*quad_vertex[k].z;
+	if (distance[0] < 0 && distance[1] < 0 && distance[2] < 0 && distance[3] < 0)
+		return false;
+	//下侧的平面
+	D3DXVECTOR3   t_plane(0, -f*matrix_array[5], f);
+	for (int k = 0; k < 4; ++k)
+		distance[k] = t_plane.x*quad_vertex[k].x + t_plane.y*quad_vertex[k].y + t_plane.z*quad_vertex[k].z;
+	if (distance[0] < 0 && distance[1] < 0 && distance[2] < 0 && distance[3] < 0)
+		return false;
+	*visibility = 1;
+	return true;
 }
-
+//评估网格覆盖
 float estimateGridCoverage(const QuadNode& quad_node, const CBaseCamera& camera, float screen_area)
 {
     // Estimate projected area
@@ -898,41 +983,47 @@ float estimateGridCoverage(const QuadNode& quad_node, const CBaseCamera& camera,
         {0.1875f, 0.148f},
     };
 
-    D3DXMATRIX matProj = *camera.GetProjMatrix();
+    const D3DXMATRIX &matProj = *camera.GetProjMatrix();
     D3DXVECTOR3 eye_point = *camera.GetEyePt();
+	//这里简化了网格的坐标变换,直接将摄像机的坐标转换到了网格的局部坐标
     eye_point = D3DXVECTOR3(eye_point.x, eye_point.z, eye_point.y);
+	//目前猜测,这里除以g_MeshDim的原因是,大致上4个g_MeshDim x g_MeshDim的网格平面覆盖掉整个屏幕空间
     float grid_len_world = quad_node.length / g_MeshDim;
+	const float area_world = grid_len_world * grid_len_world;// * abs(eye_point.z) / sqrt(nearest_sqr_dist);
+	const float nearZDvX = matProj(0, 0);
+	const float nearYDvY = matProj(1, 1);
+	const float  finalInterpolation = area_world *nearZDvX * nearYDvY;
 
     float max_area_proj = 0;
     for (int i = 0; i < 16; i++)
     {
-        D3DXVECTOR3 test_point(quad_node.bottom_left.x + quad_node.length * sample_pos[i][0], quad_node.bottom_left.y + quad_node.length * sample_pos[i][1], 0);
+        D3DXVECTOR3 test_point(quad_node.bottom_left.x + quad_node.length * sample_pos[i][0], 
+															quad_node.bottom_left.y + quad_node.length * sample_pos[i][1], 0);
         D3DXVECTOR3 eye_vec = test_point - eye_point;
         float dist = D3DXVec3Length(&eye_vec);
-
-        float area_world = grid_len_world * grid_len_world;// * abs(eye_point.z) / sqrt(nearest_sqr_dist);
-        float area_proj = area_world * matProj(0, 0) * matProj(1, 1) / (dist * dist);
-
+        float area_proj = finalInterpolation / (dist * dist);
+		//计算大概覆盖的网格的数目
         if (max_area_proj < area_proj)
             max_area_proj = area_proj;
     }
-
-    float pixel_coverage = max_area_proj * screen_area * 0.25f;
-
-    return pixel_coverage;
+	//不明白为什么最后乘上一个系数 0.25
+    return max_area_proj * screen_area * 0.25f;
 }
 
 bool isLeaf(const QuadNode& quad_node)
 {
-    return (quad_node.sub_node[0] == -1 && quad_node.sub_node[1] == -1 && quad_node.sub_node[2] == -1 && quad_node.sub_node[3] == -1);
+	const int *nodes = quad_node.sub_node;
+    return (nodes[0] == -1 && nodes[1] == -1 && nodes[2] == -1 && nodes[3] == -1);
 }
-
+/*
+  *查找最小叶子节点,该节点包含了目标点的坐标
+ */
 int searchLeaf(const vector<QuadNode>& node_list, const D3DXVECTOR2& point)
 {
     int index = -1;
 
     int size = (int)node_list.size();
-    QuadNode node = node_list[size - 1];
+    QuadNode node = node_list.back();
 
     while (!isLeaf(node))
     {
@@ -944,7 +1035,7 @@ int searchLeaf(const vector<QuadNode>& node_list, const D3DXVECTOR2& point)
             if (index == -1)
                 continue;
 
-            QuadNode sub_node = node_list[index];
+            const QuadNode &sub_node = node_list[index];
             if (point.x >= sub_node.bottom_left.x && point.x <= sub_node.bottom_left.x + sub_node.length &&
                 point.y >= sub_node.bottom_left.y && point.y <= sub_node.bottom_left.y + sub_node.length)
             {
@@ -963,24 +1054,35 @@ int searchLeaf(const vector<QuadNode>& node_list, const D3DXVECTOR2& point)
 
 QuadRenderParam& selectMeshPattern(const QuadNode& quad_node)
 {
+	//每一个完整的网格块的尺寸为g_PatchLength
+	float     position_percent = 0.49f;
     // Check 4 adjacent quad.
-    D3DXVECTOR2 point_left = quad_node.bottom_left + D3DXVECTOR2(-g_PatchLength * 0.5f, quad_node.length * 0.5f);
+    D3DXVECTOR2 point_left = quad_node.bottom_left + 
+				D3DXVECTOR2(-g_PatchLength * 0.5f, quad_node.length * 0.5f);
     int left_adj_index = searchLeaf(g_render_list, point_left);
 
-    D3DXVECTOR2 point_right = quad_node.bottom_left + D3DXVECTOR2(quad_node.length + g_PatchLength * 0.5f, quad_node.length * 0.5f);
+    D3DXVECTOR2 point_right = quad_node.bottom_left + 
+					D3DXVECTOR2(quad_node.length + g_PatchLength * 0.5f, quad_node.length * 0.5f);
     int right_adj_index = searchLeaf(g_render_list, point_right);
 
-    D3DXVECTOR2 point_bottom = quad_node.bottom_left + D3DXVECTOR2(quad_node.length * 0.5f, -g_PatchLength * 0.5f);
+    D3DXVECTOR2 point_bottom = quad_node.bottom_left + 
+					D3DXVECTOR2(quad_node.length * 0.5f, -g_PatchLength * 0.5f);
     int bottom_adj_index = searchLeaf(g_render_list, point_bottom);
 
-    D3DXVECTOR2 point_top = quad_node.bottom_left + D3DXVECTOR2(quad_node.length * 0.5f, quad_node.length + g_PatchLength * 0.5f);
+    D3DXVECTOR2 point_top = quad_node.bottom_left + 
+				D3DXVECTOR2(quad_node.length * 0.5f, quad_node.length + g_PatchLength * 0.5f);
     int top_adj_index = searchLeaf(g_render_list, point_top);
-
+	//邻接Patch与目标Patch Lod 之间的比例
     int left_type = 0;
+	//最外围的判断条件是为了保证不会出现 A与B比较,同时B又与A比较的情况
     if (left_adj_index != -1 && g_render_list[left_adj_index].length > quad_node.length * 0.999f)
     {
-        QuadNode adj_node = g_render_list[left_adj_index];
+        const QuadNode &adj_node = g_render_list[left_adj_index];
+		//关于邻接四边形scale参数课题以理解为:
+		//四边形的实际的边长尺寸与屏幕显示上的长度比例
+		//关于下方代码的含义,可以参考renderShade函数里面的 网格的缩放矩阵变换
         float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
+		//float scale = (adj_node.length * (1<< adj_node.lod)) / (quad_node.length *(1<< quad_node.lod));
         if (scale > 3.999f)
             left_type = 2;
         else if (scale > 1.999f)
@@ -990,7 +1092,7 @@ QuadRenderParam& selectMeshPattern(const QuadNode& quad_node)
     int right_type = 0;
     if (right_adj_index != -1 && g_render_list[right_adj_index].length > quad_node.length * 0.999f)
     {
-        QuadNode adj_node = g_render_list[right_adj_index];
+        const QuadNode &adj_node = g_render_list[right_adj_index];
         float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
         if (scale > 3.999f)
             right_type = 2;
@@ -1001,7 +1103,7 @@ QuadRenderParam& selectMeshPattern(const QuadNode& quad_node)
     int bottom_type = 0;
     if (bottom_adj_index != -1 && g_render_list[bottom_adj_index].length > quad_node.length * 0.999f)
     {
-        QuadNode adj_node = g_render_list[bottom_adj_index];
+        const QuadNode &adj_node = g_render_list[bottom_adj_index];
         float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
         if (scale > 3.999f)
             bottom_type = 2;
@@ -1012,7 +1114,7 @@ QuadRenderParam& selectMeshPattern(const QuadNode& quad_node)
     int top_type = 0;
     if (top_adj_index != -1 && g_render_list[top_adj_index].length > quad_node.length * 0.999f)
     {
-        QuadNode adj_node = g_render_list[top_adj_index];
+        const QuadNode &adj_node = g_render_list[top_adj_index];
         float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
         if (scale > 3.999f)
             top_type = 2;
@@ -1020,46 +1122,52 @@ QuadRenderParam& selectMeshPattern(const QuadNode& quad_node)
             top_type = 1;
     }
 
-    // Check lookup table, [L][R][B][T]
+    // Check lookup table, [Lod][L][R][B][T]
     return g_mesh_patterns[quad_node.lod][left_type][right_type][bottom_type][top_type];
 }
 
 // Return value: if successful pushed into the list, return the position. If failed, return -1.
-int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera)
+int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera,int *visibility)
 {
     // Check against view frustum
-    if (!checkNodeVisibility(quad_node, camera))
+    if (!checkNodeVisibility(quad_node, camera,visibility))
         return -1;
 
     // Estimate the min grid coverage
     UINT num_vps = 1;
     D3D11_VIEWPORT vp;
     DXUTGetD3D11DeviceContext()->RSGetViewports(&num_vps, &vp);
-    float min_coverage = estimateGridCoverage(quad_node, camera, (float)vp.Width * vp.Height);
+    float min_coverage = estimateGridCoverage(quad_node, camera, vp.Width * vp.Height);
 
-    // Recursively attatch sub-nodes.
+    // Recursively attach sub-nodes.
     bool visible = true;
+	int     visibilitys[4];
+	/*
+	  *在实际的运作过程中,也有可能会出现一种情况
+	  *就是 对A可见性测试通过后,分别对其四个子节点做测试却是失败的
+	 */
     if (min_coverage > g_UpperGridCoverage && quad_node.length > g_PatchLength)
     {
         // Recursive rendering for sub-quads.
         QuadNode sub_node_0 = {quad_node.bottom_left, quad_node.length / 2, 0, {-1, -1, -1, -1}};
-        quad_node.sub_node[0] = buildNodeList(sub_node_0, camera);
+        quad_node.sub_node[0] = buildNodeList(sub_node_0, camera, visibilitys);
 
         QuadNode sub_node_1 = {quad_node.bottom_left + D3DXVECTOR2(quad_node.length/2, 0), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-        quad_node.sub_node[1] = buildNodeList(sub_node_1, camera);
+        quad_node.sub_node[1] = buildNodeList(sub_node_1, camera, visibilitys+1);
 
         QuadNode sub_node_2 = {quad_node.bottom_left + D3DXVECTOR2(quad_node.length/2, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-        quad_node.sub_node[2] = buildNodeList(sub_node_2, camera);
+        quad_node.sub_node[2] = buildNodeList(sub_node_2, camera, visibilitys+2);
 
         QuadNode sub_node_3 = {quad_node.bottom_left + D3DXVECTOR2(0, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-        quad_node.sub_node[3] = buildNodeList(sub_node_3, camera);
+        quad_node.sub_node[3] = buildNodeList(sub_node_3, camera, visibilitys+3);
 
-        visible = !isLeaf(quad_node);
+        visible = !isLeaf(quad_node);//叶子节点不可见,是因为叶子节点不可见,也代表着这个父节点不可见
+		//assert(visible);
     }
 
     if (visible)
     {
-        // Estimate mesh LOD
+        // Estimate mesh LOD,确定最紧凑的细节层次
         int lod = 0;
         for (lod = 0; lod < g_Lods - 1; lod++)
         {
@@ -1067,7 +1175,6 @@ int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera)
                 break;
             min_coverage *= 4;
         }
-
         // We don't use 1x1 and 2x2 patch. So the highest level is g_Lods - 2.
         quad_node.lod = min(lod, g_Lods - 2);
     }
@@ -1080,22 +1187,27 @@ int buildNodeList(QuadNode& quad_node, const CBaseCamera& camera)
 
     return position;
 }
-
+static bool s_isFirst2 = true;
 void renderShaded(const CBaseCamera& camera, ID3D11ShaderResourceView* displacemnet_map, ID3D11ShaderResourceView* gradient_map, float time, ID3D11DeviceContext* pd3dContext)
 {
+	int visibilitys[4];
     // Build rendering list
-    g_render_list.clear();
+	if(s_isFirst2)
+		g_render_list.clear();
+	//海平面可以延伸的最远处
     float ocean_extent = g_PatchLength * (1 << g_FurthestCover);
+	//建立四叉树的根节点,左下角为整个延展区域的西南边界(以向北为正)
     QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-    buildNodeList(root_node, camera);
-
-    // Matrices
+	if(s_isFirst2)
+		buildNodeList(root_node, camera, visibilitys);
+	s_isFirst2 = false;
+    // Matrices/model+view
     D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * *camera.GetViewMatrix();
-    D3DXMATRIX matProj = *camera.GetProjMatrix();
+    const D3DXMATRIX &matProj = *camera.GetProjMatrix();
 
     // VS & PS
-    pd3dContext->VSSetShader(g_pOceanSurfVS, NULL, 0);
-    pd3dContext->PSSetShader(g_pOceanSurfPS, NULL, 0);
+    pd3dContext->VSSetShader(g_pOceanSurfVS, nullptr, 0);
+    pd3dContext->PSSetShader(g_pOceanSurfPS, nullptr, 0);
 
     // Textures
     ID3D11ShaderResourceView* vs_srvs[2] = {displacemnet_map, g_pSRV_Perlin};
@@ -1130,7 +1242,8 @@ void renderShaded(const CBaseCamera& camera, ID3D11ShaderResourceView* displacem
     pd3dContext->PSSetConstantBuffers(2, 1, cbs);
 
     // We assume the center of the ocean surface at (0, 0, 0).
-    for (int i = 0; i < (int)g_render_list.size(); i++)
+    //for (int i = 0; i < (int)g_render_list.size(); i++)
+	for (int i = 21; i < 22; i++)
     {
         QuadNode& node = g_render_list[i];
 
@@ -1141,16 +1254,17 @@ void renderShaded(const CBaseCamera& camera, ID3D11ShaderResourceView* displacem
         QuadRenderParam& render_param = selectMeshPattern(node);
 
         // Find the right LOD to render
-        int level_size = g_MeshDim;
-        for (int lod = 0; lod < node.lod; lod++)
-            level_size >>= 1;
-
+		assert(node.lod>=0);
+        int level_size = g_MeshDim >> node.lod ;
+        //for (int lod = 0; lod < node.lod; lod++)
+       //     level_size >>= 1;
+		
         // Matrices and constants
         Const_Per_Call call_consts;
 
         // Expand of the local coordinate to world space patch size
         D3DXMATRIX matScale;
-        D3DXMatrixScaling(&matScale, node.length / level_size, node.length / level_size, 0);
+        D3DXMatrixScaling(&matScale, node.length / level_size, node.length / level_size, 1);
         D3DXMatrixTranspose(&call_consts.g_matLocal, &matScale);
 
         // WVP matrix
@@ -1163,13 +1277,13 @@ void renderShaded(const CBaseCamera& camera, ID3D11ShaderResourceView* displacem
         D3DXVECTOR2 uv_base = node.bottom_left / g_PatchLength * g_PerlinSize;
         call_consts.g_UVBase = uv_base;
 
-        // Constant g_PerlinSpeed need to be adjusted mannually
+        // Constant g_PerlinSpeed need to be adjusted manually
         D3DXVECTOR2 perlin_move = -g_WindDir * time * g_PerlinSpeed;
         call_consts.g_PerlinMovement = perlin_move;
 
         // Eye point
         D3DXMATRIX matInvWV = matWorld * matView;
-        D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
+        D3DXMatrixInverse(&matInvWV, nullptr, &matInvWV);
         D3DXVECTOR3 vLocalEye(0, 0, 0);
         D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
         call_consts.g_LocalEye = vLocalEye;
@@ -1202,32 +1316,35 @@ void renderShaded(const CBaseCamera& camera, ID3D11ShaderResourceView* displacem
     }
 
     // Unbind
-    vs_srvs[0] = NULL;
-    vs_srvs[1] = NULL;
+    vs_srvs[0] = nullptr;
+    vs_srvs[1] = nullptr;
     pd3dContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
 
-    ps_srvs[0] = NULL;
-    ps_srvs[1] = NULL;
-    ps_srvs[2] = NULL;
-    ps_srvs[3] = NULL;
+    ps_srvs[0] = nullptr;
+    ps_srvs[1] = nullptr;
+    ps_srvs[2] = nullptr;
+    ps_srvs[3] = nullptr;
     pd3dContext->PSSetShaderResources(1, 4, &ps_srvs[0]);
 }
-
+static bool s_isFirst = true;
 void renderWireframe(const CBaseCamera& camera, ID3D11ShaderResourceView* displacemnet_map, float time, ID3D11DeviceContext* pd3dContext)
 {
+	int visibilitys[4];
     // Build rendering list
-    g_render_list.clear();
+	if(s_isFirst)
+		g_render_list.clear();
     float ocean_extent = g_PatchLength * (1 << g_FurthestCover);
     QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-    buildNodeList(root_node, camera);
-
+	if(s_isFirst)
+		buildNodeList(root_node, camera, visibilitys);
+	s_isFirst = false;
     // Matrices
     D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * *camera.GetViewMatrix();
-    D3DXMATRIX matProj = *camera.GetProjMatrix();
+    const D3DXMATRIX &matProj = *camera.GetProjMatrix();
 
     // VS & PS
-    pd3dContext->VSSetShader(g_pOceanSurfVS, NULL, 0);
-    pd3dContext->PSSetShader(g_pWireframePS, NULL, 0);
+    pd3dContext->VSSetShader(g_pOceanSurfVS, nullptr, 0);
+    pd3dContext->PSSetShader(g_pWireframePS, nullptr, 0);
 
     // Textures
     ID3D11ShaderResourceView* vs_srvs[2] = {displacemnet_map, g_pSRV_Perlin};
@@ -1237,7 +1354,7 @@ void renderWireframe(const CBaseCamera& camera, ID3D11ShaderResourceView* displa
     ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
     pd3dContext->VSSetSamplers(0, 2, &vs_samplers[0]);
 
-    ID3D11SamplerState* ps_samplers[4] = {NULL, NULL, NULL, NULL};
+    ID3D11SamplerState* ps_samplers[4] = { nullptr, nullptr, nullptr, nullptr };
     pd3dContext->PSSetSamplers(1, 4, &ps_samplers[0]);
 
     // IA setup
@@ -1257,9 +1374,16 @@ void renderWireframe(const CBaseCamera& camera, ID3D11ShaderResourceView* displa
     ID3D11Buffer* cbs[1] = {g_pShadingCB};
     pd3dContext->VSSetConstantBuffers(2, 1, cbs);
     pd3dContext->PSSetConstantBuffers(2, 1, cbs);
-
+	D3DXCOLOR    colors[2] = { {1.0f,0.0f,0.0f,1.0f},{0.0f,1.0f,0.0f,1.0f} };
     // We assume the center of the ocean surface is at (0, 0, 0).
-    for (int i = 0; i < (int)g_render_list.size(); i++)
+   // for (int i = 20; i < g_render_list.size(); i++)
+	//for (int k = 0; k < g_render_list.size(); ++k)
+	//{
+	//	auto &node = g_render_list[k];
+	//	printf("location:x:%d,y:%d,length:%d,child->%d+%d+%d+%d\n",(int)node.bottom_left.x,(int)node.bottom_left.y,(int)node.length,node.sub_node[0],node.sub_node[1],node.sub_node[2],node.sub_node[3]);
+	//}
+	for (int i = 21; i < 22; i++)
+	//for (int i = 0; i < g_render_list.size(); i++)
     {
         QuadNode& node = g_render_list[i];
 
@@ -1270,9 +1394,9 @@ void renderWireframe(const CBaseCamera& camera, ID3D11ShaderResourceView* displa
         QuadRenderParam& render_param = selectMeshPattern(node);
 
         // Find the right LOD to render
-        int level_size = g_MeshDim;
-        for (int lod = 0; lod < node.lod; lod++)
-            level_size >>= 1;
+        int level_size = g_MeshDim >> node.lod;
+        //for (int lod = 0; lod < node.lod; lod++)
+        //    level_size >>= 1;
 
         // Matrices and constants
         Const_Per_Call call_consts;
@@ -1298,11 +1422,11 @@ void renderWireframe(const CBaseCamera& camera, ID3D11ShaderResourceView* displa
 
         // Eye point
         D3DXMATRIX matInvWV = matWorld * matView;
-        D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
+        D3DXMatrixInverse(&matInvWV, nullptr, &matInvWV);
         D3DXVECTOR3 vLocalEye(0, 0, 0);
         D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
         call_consts.g_LocalEye = vLocalEye;
-
+		call_consts.g_WireColor = colors[i & 0x1];
         // Update constant buffer
         D3D11_MAPPED_SUBRESOURCE mapped_res;            
         pd3dContext->Map(g_pPerCallCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
