@@ -35,18 +35,18 @@ CD3DSettingsDlg             g_D3DSettingsDlg;           // Device settings dialo
 CDXUTDialog                 g_HUD;                      // dialog for standard controls
 CDXUTDialog                 g_SampleUI;                 // dialog for sample specific controls
 
-CDXUTTextHelper*            g_pTxtHelper = NULL;
+CDXUTTextHelper*            g_pTxtHelper = nullptr;
 
 // Ocean simulation variables
-ocean_simulator* g_pocean_simulator = NULL;
+ocean_simulator* g_pocean_simulator = nullptr;
 
 bool g_RenderWireframe = false;
 bool g_PauseSimulation = false;
 int g_BufferType = 0;
 
 // Skybox
-ID3D11Texture2D* g_pSkyCubeMap = NULL;
-ID3D11ShaderResourceView* g_pSRV_SkyCube = NULL;
+ID3D11Texture2D* g_pSkyCubeMap = nullptr;
+ID3D11ShaderResourceView* g_pSRV_SkyCube = nullptr;
 
 CSkybox11 g_Skybox;
 
@@ -101,7 +101,7 @@ void renderLogo(ID3D11DeviceContext* pd3dContext);
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
     // Enable run-time memory check for debug builds.
-#if defined(DEBUG) | defined(_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
@@ -328,7 +328,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
     g_pocean_simulator = new ocean_simulator(ocean_param, pd3dDevice);
 
     // Update the simulation for the first time.
-    g_pocean_simulator->update_displacement_map(0);
+    //g_pocean_simulator->update_displacement_map(0);
 
     // D3D11 resources for rendering
     initRenderResource(ocean_param, pd3dDevice, pBackBufferSurfaceDesc);
@@ -386,7 +386,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
     // Sky box rendering
     D3DXMATRIXA16 mView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * *g_Camera.GetViewMatrix();
-    D3DXMATRIXA16 mProj = *g_Camera.GetProjMatrix();
+    const D3DXMATRIXA16 &mProj = *g_Camera.GetProjMatrix();
     D3DXMATRIXA16 mWorldViewProjection = mView * mProj;
 
     if (!g_RenderWireframe)
@@ -402,10 +402,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
     // Ocean rendering
     ID3D11ShaderResourceView* tex_displacement = g_pocean_simulator->get_direct3d_displacement_map();
     ID3D11ShaderResourceView* tex_gradient = g_pocean_simulator->get_direct3d_gradient_map();
-    if (g_RenderWireframe)
-        renderWireframe(g_Camera, tex_displacement, (float)app_time, pd3dImmediateContext);
-    else
-        renderShaded(g_Camera, tex_displacement, tex_gradient, (float)app_time, pd3dImmediateContext);
+	if (g_RenderWireframe)
+		renderWireframe(g_Camera, tex_displacement, (float)app_time, pd3dImmediateContext);
+	else
+	    renderShaded(g_Camera, tex_displacement, tex_gradient, (float)app_time, pd3dImmediateContext);
 
     // HUD rendering
     g_HUD.OnRender( fElapsedTime ); 

@@ -17,7 +17,8 @@
 
 #define HALF_SQRT_2	0.7071068f
 #define GRAV_ACCEL	981.0f	// The acceleration of gravity, cm/s^2
-
+using namespace concurrency;
+using namespace concurrency::graphics;
 extern __int64 g_freq;
 
 HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut );
@@ -34,7 +35,7 @@ float gauss()
 
 // phillips Spectrum
 // K: normalized wave vector, W: wind direction, v: wind velocity, a: amplitude constant
-float phillips(D3DXVECTOR2 K, D3DXVECTOR2 W, float v, float a, float dir_depend)
+float phillips(const D3DXVECTOR2 &K, const D3DXVECTOR2 &W, float v, float a, float dir_depend)
 {
     // largest possible wave from constant wind of velocity v
     float l = v * v / GRAV_ACCEL;
@@ -62,13 +63,15 @@ void update_spectrum(int dimY,
                      array_view<float_2> output_ht, 
                      immutable immutable,
                      change_per_frame perframe,
-                     accelerator_view av)
+                     accelerator_view &av)
 {
+	output_ht.discard_data();
     extent<2> update_spectrum(dimY, dimX);
 
     parallel_for_each(av, update_spectrum, [=] (index<2> idx) restrict(amp)
     {
         index<1> in_index = index<1>(idx[0] * immutable.inwidth + idx[1]);
+		//镜像位置
         index<1> in_mindex = index<1>((immutable.actualdim - idx[0]) * immutable.inwidth + (immutable.actualdim - idx[1]));
         index<1> out_index = index<1>(idx[0] * immutable.outwidth + idx[1]);
 
@@ -88,7 +91,7 @@ void update_spectrum(int dimY,
         float sqr_k = kx * kx + ky * ky;
         float rsqr_k = 0;
         if (sqr_k > 1e-12f) {
-            rsqr_k = 1 / fast_math::sqrt(sqr_k);
+            rsqr_k = fast_math::rsqrt(sqr_k);
         }
         kx *= rsqr_k;
         ky *= rsqr_k;
@@ -103,7 +106,7 @@ void update_spectrum(int dimY,
         dt_y.x = ht.y * ky;
         dt_y.y = -ht.x * ky;
 
-        if ((idx[1] < immutable.outwidth) && (idx[0] < immutable.outwidth))
+        //if ((idx[1] < immutable.outwidth) && (idx[0] < immutable.outwidth))
         {
             output_ht[out_index] = ht;
             output_ht[out_index + immutable.dddressoffset] = dt_x;
@@ -115,10 +118,10 @@ void update_spectrum(int dimY,
 ocean_simulator::ocean_simulator(ocean_parameter& params, ID3D11Device* pd3dDevice)
 : m_pd3dDevice(pd3dDevice),
 m_av(concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown *>(pd3dDevice))),
-m_array_view_float2_h0(NULL),
-m_array_view_float2_ht(NULL), 
-m_array_view_float_omega(NULL),
-m_array_view_float_dxyz(NULL),
+m_array_view_float2_h0(nullptr),
+m_array_view_float2_ht(nullptr), 
+m_array_view_float_omega(nullptr),
+m_array_view_float_dxyz(nullptr),
 m_fft_plan(3, m_av)
 {
     // If the device becomes invalid at some point, delete current instance and generate a new one.
@@ -127,7 +130,7 @@ m_fft_plan(3, m_av)
     assert(m_pd3dImmediateContext);
 
     // Height map H(0)
-    int height_map_size = (params.dmap_dim + 4) * (params.dmap_dim + 1);
+    int height_map_size = (params.dmap_dim + 1) * (params.dmap_dim + 1);
     vector<float_2> h0_data(height_map_size);
     memset(h0_data.data(), 0, height_map_size * sizeof(D3DXVECTOR2));
     vector<float> omega_data(height_map_size);
@@ -137,7 +140,7 @@ m_fft_plan(3, m_av)
     m_param = params;
     int hmap_dim = params.dmap_dim;
     // This value should be (hmap_dim / 2 + 1) * hmap_dim, but right now we can only use full size.
-    int input_half_size = hmap_dim * hmap_dim;
+    //int input_half_size = hmap_dim * hmap_dim;
     int output_size = hmap_dim * hmap_dim;
 
     // For filling the buffer with zeroes.
@@ -155,16 +158,16 @@ ocean_simulator::~ocean_simulator()
 {
     m_pd3dImmediateContext->ClearState();
     delete m_array_view_float2_h0;
-    m_array_view_float2_h0 = NULL;
+    m_array_view_float2_h0 = nullptr;
 
     delete m_array_view_float_omega;
-    m_array_view_float_omega = NULL;
+    m_array_view_float_omega = nullptr;
 
     delete m_array_view_float2_ht;
-    m_array_view_float2_ht = NULL;
+    m_array_view_float2_ht = nullptr;
 
     delete m_array_view_float_dxyz;
-    m_array_view_float_dxyz = NULL;
+    m_array_view_float_dxyz = nullptr;
 
     SAFE_RELEASE(m_pBuffer_Float_Dxyz);
 
@@ -214,21 +217,24 @@ void ocean_simulator::init_height_map(ocean_parameter& params, vector<float_2> &
     float patch_length = params.patch_length;
 
     // initialize random generator.
-    srand(0);
-
+    srand(0x7);
+	float halfHeight = height_map_dim / 2.0f;
+	/*
+	  *生成波频谱,生成的算法基于统计模型
+	 */
     for (i = 0; i <= height_map_dim; i++)
     {
         // K is wave-vector, range [-|DX/W, |DX/W], [-|DY/H, |DY/H]
-        K.y = (-height_map_dim / 2.0f + i) * (2 * D3DX_PI / patch_length);
+        K.y = 2 * D3DX_PI*(i-halfHeight)  / patch_length;
 
         for (j = 0; j <= height_map_dim; j++)
         {
-            K.x = (-height_map_dim / 2.0f + j) * (2 * D3DX_PI / patch_length);
+            K.x = 2 * D3DX_PI *(j-halfHeight) / patch_length;
 
             float phil = (K.x == 0 && K.y == 0) ? 0 : sqrtf(phillips(K, wind_dir, v, a, dir_depend));
 
-            out_h0[i * (height_map_dim + 4) + j].x = float(phil * gauss() * 0.7071068f);
-            out_h0[i * (height_map_dim + 4) + j].y = float(phil * gauss() * 0.7071068f);
+            out_h0[i * (height_map_dim + 1) + j].x = float(phil * gauss() * 0.7071068f);
+            out_h0[i * (height_map_dim + 1) + j].y = float(phil * gauss() * 0.7071068f);
 
             // The angular frequency is following the dispersion relation:
             //            out_omega^2 = g*k
@@ -238,16 +244,17 @@ void ocean_simulator::init_height_map(ocean_parameter& params, vector<float_2> &
             // Gerstner wave shows that a point on a simple sinusoid wave is doing a uniform circular
             // motion with the center at (x0, y0, z0), radius at A, and the circular plane is parallel
             // to vector K.
-            out_omega[i * (height_map_dim + 4) + j] = sqrtf(GRAV_ACCEL * sqrtf(K.x * K.x + K.y * K.y));
+            out_omega[i * (height_map_dim + 1) + j] = sqrtf(GRAV_ACCEL * sqrtf(K.x * K.x + K.y * K.y));
         }
     }
 }
 
-// Key function: first, use amp to calcuate the frequency by using time value. Secondly, use amp to calculate the space information by using frequency.
+// Key function: first, use amp to calculate the frequency by using time value. 
+// Secondly, use amp to calculate the space information by using frequency.
 void ocean_simulator::update_displacement_map(float time)
 {
     // ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
-    // Consts
+    // Constants
     D3D11_MAPPED_SUBRESOURCE mapped_res;            
     m_pd3dImmediateContext->Map(m_pPerFrameCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
     assert(mapped_res.pData);
@@ -262,12 +269,12 @@ void ocean_simulator::update_displacement_map(float time)
 
     this->m_cbchange_per_frame.time = per_frame_data[0];
     this->m_cbchange_per_frame.choppyscale = per_frame_data[1];
-
-    // Pre-FFT data preparation:
+	   
+    // Pre-FFT data preparation: 
     update_spectrum(m_param.dmap_dim, m_param.dmap_dim, 
         *m_array_view_float2_h0, *m_array_view_float_omega, *m_array_view_float2_ht,
         this->m_cbimmutable, this->m_cbchange_per_frame, this->m_av);
-
+	//计算x/y/z的空间偏移量
     // ------------------------------------ Perform FFT -------------------------------------------
     m_fft_plan.fft_512x512_c2c_amp(*m_array_view_float_dxyz, *m_array_view_float2_ht);
 
@@ -285,11 +292,11 @@ void ocean_simulator::update_displacement_map(float time)
 
     // Set RT
     ID3D11RenderTargetView* rt_views[1] = {m_pDisplacementRTV};
-    m_pd3dImmediateContext->OMSetRenderTargets(1, rt_views, NULL);
+    m_pd3dImmediateContext->OMSetRenderTargets(1, rt_views, nullptr);
 
     // VS & PS
-    m_pd3dImmediateContext->VSSetShader(m_pQuadVS, NULL, 0);
-    m_pd3dImmediateContext->PSSetShader(m_pUpdateDisplacementPS, NULL, 0);
+    m_pd3dImmediateContext->VSSetShader(m_pQuadVS, nullptr, 0);
+    m_pd3dImmediateContext->PSSetShader(m_pUpdateDisplacementPS, nullptr, 0);
 
     // Constants
     ID3D11Buffer* ps_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
@@ -345,7 +352,7 @@ void ocean_simulator::update_displacement_map(float time)
     SAFE_RELEASE(old_target);
     SAFE_RELEASE(old_depth);
 
-    m_pd3dImmediateContext->GenerateMips(m_pGradientSRV);
+    //m_pd3dImmediateContext->GenerateMips(m_pGradientSRV);
 }
 
 
@@ -434,13 +441,13 @@ void ocean_simulator::direct3d_synchronize()
 void ocean_simulator::init_buffers(ocean_parameter& params, vector<float_2> &h0_data, vector<float> &omega_data, vector<float_2> &zero_data)
 {
     // H0
-    m_array_view_float2_h0 = new array_view<const float_2>(array<float_2>((params.dmap_dim + 4) * (params.dmap_dim + 1), h0_data.begin(), m_av));
+    m_array_view_float2_h0 = new array_view<const float_2>(array<float_2>((params.dmap_dim + 1) * (params.dmap_dim + 1), h0_data.begin(), m_av));
 
     // Put H(t), Dx(t) and Dy(t) into one buffer
     m_array_view_float2_ht = new array_view<float_2>(array<float_2>(3 * params.dmap_dim * params.dmap_dim, zero_data.begin(), m_av));
 
     // omega
-    m_array_view_float_omega = new array_view<const float>(array<float>((params.dmap_dim + 4) * (params.dmap_dim + 1), omega_data.begin(), m_av));
+    m_array_view_float_omega = new array_view<const float>(array<float>((params.dmap_dim + 1) * (params.dmap_dim + 1), omega_data.begin(), m_av));
 
     array<float_2> tmp_array(3 * params.dmap_dim * params.dmap_dim, zero_data.begin(), m_av);
     m_array_view_float_dxyz = new array_view<float_2>(tmp_array);
@@ -449,11 +456,14 @@ void ocean_simulator::init_buffers(ocean_parameter& params, vector<float_2> &h0_
 
 void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_stride)
 {
-    createUAV(m_pd3dDevice, m_pBuffer_Float_Dxyz, 3 * output_size * float2_stride, sizeof(float), &m_pUAV_Dxyz, &m_pSRV_Dxyz);
+    createUAV(m_pd3dDevice, m_pBuffer_Float_Dxyz, 3 * output_size * float2_stride, sizeof(float), 
+		&m_pUAV_Dxyz, &m_pSRV_Dxyz);
 
     // D3D11 Textures
-    createTextureAndViews(m_pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R32G32B32A32_FLOAT, &m_pDisplacementMap, &m_pDisplacementSRV, &m_pDisplacementRTV);
-    createTextureAndViews(m_pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R16G16B16A16_FLOAT, &m_pGradientMap, &m_pGradientSRV, &m_pGradientRTV);
+    createTextureAndViews(m_pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R32G32B32A32_FLOAT, 
+		&m_pDisplacementMap, &m_pDisplacementSRV, &m_pDisplacementRTV);
+    createTextureAndViews(m_pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R16G16B16A16_FLOAT, 
+		&m_pGradientMap, &m_pGradientSRV, &m_pGradientRTV);
 
     // Samplers
     D3D11_SAMPLER_DESC sam_desc;
@@ -474,9 +484,9 @@ void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_strid
     assert(m_pPointSamplerState);
 
     // Vertex & pixel shaders
-    ID3DBlob* pBlobQuadVS = NULL;
-    ID3DBlob* pBlobUpdateDisplacementPS = NULL;
-    ID3DBlob* pBlobGenGradientFoldingPS = NULL;
+    ID3DBlob* pBlobQuadVS = nullptr;
+    ID3DBlob* pBlobUpdateDisplacementPS = nullptr;
+    ID3DBlob* pBlobGenGradientFoldingPS = nullptr;
 
     tstring filePath = GetFilePath::GetFilePath(_T("ocean_simulator_vs_ps.hlsl"));
 
@@ -487,9 +497,9 @@ void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_strid
     assert(pBlobUpdateDisplacementPS);
     assert(pBlobGenGradientFoldingPS);
 
-    m_pd3dDevice->CreateVertexShader(pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), NULL, &m_pQuadVS);
-    m_pd3dDevice->CreatePixelShader(pBlobUpdateDisplacementPS->GetBufferPointer(), pBlobUpdateDisplacementPS->GetBufferSize(), NULL, &m_pUpdateDisplacementPS);
-    m_pd3dDevice->CreatePixelShader(pBlobGenGradientFoldingPS->GetBufferPointer(), pBlobGenGradientFoldingPS->GetBufferSize(), NULL, &m_pGenGradientFoldingPS);
+    m_pd3dDevice->CreateVertexShader(pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), nullptr, &m_pQuadVS);
+    m_pd3dDevice->CreatePixelShader(pBlobUpdateDisplacementPS->GetBufferPointer(), pBlobUpdateDisplacementPS->GetBufferSize(), nullptr, &m_pUpdateDisplacementPS);
+    m_pd3dDevice->CreatePixelShader(pBlobGenGradientFoldingPS->GetBufferPointer(), pBlobGenGradientFoldingPS->GetBufferSize(), nullptr, &m_pGenGradientFoldingPS);
     assert(m_pQuadVS);
     assert(m_pUpdateDisplacementPS);
     assert(m_pGenGradientFoldingPS);
@@ -531,13 +541,13 @@ void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_strid
 
     // Constant buffers
     UINT actual_dim = m_param.dmap_dim;
-    UINT input_width = actual_dim + 4;
+    UINT input_width = actual_dim + 1;
     // We use full sized data here. The value "output_width" should be actual_dim/2+1 though.
     UINT output_width = actual_dim;
     UINT output_height = actual_dim;
     UINT dtx_offset = actual_dim * actual_dim;
     UINT dty_offset = actual_dim * actual_dim * 2;
-    UINT immutable_consts[] = {actual_dim, input_width, output_width, output_height, dtx_offset, dty_offset};
+    UINT immutable_consts[8] = {actual_dim, input_width, output_width, output_height, dtx_offset, dty_offset};
     memcpy(&this->m_cbimmutable, immutable_consts, sizeof(immutable_consts));
 
     D3D11_SUBRESOURCE_DATA init_cb0 = {&immutable_consts[0], 0, 0};
@@ -552,6 +562,7 @@ void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_strid
     assert(m_pImmutableCB);
 
     ID3D11Buffer* cbs[1] = {m_pImmutableCB};
+	//目前应用程序中没有计算着色器
     m_pd3dImmediateContext->CSSetConstantBuffers(0, 1, cbs);
     m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, cbs);
 
@@ -560,6 +571,6 @@ void ocean_simulator::init_dx11(int hmap_dim, int output_size, UINT float2_strid
     cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     cb_desc.MiscFlags = 0;    
     cb_desc.ByteWidth = PAD16(sizeof(float) * 3);
-    m_pd3dDevice->CreateBuffer(&cb_desc, NULL, &m_pPerFrameCB);
+    m_pd3dDevice->CreateBuffer(&cb_desc, nullptr, &m_pPerFrameCB);
     assert(m_pPerFrameCB);
 }

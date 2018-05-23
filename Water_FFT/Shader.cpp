@@ -68,19 +68,19 @@ HRESULT VERTEXSHADER::InitVertexShader(LPSTR Filename, D3DVERTEXELEMENT9 *decl, 
 }
 
 
-HRESULT VERTEXSHADER::SetConstant(DWORD RegNo, CONST void* pConstantData, DWORD ConstantCount)
+HRESULT VERTEXSHADER::SetConstant(DWORD RegNo, const void* pConstantData, DWORD ConstantCount)
 {
 	if(ShaderAttrib == 0) return E_FAIL;
 	return d3ddevice->SetVertexShaderConstantF(RegNo, (float *)pConstantData, ConstantCount);
 }
 
-HRESULT VERTEXSHADER::SetConstantB(DWORD RegNo, CONST BOOL* pConstantData, DWORD ConstantCount)
+HRESULT VERTEXSHADER::SetConstantB(DWORD RegNo, const BOOL* pConstantData, DWORD ConstantCount)
 {
 	if(ShaderAttrib == 0) return E_FAIL;
 	return d3ddevice->SetVertexShaderConstantB(RegNo, pConstantData, ConstantCount);
 }
 
-HRESULT VERTEXSHADER::SetConstantI(DWORD RegNo, CONST int* pConstantData, DWORD ConstantCount)
+HRESULT VERTEXSHADER::SetConstantI(DWORD RegNo, const int* pConstantData, DWORD ConstantCount)
 {
 	if(ShaderAttrib == 0) return E_FAIL;
 	return d3ddevice->SetVertexShaderConstantI(RegNo, pConstantData, ConstantCount);

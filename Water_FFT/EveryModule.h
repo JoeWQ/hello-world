@@ -31,7 +31,9 @@ public:
 	float GetTime();
 	void Release();
 
-	//将指定顶点数据拷入显存内的顶点缓冲区，BufferPoint是顶点数据数组的指针，PointNum是表示有多少个顶点，EPointSize是每个顶点数据的大小，一般是sizeof(CUSTOMVERTEX)，即VertexShader所定义的顶点的储存大小
+	//将指定顶点数据拷入显存内的顶点缓冲区，BufferPoint是顶点数据数组的指针，
+	//PointNum是表示有多少个顶点，EPointSize是每个顶点数据的大小，一般是sizeof(CUSTOMVERTEX)，
+	//即VertexShader所定义的顶点的储存大小
 	HRESULT InitVertexBuffer(BYTE* BufferPoint, UINT PointNum, UINT EPointSize);
 	//将指定顶点数据和索引数据拷入显存内的顶点缓冲区和索引缓冲区，BufferPoint是顶点数据数组的指针，PointNum是表示有多少个顶点，IndexNum表示有多少个索引，EPointSize是每个顶点数据的大小，一般是sizeof(CUSTOMVERTEX)，即VertexShader所定义的顶点的储存大小
 	HRESULT InitIndexVertexBuffer(BYTE* VertexBufferPoint, WORD* IndexBufferPoint, UINT PointNum, UINT IndexNum, UINT EPointSize);

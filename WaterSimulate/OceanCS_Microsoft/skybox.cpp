@@ -124,7 +124,7 @@ void CSkybox11::OnD3D11ResizedSwapChain( const DXGI_SURFACE_DESC* pBackBufferSur
         return;
 
     // Fill the vertex buffer
-    SKYBOX_VERTEX* pVertex = new SKYBOX_VERTEX[4];
+	SKYBOX_VERTEX pVertex[4];
     if ( !pVertex )
         return;
 
@@ -151,7 +151,7 @@ void CSkybox11::OnD3D11ResizedSwapChain( const DXGI_SURFACE_DESC* pBackBufferSur
     D3D11_SUBRESOURCE_DATA InitData;
     InitData.pSysMem = pVertex;    
     V( m_pd3dDevice11->CreateBuffer( &vbdesc, &InitData, &m_pVB11 ) );
-    SAFE_DELETE_ARRAY( pVertex ); 
+    //SAFE_DELETE_ARRAY( pVertex ); 
 }
 
 void CSkybox11::D3D11Render( D3DXMATRIX* pmWorldViewProj, ID3D11DeviceContext* pd3dImmediateContext )

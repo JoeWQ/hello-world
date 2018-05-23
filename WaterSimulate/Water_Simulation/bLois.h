@@ -12,7 +12,7 @@
 // Defines, and constants
 //-----------------------------------------------------------------------------
 // TODO: change "DirectX AppWizard Apps" to your name or the company name
-#define DXAPP_KEY        TEXT("Software\\DirectX AppWizard Apps\\bLois")
+#define DXAPP_KEY        TEXT("Software/DirectX AppWizard Apps/bLois")
 
 // Struct to store the current input state
 struct UserInput

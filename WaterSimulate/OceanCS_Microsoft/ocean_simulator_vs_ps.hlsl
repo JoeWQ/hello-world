@@ -26,9 +26,10 @@ VS_QUAD_OUTPUT QuadVS(float4 vPos : POSITION)
     VS_QUAD_OUTPUT Output;
 
     Output.Position = vPos;
-    Output.TexCoord.x = 0.5f + vPos.x * 0.5f;
-    Output.TexCoord.y = 0.5f - vPos.y * 0.5f;
+	//Output.TexCoord.x = mad(vPos.x, 0.5f, 0.5f);//0.5f + vPos.x * 0.5f; 
+	//Output.TexCoord.y =  mad(vPos.y, -0.5f, 0.5f);//0.5f - vPos.y * 0.5f;
 
+	Output.TexCoord = mad(vPos.xy,float2(0.5f,-0.5f),float2(0.5f,0.5f));
     return Output;
 }
 
@@ -54,14 +55,14 @@ cbuffer cbChangePerFrame : register(b1)
 {
     float g_Time;
     float g_ChoppyScale;
-    float g_GridLen;
+    float g_GridLen;//512/2000
 };
 
 // The following three should contains only real numbers. But we have only C2C FFT now.
 ByteAddressBuffer g_InputDxyz : register(t0);
 
 // Post-FFT data wrap up: Dx, Dy, Dz -> Displacement
-float4 UpdateDisplacementPS(VS_QUAD_OUTPUT In) : SV_Target
+float4 UpdateDisplacementPS(VS_QUAD_OUTPUT In) : SV_TARGET
 {
     uint index_x = (uint)(In.TexCoord.x * (float)g_OutWidth);
     uint index_y = (uint)(In.TexCoord.y * (float)g_OutHeight);
@@ -70,15 +71,15 @@ float4 UpdateDisplacementPS(VS_QUAD_OUTPUT In) : SV_Target
     // cos(pi * (m1 + m2))
     int sign_correction = ((index_x + index_y) & 1) ? -1 : 1;
 
-    float dx = asfloat(g_InputDxyz.Load((addr + g_DxAddressOffset) * 2 * 4)) * sign_correction * g_ChoppyScale;
-    float dy = asfloat(g_InputDxyz.Load((addr + g_DyAddressOffset) * 2 * 4)) * sign_correction * g_ChoppyScale;
-    float dz = asfloat(g_InputDxyz.Load(addr * 2 * 4)) * sign_correction;
+    float dx = asfloat(g_InputDxyz.Load((addr + g_DxAddressOffset) << 3)) * sign_correction * g_ChoppyScale;
+    float dy = asfloat(g_InputDxyz.Load((addr + g_DyAddressOffset) << 3)) * sign_correction * g_ChoppyScale;
+    float dz = asfloat(g_InputDxyz.Load(addr << 3)) * sign_correction;
 
     return float4(dx, dy, dz, 1);
 }
 
 // Displacement -> Normal, Folding
-float4 GenGradientFoldingPS(VS_QUAD_OUTPUT In) : SV_Target
+float4 GenGradientFoldingPS(VS_QUAD_OUTPUT In) : SV_TARGET
 {
     // Sample neighbour texels
     float2 one_texel = float2(1.0f / (float)g_OutWidth, 1.0f / (float)g_OutHeight);
@@ -100,6 +101,7 @@ float4 GenGradientFoldingPS(VS_QUAD_OUTPUT In) : SV_Target
     // Calculate Jacobian corelation from the partial differential of height field
     float2 Dx = (displace_right.xy - displace_left.xy) * g_ChoppyScale * g_GridLen;
     float2 Dy = (displace_front.xy - displace_back.xy) * g_ChoppyScale * g_GridLen;
+	//solve Jacobian determinate
     float J = (1.0f + Dx.x) * (1.0f + Dy.y) - Dx.y * Dy.x;
 
     // Practical subsurface scale calculation: max[0, (1 - J) + Amplitude * (2 * Coverage - 1)].

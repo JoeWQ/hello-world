@@ -5,8 +5,9 @@
 #include "complex"
 using namespace std;
 
-
-#define MAX_FLUID_STEPS 6		// 流体计算W的最大步骤（包括平流、扩散、外力、重力、浮力、漩涡重建等），计算密度场D也可使用该值，但密度场的步骤要少于W的步骤
+// 流体计算W的最大步骤（包括平流、扩散、外力、重力、浮力、漩涡重建等），
+//计算密度场D也可使用该值，但密度场的步骤要少于W的步骤
+#define MAX_FLUID_STEPS 6		
 
 
 // 流体脉冲发射器的形状类型
@@ -21,7 +22,9 @@ enum enuInject_Type
 
 // 待处理的贴图长宽和初始化时指定的长宽相同，必须是2的幂，且不能是内存纹理
 
-// 待处理贴图必须保证有4个rgba通道，必须是浮点格式（FP32或FP16任意），每个像素的xyzw必须为如下格式：实部绝对值、虚部绝对值、实部符号值（负数为0.0，正数为2.0）、虚部符号值（负数为0.0，正数为2.0），这三个条件不会自动判断，如果不符合的话，运算结果会错误
+// 待处理贴图必须保证有4个rgba通道，必须是浮点格式（FP32或FP16任意），每个像素的xyzw必须为如下格式：
+//实部绝对值、虚部绝对值、实部符号值（负数为0.0，正数为2.0）、虚部符号值（负数为0.0，正数为2.0），
+//这三个条件不会自动判断，如果不符合的话，运算结果会错误
 // 输出贴图的像素数据结构也仍然为上面的格式
 
 // FP16在数据贴图中（Scramble/Butterfly）并没有什么问题，但由于精度低且存储范围小，在临时贴图计算过程中可能会丢失部分数据
@@ -40,44 +43,45 @@ public:
 
 	// 调用乱序和蝶形运算，用GPU进行FFT和IFFT，这里传入的纹理必须保证rgba必须为如下格式：实部绝对值、虚部绝对值、实部符号值（负数为0.0，正数为2.0）、虚部符号值（负数为0.0，正数为2.0）
 	// 所以在传入纹理之前就要做相应的数据采样，保证符合这里的要求
-	HRESULT FFT(LPDIRECT3DTEXTURE9 pTexFFTSource) {return CoreProcess(FALSE, pTexFFTSource);}
-	HRESULT IFFT(LPDIRECT3DTEXTURE9 pTexFFTSource) {return CoreProcess(TRUE, pTexFFTSource);}
+	HRESULT FFT(IDirect3DTexture9 *pTexFFTSource) {return CoreProcess(FALSE, pTexFFTSource);}
+	HRESULT IFFT(IDirect3DTexture9 *pTexFFTSource) {return CoreProcess(TRUE, pTexFFTSource);}
 
 	// 得到最终的结果，将内部的TexResult复制到指定的贴图中，该贴图必须提前创建好！
 	// 注意这里的参数表示：是否乘傅里叶变换中的系数1/N，因为在前面的处理中是不会乘这个的
-	HRESULT GetResultData(LPDIRECT3DTEXTURE9 pDestTexture, BOOL bMulFourierCoef);
+	HRESULT GetResultData(IDirect3DTexture9 *pDestTexture, BOOL bMulFourierCoef);
 
 	// 得到当前处理好的纹理指针，不复制数据，可以直接保存或设置为纹理待用，不过无法乘傅里叶系数
 	// 必须在CPU、GPU的FFT或IFFT之后才可以使用该函数，否则返回空指针
-	LPDIRECT3DTEXTURE9 GetResultTexture() {if(m_iCreateAttrib != 2) return NULL; else return m_pTexResult;}
+	IDirect3DTexture9* GetResultTexture() {if(m_iCreateAttrib != 2) return NULL; else return m_pTexResult;}
 
 
 	// 用CPU来算DFT，结果存放在TexResult中。想算IDFT的话，只需要将第二个参数给TRUE即可，第三个参数是乘傅里叶系数
 	// CPU计算的都只支持A32R32G32B32F贴图
-	HRESULT DFTCPU(LPDIRECT3DTEXTURE9 pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef);
+	HRESULT DFTCPU(IDirect3DTexture9* pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef);
 	// 用CPU来算FFT，暂时不可用。这里提供的是网上一种顺序输入，再乱序输出的方法，具体见IFFTCPUCore
-	HRESULT FFTCPU(LPDIRECT3DTEXTURE9 pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef);
+	HRESULT FFTCPU(IDirect3DTexture9* pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef);
 
 
 	// 存放最终结果的，无论FFT还是IFFT都在这里面
 	PIXELSHADER m_PSGetResult;
-	LPDIRECT3DTEXTURE9 m_pTexResult;
+	IDirect3DTexture9 *m_pTexResult;
 
 
 	//内部函数
 private:
 	// 核心处理函数，根据参数分别处理FFT和IFFT
-	HRESULT CoreProcess(BOOL bIFFT, LPDIRECT3DTEXTURE9 pTexFFTSource);
+	HRESULT CoreProcess(BOOL bIFFT, IDirect3DTexture9* pTexFFTSource);
 
 	// 初始化用
 	HRESULT InitButterflyX(UINT iLitNo);
 	HRESULT InitButterflyY(UINT iLitNo);
 
-	// 内部渲染用，参数表示当前的来源图和目的图，不包含自用的特殊贴图（Scramble和Butterfly数据图），因为迭代次数很多，需要用中间贴图来保存结果，这里的参数就是提供一个切换过程
-	HRESULT ScrambleX(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT);
-	HRESULT ScrambleY(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT);
-	HRESULT ButterflyX(UINT iLitNo, BOOL bIFFT, LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT);	// 第一个参数表示当前调用的迭代次数，第二个参数表示是FFT还是IFFT
-	HRESULT ButterflyY(UINT iLitNo, BOOL bIFFT, LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT);
+	// 内部渲染用，参数表示当前的来源图和目的图，不包含自用的特殊贴图(Scramble和Butterfly数据图),
+	//因为迭代次数很多，需要用中间贴图来保存结果，这里的参数就是提供一个切换过程
+	HRESULT ScrambleX(IDirect3DTexture9* pSource, IDirect3DTexture9* pRT);
+	HRESULT ScrambleY(IDirect3DTexture9* pSource, IDirect3DTexture9* pRT);
+	HRESULT ButterflyX(UINT iLitNo, BOOL bIFFT, IDirect3DTexture9* pSource, IDirect3DTexture9* pRT);	// 第一个参数表示当前调用的迭代次数，第二个参数表示是FFT还是IFFT
+	HRESULT ButterflyY(UINT iLitNo, BOOL bIFFT, IDirect3DTexture9* pSource, IDirect3DTexture9* pRT);
 
 	// 内部使用，1D FFT运算核心，参数1表示时域输入，参数2表示频域输出，r表示迭代次数，内部动态调用
 	void IFFTCPUCore(complex<double> * TD, complex<double> * FD, int r);
@@ -101,53 +105,33 @@ private:
 	};
 	VERTEXSHADER m_VSDrawQuad;
 	UINT m_iStride;
-	LPDIRECT3DVERTEXBUFFER9 m_pVB;
+	IDirect3DVertexBuffer9* m_pVB;
 
 
 
 	// 存放中间临时运算结果的贴图，和最终结果完全一致
-	LPDIRECT3DTEXTURE9 m_pTexTempUse[2];
+	IDirect3DTexture9* m_pTexTempUse[2];
 
 
 	// 存放Scramble数据的
 	PIXELSHADER m_PSScrambleX, m_PSScrambleY;
-	LPDIRECT3DTEXTURE9 m_pTexScrambleX;	// 结构：SwapCoordX, 1.0f
-	LPDIRECT3DTEXTURE9 m_pTexScrambleY;	// 结构：1.0f, SwapCoordY
+	IDirect3DTexture9* m_pTexScrambleX;	// 结构：SwapCoordX, 1.0f
+	IDirect3DTexture9* m_pTexScrambleY;	// 结构：1.0f, SwapCoordY
 
 	// 存放Butterfly数据的
 	PIXELSHADER m_PSIFFTButterflyX, m_PSFFTButterflyX;
 	PIXELSHADER m_PSIFFTButterflyY, m_PSFFTButterflyY;
-	LPDIRECT3DTEXTURE9 *m_ppTexButterflyX, *m_ppTexButterflyY;
-	LPDIRECT3DTEXTURE9 *m_ppTexButterflyX_Sign, *m_ppTexButterflyY_Sign;	// 符号贴图，x分量存储复数结合方式（加减的符号值而已），zw分量存储W的符号值
+	IDirect3DTexture9 **m_ppTexButterflyX, **m_ppTexButterflyY;
+	IDirect3DTexture9 **m_ppTexButterflyX_Sign, **m_ppTexButterflyY_Sign;	// 符号贴图，x分量存储复数结合方式（加减的符号值而已），zw分量存储W的符号值
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct FLUID_ATTRIBUTE
 {
-	float fConsistensy;			// 密度系数，默认为1，密度越大越不容易引起：浓度高低部分，在力作用下，运动的两极分化（互溶性越好），密度越高越像液体，不过不能太高，否则会模拟错误（Project时用）
+	// 密度系数，默认为1，密度越大越不容易引起：浓度高低部分，在力作用下，运动的两极分化（互溶性越好），密度越高越像液体，不过不能太高，否则会模拟错误（Project时用）
+	float fConsistensy;			
 	BOOL bLiquid;		// 是否液体，如果是液体就要计算法线，默认为气体
-	D3DXVECTOR2 VecGravity;		// 流体重力，可以为任意方向，它和流体密度场有关，密度越大，重力越大，而且是持续作用的，并非脉冲注入
+	// 流体重力，可以为任意方向，它和流体密度场有关，密度越大，重力越大，而且是持续作用的，并非脉冲注入
+	D3DXVECTOR2 VecGravity;		
 	float fGravityPower;		// 重力的乘方幂（正数），值越大表示重的越重，轻的越轻，值越小表示两极分化越小。为1时表示无作用。在液体中一般小于1，否则会出现不真实的情况
 	UINT iIterateNum;	// Jacobi迭代次数
 	float fVorticityRefinementCoef;	// 黏度很低的流体上，重建漩涡状态，该值为公式中的epsilon，如果为0就表示不重建漩涡
@@ -214,7 +198,7 @@ struct INJECT_ATTRIBUTE
 
 	// 纹理发射器用，指定纹理必须符合以下格式：作为外力，xy必须经过乘加0.5（外力强度的单位是纹理坐标，所以范围肯定在-1~1之间），zw未用。作为来源则无要求，存放颜色即可
 	// 尽量使用和Fluid模拟区域同样分辨率的贴图，这样不需要Shader过滤，提高性能，整数和浮点纹理均可
-	LPDIRECT3DTEXTURE9 pTexInjectForce, pTexInjectSource;
+	IDirect3DTexture9* pTexInjectForce, *pTexInjectSource;
 	float fTexInjectForceCoef, fTexInjectSourceCoef;		// 考虑到纹理存放值有范围限制，这里再给定一个发射强度的系数，值可为任意（作用于每个Texel）。0表示暂时取消发射。对外力而言，-1表示纹理值的方向取反
 
 	// 程序发射器用
@@ -307,7 +291,7 @@ public:
 	// 如果TexObstacle为，则ABC计算标记置为false，用它来禁止任意边界的计算
 	// TexOffset是8888格式，且不能为内存纹理。它的作用是当显卡不支持sm2.x时，可以设置Obstacle对应的（提前计算好的）Offset贴图，这样在SM2.0的显卡上也可以实现任意边界
 	// 可以连续设置同一张Obstacle图，程序会自动优化，只在第一次设置时计算Offset图
-	HRESULT SetObstacleTexture(LPDIRECT3DTEXTURE9 pTexObstacle, LPDIRECT3DTEXTURE9 pTexOffset = NULL);
+	HRESULT SetObstacleTexture(IDirect3DTexture9* pTexObstacle, IDirect3DTexture9* pTexOffset = NULL);
 
 	// 设置瞬时外力和来源，先暂时保存数据，然后在模拟过程中直接作用在速度场U和密度场D上
 	HRESULT SetForce(UINT iForceNum, INJECT_ATTRIBUTE* pInjectData);
@@ -315,13 +299,13 @@ public:
 
 
 	// Get，必须先Simulate才行，只是得到指针，并不复制数据
-	LPDIRECT3DTEXTURE9 GetDensityMap()
+	IDirect3DTexture9* GetDensityMap()
 	{
 		if(m_iCreateAttrib != 2)
 			return NULL;
 		return m_pTexD;
 	}
-	LPDIRECT3DTEXTURE9 GetNormalMap() 
+	IDirect3DTexture9* GetNormalMap() 
 	{
 		if(m_iCreateAttrib != 2 || !m_bGenerateNormal)
 			return NULL;
@@ -353,7 +337,7 @@ private:
 	HRESULT RefineVorticity();
 
 	// 边界条件（包括基本边界和任意边界），参数表示更新哪种场的边界，对三个场都有效，pTexture表示需要被更新的纹理指针，注意是原地更新，输入=输出（里面已经自动进行了CopyToTemp的操作，不用担心会出错）
-	HRESULT ApplyBoundaryCondition(enuFluid_VectorField Type, LPDIRECT3DTEXTURE9 pTexture);
+	HRESULT ApplyBoundaryCondition(enuFluid_VectorField Type, IDirect3DTexture9* pTexture);
 
 	// NormalMap
 	HRESULT GenerateNormal();
@@ -363,16 +347,16 @@ private:
 // 模拟时内部使用的：公共步骤
 private:
 	// 根据障碍图，更新ABC偏移坐标贴图，它仅由SetObstacle函数调用
-	HRESULT UpdateABCTexture(LPDIRECT3DTEXTURE9 pTexObstacle);
+	HRESULT UpdateABCTexture(IDirect3DTexture9* pTexObstacle);
 
 	// 复制纹理，其实就是一个简单的Copy CommonComputeQuad调用，专门提出来
-	HRESULT CopyTexture(LPDIRECT3DTEXTURE9 pTexSrc, LPDIRECT3DTEXTURE9 pTexDst)
+	HRESULT CopyTexture(IDirect3DTexture9* pTexSrc, IDirect3DTexture9* pTexDst)
 	{
 		return CommonComputeQuad(pTexSrc, NULL, NULL, pTexDst, &m_PSCopy);	
 	}
 
 	// 清除纹理，每个像素清为指定颜色，默认为0
-	HRESULT ClearTexture(LPDIRECT3DTEXTURE9 pTexture, LPD3DXVECTOR4 pColor = NULL)
+	HRESULT ClearTexture(IDirect3DTexture9* pTexture, LPD3DXVECTOR4 pColor = NULL)
 	{
 		D3DXVECTOR4 VecColor = D3DXVECTOR4(0, 0, 0, 0);
 		if(pColor)
@@ -389,10 +373,10 @@ private:
 	// 公用Pixel Shader计算步骤，必须提前将常量寄存器设置好
 	// 如果用到的贴图只有一层，那么第二、三个参数置NULL
 	// 这个是画Quad
-	HRESULT CommonComputeQuad(LPDIRECT3DTEXTURE9 pSrcTex1, LPDIRECT3DTEXTURE9 pSrcTex2, LPDIRECT3DTEXTURE9 pSrcTex3, LPDIRECT3DTEXTURE9 pRT, PIXELSHADER *pPS);
+	HRESULT CommonComputeQuad(IDirect3DTexture9* pSrcTex1, IDirect3DTexture9* pSrcTex2, IDirect3DTexture9* pSrcTex3, IDirect3DTexture9* pRT, PIXELSHADER *pPS);
 
 	// 参数同上，这个是画Line，对应m_pVBBoundaryLine[iLineNo]，并用D3DPT_LINELSIT
-	HRESULT CommonComputeLine(LPDIRECT3DTEXTURE9 pSrcTex1, LPDIRECT3DTEXTURE9 pSrcTex2, LPDIRECT3DTEXTURE9 pSrcTex3, LPDIRECT3DTEXTURE9 pRT, PIXELSHADER *pPS, UINT iLineNo);
+	HRESULT CommonComputeLine(IDirect3DTexture9* pSrcTex1, IDirect3DTexture9* pSrcTex2, IDirect3DTexture9* pSrcTex3, IDirect3DTexture9* pRT, PIXELSHADER *pPS, UINT iLineNo);
 
 
 // 内部使用变量
@@ -419,10 +403,10 @@ public:
 		float tu,tv,tw,tx;	// 纹理坐标：小数，后两个未用，只是为了去掉PS编译的错误
 		float tu_int,tv_int,tw_int,tx_int;	// 同上，纹理坐标整数 for Bilinear Filtering
 	};
-	LPDIRECT3DVERTEXDECLARATION9 m_pDeclaration;
+	IDirect3DVertexDeclaration9 *m_pDeclaration;
 	UINT m_iStride;
-	LPDIRECT3DVERTEXBUFFER9 m_pVBQuad, m_pVBQuadExceptBoundary; // 一个大矩形，和一个不包括边界线的矩形（模拟时用）
-	LPDIRECT3DVERTEXBUFFER9 m_pVBBoundaryLine[4];	// 四边的线，用于更新基本边界，四边0～3分别为上下左右
+	IDirect3DVertexBuffer9* m_pVBQuad, *m_pVBQuadExceptBoundary; // 一个大矩形，和一个不包括边界线的矩形（模拟时用）
+	IDirect3DVertexBuffer9* m_pVBBoundaryLine[4];	// 四边的线，用于更新基本边界，四边0～3分别为上下左右
 	LPDIRECT3DSURFACE9 m_pDepthBuffer;
 
 
@@ -431,27 +415,27 @@ public:
 	
 // 贴图部分，向量场都是XY存放绝对值，ZW存放符号（0、2分别表示负数正数），Normal/ABC Offset图，都是乘加0.5，把-1～1转换为0～1存储
 public:
-	LPDIRECT3DTEXTURE9 m_pTexWTemp[MAX_FLUID_STEPS], m_pTexDTemp[MAX_FLUID_STEPS];	// 临时使用，按步骤计算W和密度场
+	IDirect3DTexture9* m_pTexWTemp[MAX_FLUID_STEPS], *m_pTexDTemp[MAX_FLUID_STEPS];	// 临时使用，按步骤计算W和密度场
 	UINT m_iCurrentWIndex, m_iCurrentDIndex;		// 因为计算步骤数不定（根据用户设定不同），所以总是让这两个值代表当前计算好的W和D在上面的哪张贴图中，在计算完所有步骤之后，它们也代表最终数据存放的贴图序号。
 
-	LPDIRECT3DTEXTURE9 m_pTexTemp[2];	// 用于临时切换循环使用，比如循环计算Jacobi迭代、循环叠加FS等
-	LPDIRECT3DTEXTURE9 m_pTexBCTemp;	// 用于临时计算边界条件，BC和其他操作可能会混合在一起，所以要单独给一张贴图
-	LPDIRECT3DTEXTURE9 m_pTexP, m_pTexD, m_pTexU;	// 算好的：压力场、密度场、速度场U，记住要在最后拷贝TexDTemp到TexD中
+	IDirect3DTexture9* m_pTexTemp[2];	// 用于临时切换循环使用，比如循环计算Jacobi迭代、循环叠加FS等
+	IDirect3DTexture9* m_pTexBCTemp;	// 用于临时计算边界条件，BC和其他操作可能会混合在一起，所以要单独给一张贴图
+	IDirect3DTexture9* m_pTexP, *m_pTexD, *m_pTexU;	// 算好的：压力场、密度场、速度场U，记住要在最后拷贝TexDTemp到TexD中
 
 
 	// 任意边界条件（Arbitary Boundary Conditions）用
-	LPDIRECT3DTEXTURE9 m_pTexABCTypeToOffset;	// 转换图，存放不同的类型对应的临近偏移点坐标数据，初始化一次即可。临时使用，用于计算偏移坐标图
-	LPDIRECT3DTEXTURE9 m_pTexABCType;			// ABC类型图，存放计算好的各个边界点开口类型。临时使用，用于计算偏移坐标图
-	LPDIRECT3DTEXTURE9 m_pTexABCBoundaryToOffset;	// 转换图，存放不同Boundary相加之和对应的临近偏移点坐标数据，初始化一次即可。临时使用，用于计算偏移坐标图
+	IDirect3DTexture9* m_pTexABCTypeToOffset;	// 转换图，存放不同的类型对应的临近偏移点坐标数据，初始化一次即可。临时使用，用于计算偏移坐标图
+	IDirect3DTexture9* m_pTexABCType;			// ABC类型图，存放计算好的各个边界点开口类型。临时使用，用于计算偏移坐标图
+	IDirect3DTexture9* m_pTexABCBoundaryToOffset;	// 转换图，存放不同Boundary相加之和对应的临近偏移点坐标数据，初始化一次即可。临时使用，用于计算偏移坐标图
 	
-	LPDIRECT3DTEXTURE9 m_pTexABCBoundary;		// 障碍类型图，存放边界点、障碍点或是非边界点
-	LPDIRECT3DTEXTURE9 m_pTexABCOffset;			// ABC每个边界点的偏移，xy和zw分别存放两个临近点的偏移坐标，范围修正为0～1，这里临近点和法向点相同，所以U和P可以公用
+	IDirect3DTexture9* m_pTexABCBoundary;		// 障碍类型图，存放边界点、障碍点或是非边界点
+	IDirect3DTexture9* m_pTexABCOffset;			// ABC每个边界点的偏移，xy和zw分别存放两个临近点的偏移坐标，范围修正为0～1，这里临近点和法向点相同，所以U和P可以公用
 
 	// 临时使用，计算W的散度（压力场用）、旋度（漩涡重建用）
-	LPDIRECT3DTEXTURE9 m_pTexDivW, m_pTexCurlW;
+	IDirect3DTexture9* m_pTexDivW, *m_pTexCurlW;
 
 	// 法线范围修正到0～1之间，不用加Sign修正
-	LPDIRECT3DTEXTURE9 m_pTexNormal;
+	IDirect3DTexture9* m_pTexNormal;
 
 
 
