@@ -12,6 +12,7 @@
 #include<GL/glew.h>
 #include<assert.h>
 #include<stdlib.h>
+#include<math.h>
 __NS_GLK_BEGIN
 /////////////////////////////////////////Shape Class//////////////////////////////
 Shape::Shape()
@@ -248,6 +249,9 @@ void      Sphere::initWithSlice(int   slices,float  radius)
 {
 	float   *vertex, *texCoord, *normal,*tangent;
 	int     *indice;
+
+	_aabb._minBox = GLVector3(-radius,-radius,-radius);
+	_aabb._maxBox = GLVector3(radius, radius, radius);
 	_numberOfIndice = esGenSphere(slices, radius, &vertex, &normal, &tangent, &texCoord, &indice, &_numberOfVertex);
 
 	glGenBuffers(1, &_vertexVBO);
@@ -581,6 +585,12 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 	float   stepSize = ((float)(size - 1)) / 2.0f;
 	float   *vertex = new float[3 * numVertices];
 
+	if (meshType == MeshType_XOY)
+	{
+		_aabb._minBox = GLVector3(-scaleX,-scaleY,0);
+		_aabb._maxBox = GLVector3(scaleX,scaleY,0);
+	}
+
 	int  index = 0;
 	for (i = 0; i < size; ++i) // row
 	{
@@ -694,5 +704,91 @@ Mesh  *Mesh::createWithIntensity(int grid_size, float scaleX, float scaleY, floa
 	Mesh *mesh = new Mesh();
 	mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity, meshType);
 	return mesh;
+}
+//////////////////////////Pyramid////////////////////////
+Pyramid::Pyramid(float l):
+	_lengthOfEdge(l)
+{
+	_height = sqrtf(6)/3.0f * l;
+}
+Pyramid *Pyramid::create(float length_of_edge)
+{
+	Pyramid *p = new Pyramid(length_of_edge);
+	p->init(length_of_edge);
+	return p;
+}
+
+void    Pyramid::init(float lengOfEdge)
+{
+	float   sqrtf_3 = sqrtf(3.0f);
+	float   sqrtf_6 = sqrtf(6.0f);
+	float   one_d_2sqrt3 = 1.0f / (2.0f*sqrtf_3);
+
+	const GLVector3    v_1(-lengOfEdge * 0.5f,0, lengOfEdge*one_d_2sqrt3);
+	const GLVector3    v_2(lengOfEdge*0.5f,0, lengOfEdge*one_d_2sqrt3);
+	const GLVector3    v_3(0,0,-lengOfEdge / sqrtf_3);
+	const GLVector3    v_4(0, lengOfEdge*sqrtf_6/3.0f,0);
+	_aabb._minBox = GLVector3(v_1.x, v_1.y,v_3.z);
+	_aabb._maxBox = GLVector3(v_2.x,v_4.y,v_2.z);
+	//四个平面的法线
+	const GLVector3   n_1 = (v_3 - v_1).cross(v_2 - v_1).normalize();
+	const GLVector3   n_2 = (v_2 - v_1).cross(v_4 - v_1).normalize();
+	const GLVector3   n_3 = (v_3-v_2).cross(v_4 -v_2).normalize();
+	const GLVector3   n_4 = (v_1 - v_3).cross(v_4 - v_3).normalize();
+	//12个顶点/法线/纹理坐标
+	float    vertex_data[] = {
+		v_2.x,v_2.y,v_2.z,n_1.x,n_1.y,n_1.z,0,1,//1
+		v_1.x,v_1.y,v_1.z,n_1.x,n_1.y,n_1.z,0,0,//2
+		v_3.x,v_3.y,v_3.z,n_1.x,n_1.y,n_1.z,1,1,//3
+
+		v_4.x,v_4.y,v_4.z,n_3.x,n_3.y,n_3.z,0,1,//4
+		v_2.x,v_2.y,v_2.z,n_3.x,n_3.y,n_3.z,0,0,//5
+		v_3.x,v_3.y,v_3.z,n_3.x,n_3.y,n_3.z,1,0,//6
+
+		v_4.x,v_4.y,v_4.z,n_4.x,n_4.y,n_4.z,0,1,//7
+		v_3.x,v_3.y,v_3.z,n_4.x,n_4.y,n_4.z,1,0,//8
+		v_1.x,v_1.y,v_1.z,n_4.x,n_4.y,n_4.z,1,1,//9
+
+		v_4.x,v_4.y,v_4.z,n_2.x,n_2.y,n_2.z,1,1,//10
+		v_1.x,v_1.y,v_1.z,n_2.x,n_2.y,n_2.z,0,0,//11
+		v_2.x,v_2.y,v_2.z,n_2.x,n_2.y,n_2.z,1,0,//12
+	};
+
+	_numberOfVertex = 12;
+	glGenBuffers(1, &_vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER,_vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, _numberOfVertex * sizeof(float) * 8, vertex_data,GL_STATIC_DRAW);
+}
+
+void Pyramid::bindVertexObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,_vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc,3,GL_FLOAT,GL_FALSE,sizeof(float)*8,nullptr);
+}
+
+void  Pyramid::bindNormalObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc,3,GL_FLOAT,GL_FALSE,sizeof(float)*8,(void*)(sizeof(float)*3));
+}
+
+void Pyramid::bindTexCoordObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8,(void*)(sizeof(float)*6));
+}
+
+void Pyramid::bindTangentObject(int loc)
+{
+	glDisableVertexAttribArray(loc);
+	glVertexAttrib3f(loc,1.0f, 0,0);
+}
+
+void Pyramid::drawShape()
+{
+	glDrawArrays(GL_TRIANGLES, 0, _numberOfVertex);
 }
 __NS_GLK_END

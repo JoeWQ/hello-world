@@ -35,7 +35,7 @@
 //declare function
 void   Init(glk::GLContext   *);
 void   Draw(glk::GLContext *);
-void   Update(glk::GLContext *, float);
+void   Update(glk::GLContext *, float,float);
 void   ShutDown(glk::GLContext *);
 //////////////////////////////////////////////////////////////////
 __NS_GLK_BEGIN
@@ -139,7 +139,7 @@ static   void         _static_OnUpdate(int   _tag)
 		//时间间隔不宜过大,否则出现难以预料的结果
 		if (timeElapse > 33)
 			timeElapse = 33;
-		_context->update(_context, timeElapse / 1000.0f);
+		_context->update(_context, timeElapse / 1000.0f,newTickCount/1000.0f);
 		_context->_lastTickCount = newTickCount;
 #else
 		timeElapse = newTickCount - lastTick;

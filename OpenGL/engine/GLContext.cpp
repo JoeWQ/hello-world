@@ -41,7 +41,7 @@ GLContext::GLContext()
 	winSize.height = 640;
 }
 //
-void    GLContext::registerUpdateFunc(void(*_update)(GLContext *, float))
+void    GLContext::registerUpdateFunc(void(*_update)(GLContext *, float,float))
 {
 	this->update = _update;
 }

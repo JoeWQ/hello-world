@@ -11,7 +11,7 @@
 __NS_GLK_BEGIN
 
 #define NOISE_TABLE_MASK   255
-#define  M_PI                  3.14159265358
+//#define  M_PI                  3.14159265358
 #define FLOOR(x)           ((int)(x) - ((x) < 0 && (x) != (int)(x)))
 #define smoothstep(t)      ( t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f ) )
 #define lerp(t, a, b)      ( a + t * (b - a) )

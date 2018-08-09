@@ -21,7 +21,7 @@ void		gauss(float work[2]);
 	*@param:k:波数
 	*@param:wind:风的速度
 */
-float		phillips(float	a, const float     k[2], const float    wind[2]);
+float phillips(float	a, const float k[2], const float wind[2]);
 __NS_GLK_END
 
 #endif

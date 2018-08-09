@@ -12,7 +12,6 @@
 #define TRUE 1
 #endif
 int    FFT(int,int,float *,float *);
-int    FFT2D(Complex **, int,int,int);
 int    DFT(int,int,float *,float *);
 int    Powerof2(int,int *,int *);
 
@@ -120,17 +119,13 @@ int FFT(int dir,int m,float *x,float *y)
       the dimensions are not powers of 2
 */
 //int FFT2D(Complex **c,int nx,int ny,int dir)
-int FFT2D(Complex c[][64],int nx,int ny,int dir)
+int FFT2D(Complex c[][NY],int nx,int ny,int dir)
 {
    int i,j;
    int m,twopm;
-   float *real,*imag;
 
    /* Transform the rows */
-   real = (float *)malloc(nx * sizeof(float));
-   imag = (float *)malloc(nx * sizeof(float));
-   if (real == NULL || imag == NULL)
-      return(FALSE);
+   float real[NY], imag[NY];
    if (!Powerof2(nx,&m,&twopm) || twopm != nx)
       return(FALSE);
    for (j=0;j<ny;j++) {
@@ -144,14 +139,7 @@ int FFT2D(Complex c[][64],int nx,int ny,int dir)
          c[i][j].imag = imag[i];
       }
    }
-   free(real);
-   free(imag);
-
    /* Transform the columns */
-   real = (float *)malloc(ny * sizeof(float));
-   imag = (float *)malloc(ny * sizeof(float));
-   if (real == NULL || imag == NULL)
-      return(FALSE);
    if (!Powerof2(ny,&m,&twopm) || twopm != ny)
       return(FALSE);
    for (i=0;i<nx;i++) {
@@ -165,8 +153,6 @@ int FFT2D(Complex c[][64],int nx,int ny,int dir)
          c[i][j].imag = imag[j];
       }
    }
-   free(real);
-   free(imag);
 
    return(TRUE);
 }

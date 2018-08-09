@@ -31,6 +31,8 @@ protected:
 	unsigned int    _normalVBO;
 //切线向量
 	unsigned int   _tangentVBO;
+	//包围盒
+	AABB               _aabb;
 protected:
 	Shape();
 public:
@@ -55,6 +57,7 @@ public:
 //结束所有的绑定
 	void      finish();
 	virtual     ~Shape();
+	const AABB&    getAABB()const { return _aabb; };
 };
 //地面
 class      Ground:public Shape
@@ -154,6 +157,23 @@ public:
 	static      Mesh       *createWithIntensity(int   grid_size, float  scaleX, float  scaleY, float  texIntensity,MeshType meshType);
 	virtual     void      bindNormalObject(int _loc);//绑定法线缓冲区
 	virtual     void      bindTangentObject(int _loc);
+};
+//四棱锥
+class Pyramid : public Shape
+{
+	float _height;
+	float _lengthOfEdge;
+private:
+	Pyramid(float );
+	void              init(float l);
+public:
+	//给定边长,创建四棱锥对象
+	static Pyramid    *create(float length_of_edge);
+	virtual    void    bindNormalObject(int loc);
+	virtual    void    bindVertexObject(int loc);
+	virtual    void    bindTexCoordObject(int loc);
+	virtual    void    bindTangentObject(int loc);
+	virtual    void    drawShape();
 };
 __NS_GLK_END
 #endif

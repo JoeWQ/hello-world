@@ -14,14 +14,26 @@
 #include<string>
 //全局单子
 __NS_GLK_BEGIN
+
 class  GLCacheManager
 {
+public:
+	enum GLProgramType
+	{
+		GLProgramType_TextureColor = 0,//通用着色器
+		GLProgramType_LightParallel = 1,//平行光光照着色器
+		GLProgramType_ShadowMap = 2,//常规SM阴影着色器
+		GLProgramType_LightSpaceShadowMap = 3,//光空间透视阴影着色器
+		GLProgramType_DebugNormalTexture = 4,//调试常规的纹理
+		GLProgramType_DebugDepthTexture = 5,//调试深度纹理
+		GLProgramType_FuzzyBoxTexture = 6,//box模糊纹理
+		GLProgramType_FuzzyBoxTextureVSM = 7,//针对VSM而存在的纹理模糊
+		GLProgramType_Number = 8,
+	};
 private:
-	std::map<std::string, GLProgram *>  _glProgramCache;
+	std::map<GLProgramType, GLProgram *>  _glProgramCache;
 	std::map<std::string, GLTexture *>   _glTextureCache;
-//是否是内嵌的程序对象
-	std::map<std::string, int>      _glEmbedProgramSrc;
-	unsigned                                   _bufferIdentity;//单位顶点缓冲区对象
+	unsigned		_bufferIdentity;//单位顶点缓冲区对象
 private:
 	GLCacheManager(GLCacheManager &);
 	GLCacheManager();
@@ -29,12 +41,12 @@ private:
 	static    GLCacheManager              _glCacheManager;
 //向程序对象缓存中加入程序对象,注意,引擎的使用者不要调用这个函数,这个函数只能在GLProgram中调用
 	friend     class    GLProgram;
-	void                          inserGLProgram(std::string  &, GLProgram *);
+	void                          inserGLProgram(GLProgramType type, GLProgram *);
 public:
 	static    GLCacheManager              *getInstance();
 	~GLCacheManager();
 //给定名字查找程序对象,如过没有找到,返回NULL
-	GLProgram            *findGLProgram(std::string  &);
+	GLProgram            *findGLProgram(GLProgramType type);
 //给定名字返回纹理对象,如过没有找到,返回NULL
 	GLTexture              *findGLTexture(std::string  &);
 //插入纹理

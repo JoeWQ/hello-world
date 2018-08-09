@@ -15,7 +15,7 @@
 #define      __GEOMETRY_SHADER__
 #endif
 //是否开启缓存,着色器缓存,纹理缓存
-#define     __ENABLE_PROGRAM_CACHE__    
+//#define     __ENABLE_PROGRAM_CACHE__    
 //开启纹理缓存
 #define     __ENABLE_TEXTURE_CACHE__
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,12 +38,14 @@
 #define  NULL  0
 #endif
 #ifndef MATH_PI
-#define MATH_PI 4.14159265358
+#define MATH_PI 3.14159265358
 #endif
 //弧度与角度之间的转换
 #define    GLK_RADIUS_TO_ANGLE(radius)  ((radius)*180/MATH_PI)
 //角度与弧度之间的转换
 #define    GLK_ANGLE_TO_RADIUS(angle) ((angle)*MATH_PI/180)
+//符号计算
+#define    __SIGNFloat(sign)   (-(  ((sign)&0x1)<<1)+1)
 //重力系数
 #define    GLK_GRAVITY_CONSTANT		9.810f
 //引擎的命名空间名字

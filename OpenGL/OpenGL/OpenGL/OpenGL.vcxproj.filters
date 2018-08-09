@@ -21,18 +21,12 @@
     <Filter Include="头文件\engine\event">
       <UniqueIdentifier>{e0c5bcab-5933-4d19-b285-d56b7bb7ee9c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resource">
-      <UniqueIdentifier>{fa8496e4-8678-456e-bad2-401ac269698e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\OpenGL.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\Camera.cpp">
-      <Filter>源文件\engine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\engine\FFT.cpp">
       <Filter>源文件\engine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\Frustum.cpp">
@@ -101,13 +95,16 @@
     <ClCompile Include="..\..\engine\Camera2.cpp">
       <Filter>源文件\engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\Triangle.cpp">
+    <ClCompile Include="..\..\engine\DefferedShader.cpp">
+      <Filter>源文件\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ShadowMapVSM.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\CollisionDetector.cpp">
+    <ClCompile Include="..\VSM.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\SceneBuilding.cpp">
+    <ClCompile Include="..\LightSpaceSM.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -199,61 +196,17 @@
     <ClInclude Include="..\..\include\engine\Camera2.h">
       <Filter>头文件\engine</Filter>
     </ClInclude>
-    <ClInclude Include="..\Triangle.h">
+    <ClInclude Include="..\..\include\engine\DefferedShader.h">
+      <Filter>头文件\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ShadowMapVSM.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\SceneBuilding.h">
+    <ClInclude Include="..\VSM.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\CollisionDetector.h">
+    <ClInclude Include="..\LightSpaceSM.h">
       <Filter>源文件</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\bin\shader\WaterGPU\Normal_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Normal_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Photon_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Photon_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Pool_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Pool_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_GS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Water_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\Water_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_FS.glsl">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_VS.glsl">
-      <Filter>resource</Filter>
-    </None>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@ Camera2::Camera2() :
 void Camera2::initWithPerspective(float fov, float whrate, float nearZ, float farZ)
 {
 	Matrix::createPerspective(fov, whrate, nearZ, farZ, _projMatrix);
+	_nearFarFovRatioVec.x = nearZ, _nearFarFovRatioVec.y = farZ, _nearFarFovRatioVec.z = fov,_nearFarFovRatioVec.w = whrate;
 	_isViewProjDirty = true;
 	_isViewProjInverseDirty = true;
 }
@@ -24,6 +25,7 @@ void Camera2::initWithPerspective(float fov, float whrate, float nearZ, float fa
 void Camera2::initWithOrtho(float lx, float rx, float by, float ty, float nearZ, float farZ)
 {
 	Matrix::createOrtho(lx, rx, by, ty, nearZ, farZ, _projMatrix);
+	_nearFarFovRatioVec.x = nearZ, _nearFarFovRatioVec.y = farZ;
 	_isViewProjDirty = true;
 	_isViewProjInverseDirty = true;
 }
@@ -111,6 +113,7 @@ void Camera2::translate(const GLVector3 &offset)
 void Camera2::rotate(float xOffset, float yOffset)
 {
 	bool cameraChanged = false;
+	GLVector3   z_axis = _eyePosition - _targetPosition;
 	if (xOffset != 0)
 	{
 		//旋转的时候直接绕+Y轴旋转
@@ -138,6 +141,7 @@ void Camera2::rotate(float xOffset, float yOffset)
 	}
 	if (cameraChanged)
 	{
+		//_eyePosition = _targetPosition + _Z * z_axis.length();
 		updateViewMatrix();
 		_isViewProjDirty = true;
 		_isViewProjInverseDirty = true;

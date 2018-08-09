@@ -38,6 +38,7 @@ __NS_GLK_BEGIN
 		const float     length()const;
 		float               dot(const GLVector2 &other)const;
 	};
+	typedef GLVector2 Vec2;
 	struct    Size
 	{
 		float   width, height;
@@ -48,7 +49,9 @@ __NS_GLK_BEGIN
 		}
 	};
 	class  Matrix3;
+	typedef Matrix3  Mat3;
 	struct  GLVector4;
+	typedef GLVector4 Vec4;
 	struct  GLVector3
 	{
 		float    x, y, z;
@@ -93,7 +96,9 @@ __NS_GLK_BEGIN
 		//使用Z向量产生+X轴/+Y轴向量,向量产生的规则结果遵循摄像机原理
 		static   void  generateViewXY(const GLVector3 &Z,GLVector3 &X,GLVector3 &Y);
 	};
+	typedef GLVector3 Vec3;
 	class  Matrix;
+	typedef Matrix Mat4;
 	struct GLVector4
 	{
 		float   x, y, z, w;
@@ -105,6 +110,10 @@ __NS_GLK_BEGIN
 		GLVector4(const float xyzw)
 		{
 			x = y = z = w=xyzw;
+		}
+		GLVector4(const GLVector3&a, float d)
+		{
+			x = a.x, y = a.y, z = a.z, w = d;
 		}
 		GLVector4() { x = 0, y = 0, z = 0, w = 0; };
 		GLVector3    xyz() const{ return GLVector3(x, y, z); };
@@ -193,7 +202,7 @@ __NS_GLK_BEGIN
 		friend    struct GLVector3;
 		Matrix3();
 		Matrix3(const GLVector3 &row0,const GLVector3 &row1,const GLVector3 &row2);
-		Matrix3(const Matrix &);
+		Matrix3(const Matrix &src);
 		inline     const float    *pointer() const { return  (float*)m; };
 		//求逆矩阵
 		Matrix3         reverse()const;
@@ -276,6 +285,7 @@ __NS_GLK_BEGIN
 		Matrix3     normalMatrix()const;
 		//截断为3维矩阵
 		Matrix3       trunk()const;
+		void             trunk(Matrix3 &)const;
 		//求逆矩阵
 		Matrix             reverse()const;
 		void                  reverse(Matrix &rm)const;
@@ -306,10 +316,10 @@ __NS_GLK_BEGIN
 	float     detVector2(GLVector2  *a, GLVector2  *b);
 	float     detVector3(GLVector3   *a, GLVector3   *b, GLVector3   *c);
 	//////////////////////////////////////////////////////////////////////////////
-	typedef GLVector3 Vec3;
-	typedef GLVector4 Vec4;
-	typedef GLVector2 Vec2;
-	typedef Matrix       Mat4;
-	typedef Matrix3     Mat3;
+	//typedef GLVector3 Vec3;
+	//typedef GLVector4 Vec4;
+	//typedef GLVector2 Vec2;
+	//typedef Matrix       Mat4;
+	//typedef Matrix3     Mat3;
 __NS_GLK_END
 #endif

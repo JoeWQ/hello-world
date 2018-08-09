@@ -20,7 +20,6 @@
 #include<assert.h>
 #define PI 3.1415926535f
 #define    __EPS__  0.000001f
-#define    __SIGN(sign)   (-(  ((sign)&0x1)<<1)+1)
 __NS_GLK_BEGIN
 //新引入切线的计算
 int  esGenSphere(int numSlices, float radius, float **vertices, float **normals, float  **tangents,
@@ -443,7 +442,7 @@ float   detVector3(GLVector3    *a,GLVector3       *b,GLVector3  *c)
 	return _result;
 }
 //四维矩阵的逆
-static   void   __fix__(int  *_index,int  _current)//辅助函数
+static   void   static_fix_func(int  *_index,int  _current)//辅助函数
 {
 	int   i = 0;
 	int   k = 0;
@@ -1201,10 +1200,6 @@ void Matrix::createPerspective(float fov, float aspect, float nearZ, float farZ,
 {
 	float frustumH = tanf(fov / 360.0f * PI) * nearZ;
 	float frustumW = frustumH * aspect;
-	float       left = -frustumW;
-	float       right = frustumW;
-	float	   bottom = -frustumH	;
-	float      top = frustumH;
 	//
 	float       deltaX = 2* frustumW;
 	float       deltaY = 2* frustumH;
@@ -1212,7 +1207,7 @@ void Matrix::createPerspective(float fov, float aspect, float nearZ, float farZ,
 
 	assert(deltaX > 0.0f && deltaY > 0.0f && deltaZ > 0.0f && nearZ > 0.0f);
 
-	proj.m[0][0] = 2.0f * nearZ / deltaX;
+	proj.m[0][0] = 2.0f * nearZ / deltaX;//==>deltaX*aspect/nearZ * 0.5==>tanf(fov / 360.0f * PI)*aspect
 	proj.m[0][1] = proj.m[0][2] = proj.m[0][3] = 0.0f;
 
 	proj.m[1][1] = 2.0f * nearZ / deltaY;
@@ -1225,7 +1220,7 @@ void Matrix::createPerspective(float fov, float aspect, float nearZ, float farZ,
 
 	proj.m[3][2] = -2.0f * nearZ * farZ / deltaZ;
 	proj.m[3][0] = proj.m[3][1] = proj.m[3][3] = 0.0f;
-}
+} 
 
 Matrix             Matrix::reverse()const
 {
@@ -1236,62 +1231,62 @@ Matrix             Matrix::reverse()const
 	int        _index[4];
 	for (int i = 0; i < 4; ++i)
 	{
-		__fix__(_index, i);
+		static_fix_func(_index, i);
 		int     a = _index[0], b = _index[1], c = _index[2];
 		//i,0
 		row1 = GLVector3(m[a][1], m[a][2], m[a][3]);
 		row2 = GLVector3(m[b][1], m[b][2], m[b][3]);
 		row3 = GLVector3(m[c][1], m[c][2],m[c][3]);
-		tmp.m[0][i] = __SIGN(i + 0)*detVector3(&row1, &row2, &row3);
+		tmp.m[0][i] = __SIGNFloat(i + 0)*detVector3(&row1, &row2, &row3);
 		//i,1
 		row1 = GLVector3(m[a][0], m[a][2], m[a][3]);
 		row2 = GLVector3(m[b][0], m[b][2], m[b][3]);
 		row3 = GLVector3(m[c][0], m[c][2],m[c][3]);
-		tmp.m[1][i] = __SIGN(i + 1)*detVector3(&row1, &row2, &row3);
+		tmp.m[1][i] = __SIGNFloat(i + 1)*detVector3(&row1, &row2, &row3);
 		//i,2
 		row1 = GLVector3(m[a][0], m[a][1], m[a][3]);
 		row2 = GLVector3(m[b][0], m[b][1], m[b][3]);
 		row3 = GLVector3(m[c][0], m[c][1], m[c][3]);
-		tmp.m[2][i] = __SIGN(i + 2)*detVector3(&row1, &row2, &row3);
+		tmp.m[2][i] = __SIGNFloat(i + 2)*detVector3(&row1, &row2, &row3);
 		//i,3
 		row1 = GLVector3(m[a][0], m[a][1], m[a][2]);
 		row2 = GLVector3(m[b][0], m[b][1], m[b][2]);
 		row3 = GLVector3(m[c][0], m[c][1], m[c][2]);
-		tmp.m[3][i] = __SIGN(i + 3)*detVector3(&row1, &row2, &row3);
+		tmp.m[3][i] = __SIGNFloat(i + 3)*detVector3(&row1, &row2, &row3);
 	}
 	return   tmp;
 }
 
 void Matrix::reverse(Matrix &rm)const
 {
-	float             _det = this->det();
-	assert(fabs(_det) > __EPS__);
+	float             det = this->det();
+	assert(fabs(det) > __EPS__);
 	GLVector3    row1, row2, row3;
-	int        _index[4];
+	int        index[4];
 	for (int i = 0; i < 4; ++i)
 	{
-		__fix__(_index, i);
-		int     a = _index[0], b = _index[1], c = _index[2];
+		static_fix_func(index, i);
+		int     a = index[0], b = index[1], c = index[2];
 		//i,0
 		row1 = GLVector3(m[a][1], m[a][2], m[a][3]);
 		row2 = GLVector3(m[b][1], m[b][2], m[b][3]);
 		row3 = GLVector3(m[c][1], m[c][2], m[c][3]);
-		rm.m[0][i] = __SIGN(i + 0)*detVector3(&row1, &row2, &row3);
+		rm.m[0][i] = __SIGNFloat(i + 0)*detVector3(&row1, &row2, &row3)/ det;
 		//i,1
 		row1 = GLVector3(m[a][0], m[a][2], m[a][3]);
 		row2 = GLVector3(m[b][0], m[b][2], m[b][3]);
 		row3 = GLVector3(m[c][0], m[c][2], m[c][3]);
-		rm.m[1][i] = __SIGN(i + 1)*detVector3(&row1, &row2, &row3);
+		rm.m[1][i] = __SIGNFloat(i + 1)*detVector3(&row1, &row2, &row3)/ det;
 		//i,2
 		row1 = GLVector3(m[a][0], m[a][1], m[a][3]);
 		row2 = GLVector3(m[b][0], m[b][1], m[b][3]);
 		row3 = GLVector3(m[c][0], m[c][1], m[c][3]);
-		rm.m[2][i] = __SIGN(i + 2)*detVector3(&row1, &row2, &row3);
+		rm.m[2][i] = __SIGNFloat(i + 2)*detVector3(&row1, &row2, &row3)/ det;
 		//i,3
 		row1 = GLVector3(m[a][0], m[a][1], m[a][2]);
 		row2 = GLVector3(m[b][0], m[b][1], m[b][2]);
 		row3 = GLVector3(m[c][0], m[c][1], m[c][2]);
-		rm.m[3][i] = __SIGN(i + 3)*detVector3(&row1, &row2, &row3);
+		rm.m[3][i] = __SIGNFloat(i + 3)*detVector3(&row1, &row2, &row3)/ det;
 	}
 }
 //行列式
@@ -1365,6 +1360,23 @@ Matrix3    Matrix::trunk()const
 	_MATRIX_TRUNK_(2, 2);
 #undef _MATRIX_TRUNK_
 	return tmp;
+}
+
+void Matrix::trunk(Matrix3 &input)const
+{
+#define   _MATRIX_TRUNK_(i,k)   input.m[i][k]=m[i][k]
+	_MATRIX_TRUNK_(0, 0);
+	_MATRIX_TRUNK_(0, 1);
+	_MATRIX_TRUNK_(0, 2);
+
+	_MATRIX_TRUNK_(1, 0);
+	_MATRIX_TRUNK_(1, 1);
+	_MATRIX_TRUNK_(1, 2);
+
+	_MATRIX_TRUNK_(2, 0);
+	_MATRIX_TRUNK_(2, 1);
+	_MATRIX_TRUNK_(2, 2);
+#undef _MATRIX_TRUNK_
 }
 //偏置矩阵
 void     Matrix::offset()

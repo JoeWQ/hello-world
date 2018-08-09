@@ -18,6 +18,7 @@ private:
 	GLVector3    _forwardZ, _upVector;
 	//眼睛的位置,以及目标位置的位置
 	GLVector3   _eyePosition, _targetPosition;
+	GLVector4   _nearFarFovRatioVec;
 	//视图矩阵/视图投影矩阵
 	Matrix          _viewMatrix, _projMatrix,_viewProjMatrix;
 	//视图投影矩阵的逆矩阵
@@ -94,6 +95,10 @@ public:
 	const GLVector3& getXVector()const { return _X; };
 	const GLVector3& getUpVector()const { return _upVector; };
 	const GLVector3& getForwardVector()const { return _forwardZ; };
+	/*
+	  *获取近远平面的距离,此针对透视投影
+	 */
+	const GLVector4&  getNearFarFovRatio()const { return _nearFarFovRatioVec; };
 };
 
 __NS_GLK_END

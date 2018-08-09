@@ -54,7 +54,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;HYCOMMONWINAPI_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;HYCOMMONWINAPI_EXPORTS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\include;..\..\other;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4273;4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -88,11 +88,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\engine\Camera.cpp" />
     <ClCompile Include="..\..\engine\Camera2.cpp" />
+    <ClCompile Include="..\..\engine\DefferedShader.cpp" />
     <ClCompile Include="..\..\engine\event\EventManager.cpp" />
     <ClCompile Include="..\..\engine\event\KeyEventListener.cpp" />
     <ClCompile Include="..\..\engine\event\MouseEventListener.cpp" />
     <ClCompile Include="..\..\engine\event\TouchEventListener.cpp" />
-    <ClCompile Include="..\..\engine\FFT.cpp" />
     <ClCompile Include="..\..\engine\Frustum.cpp" />
     <ClCompile Include="..\..\engine\Geometry.cpp" />
     <ClCompile Include="..\..\engine\GLCacheManager.cpp" />
@@ -110,14 +110,15 @@
     <ClCompile Include="..\..\engine\Sprite.cpp" />
     <ClCompile Include="..\..\engine\TGAImage.cpp" />
     <ClCompile Include="..\..\engine\Tools.cpp" />
-    <ClCompile Include="..\CollisionDetector.cpp" />
+    <ClCompile Include="..\LightSpaceSM.cpp" />
     <ClCompile Include="..\OpenGL.cpp" />
-    <ClCompile Include="..\SceneBuilding.cpp" />
-    <ClCompile Include="..\Triangle.cpp" />
+    <ClCompile Include="..\ShadowMapVSM.cpp" />
+    <ClCompile Include="..\VSM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\engine\Camera.h" />
     <ClInclude Include="..\..\include\engine\Camera2.h" />
+    <ClInclude Include="..\..\include\engine\DefferedShader.h" />
     <ClInclude Include="..\..\include\engine\event\EventListener.h" />
     <ClInclude Include="..\..\include\engine\event\EventManager.h" />
     <ClInclude Include="..\..\include\engine\event\KeyCode.h" />
@@ -145,26 +146,9 @@
     <ClInclude Include="..\..\include\engine\TGAImage.h" />
     <ClInclude Include="..\..\include\engine\Tools.h" />
     <ClInclude Include="..\..\include\engine\Types.h" />
-    <ClInclude Include="..\CollisionDetector.h" />
-    <ClInclude Include="..\SceneBuilding.h" />
-    <ClInclude Include="..\Triangle.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\bin\shader\WaterGPU\Normal_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Normal_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Photon_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Photon_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Pool_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Pool_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_GS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\SkyboxBlur_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\WaterHeight_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\WaterNormal_VS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Water_FS.glsl" />
-    <None Include="..\..\bin\shader\WaterGPU\Water_VS.glsl" />
+    <ClInclude Include="..\LightSpaceSM.h" />
+    <ClInclude Include="..\ShadowMapVSM.h" />
+    <ClInclude Include="..\VSM.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

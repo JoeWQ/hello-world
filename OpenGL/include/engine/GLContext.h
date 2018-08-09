@@ -23,7 +23,7 @@ struct   GLContext
 	void      *userObject;
 public:
 	//定时回调函数
-	void(*update)(GLContext *, float  deltaTime);//
+	void(*update)(GLContext *, float  deltaTime,float delay_time);//
 	void(*draw)(GLContext *);
 
 	void(*init)(GLContext *);//    初始化函数
@@ -51,7 +51,7 @@ private:
 public:
 	static     GLContext         *getInstance();
 	//注册接口
-	void      registerUpdateFunc(void(*update)(GLContext*, float));
+	void      registerUpdateFunc(void(*update)(GLContext*, float,float));
 	void      registerDrawFunc(void(*draw)(GLContext *));
 	void      registerInitFunc(void(*init)(GLContext *));
 	void      registerShutDownFunc(void(*finalize)(GLContext *));

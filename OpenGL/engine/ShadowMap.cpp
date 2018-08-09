@@ -5,7 +5,7 @@
   */
 #include<assert.h>
 #include<GL/glew.h>
-#include<engine/GLContext.h>
+//#include<engine/GLContext.h>
 #include<engine/ShadowMap.h>
 __NS_GLK_BEGIN
 ShadowMap::ShadowMap()
@@ -28,18 +28,18 @@ bool	ShadowMap::initWithMapSize(const Size &shadowMapSize)
 {
 	int       _default_framebufferId;
 	int       _default_texture_textureId;
-	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &_default_framebufferId);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_default_framebufferId);
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &_default_texture_textureId);
 
-	Size      _size = GLContext::getInstance()->getWinSize();
+	//Size      _size = GLContext::getInstance()->getWinSize();
 	glGenFramebuffers(1, &_framebufferId);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _framebufferId);
+	glBindFramebuffer(GL_FRAMEBUFFER, _framebufferId);
 	glGenTextures(1, &_depthTextureId);
 	glBindTexture(GL_TEXTURE_2D, _depthTextureId);
 //	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, _size.width, _size.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexStorage2D(GL_TEXTURE_2D,1,GL_DEPTH_COMPONENT32F,_size.width,_size.height);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexStorage2D(GL_TEXTURE_2D,1,GL_DEPTH_COMPONENT32F, shadowMapSize.width, shadowMapSize.height);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
@@ -50,7 +50,7 @@ bool	ShadowMap::initWithMapSize(const Size &shadowMapSize)
 	assert(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	//检查真缓冲区对象的完整性
 	glBindTexture(GL_TEXTURE_2D, _default_texture_textureId);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _default_framebufferId);
+	glBindFramebuffer(GL_FRAMEBUFFER, _default_framebufferId);
 	_shadowMapSize = shadowMapSize;
 	return true;
 }

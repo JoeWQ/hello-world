@@ -50,7 +50,7 @@ void     Sprite::initWithFile(const char *file_name)
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_vertex), _vertex, GL_STATIC_DRAW);
 //×ÅÉ«Æ÷
-	_glProgram = GLCacheManager::getInstance()->findGLProgram(std::string(OpenGLSpriteProgram));
+	_glProgram = GLCacheManager::getInstance()->findGLProgram(GLCacheManager::GLProgramType_TextureColor);
 	_glProgram->retain();
 	_mvMatrixLoc = _glProgram->getUniformLocation("u_mvMatrix");
 	_baseMapLoc = _glProgram->getUniformLocation("u_baseMap");
