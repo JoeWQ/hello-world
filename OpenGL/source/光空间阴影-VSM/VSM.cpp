@@ -17,12 +17,12 @@ VSM::VSM():
 	_viewProjMatrixLoc(-1),
 	_modelMatrixLoc(-1),
 	_normalMatrixLoc(-1),
-	_lightPositionLoc(-1),
+	_lightDirectionLoc(-1),
 	_lightAmbientColorLoc(-1),
 	_lightColorLoc(-1),
 	_lightColor(1.0f,0.72f,0.72f,1.0f),
 	_lightAmbientColor(0.25f,0.25f,0.25f),
-	_lightBleeding(0.18f),
+	_lightBleeding(0.082f),//0.18f
 	_touchListener(nullptr),
 	_keyListener(nullptr),
 	_keyMask(0),
@@ -47,14 +47,16 @@ void  VSM::init()
 	_normalMatrixLoc = _lightProgram->getUniformLocation("g_NormalMatrix");
 	_shadowMapLoc = _lightProgram->getUniformLocation("g_ShadowMap");
 	//_lightMVMatrixLoc = _lightProgram->getUniformLocation("g_LightMVMatrix");
-	_lightViewProjMatrixLoc = _lightProgram->getUniformLocation("g_LightViewProjMatrix");
-	_lightPositionLoc = _lightProgram->getUniformLocation("g_LightPosition");
+	_lightViewMatrixLoc = _lightProgram->getUniformLocation("g_LightViewMatrix");
+	_lightProjMatrixLoc = _lightProgram->getUniformLocation("g_LightProjMatrix");
+	_lightDirectionLoc = _lightProgram->getUniformLocation("g_LightDirection");
 	_lightColorLoc = _lightProgram->getUniformLocation("g_Color");
 	_lightAmbientColorLoc = _lightProgram->getUniformLocation("g_AmbientColor");
 	_lightBleedingLoc = _lightProgram->getUniformLocation("g_LightBleeding");
 
 	_shadowProgram = GLProgram::createWithFile("shader/vsm/ShadowVSM_v.glsl","shader/vsm/ShadowVSM_f.glsl");
 	_shadowViewProjMatrixLoc = _shadowProgram->getUniformLocation("g_ViewProjMatrix");
+	_shadowLightViewMatrixLoc = _shadowProgram->getUniformLocation("g_LightViewMatrix");
 	_shadowModelMatrixLoc = _shadowProgram->getUniformLocation("g_ModelMatrix");
 
 	auto &winSize = GLContext::getInstance()->getWinSize();
@@ -237,7 +239,8 @@ void  VSM::render()
 	_groundMesh->bindVertexObject(0);
 	glUniformMatrix4fv(_shadowModelMatrixLoc, 1, GL_FALSE,_groundModelMatrix.pointer());
 	glUniformMatrix4fv(_shadowViewProjMatrixLoc, 1, GL_FALSE, _lightViewProjMatrix.pointer());
-	glUniform3fv(_shadowLightPositionLoc,1,&_lightPosition.x);
+	//glUniform3fv(_shadowLightPositionLoc,1,&_lightPosition.x);
+	glUniformMatrix4fv(_shadowLightViewMatrixLoc,1,GL_FALSE,_lightViewMatrix.pointer());
 	_groundMesh->drawShape();
 	//Pyramid
 	_pyramidMesh->bindVertexObject(0);
@@ -261,7 +264,8 @@ void  VSM::render()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,_shadowVSM->getColorTexture());
 	glUniform1i(_shadowMapLoc,0);
-	glUniformMatrix4fv(_lightViewProjMatrixLoc,1,GL_FALSE,_lightViewProjMatrix.pointer());
+	glUniformMatrix4fv(_lightProjMatrixLoc,1,GL_FALSE,_lightProjMatrix.pointer());
+	glUniformMatrix4fv(_lightViewMatrixLoc,1,GL_FALSE,_lightViewMatrix.pointer());
 	glUniform1f(_lightBleedingLoc,_lightBleeding);
 
 	glUniformMatrix4fv(_modelMatrixLoc,1,GL_FALSE,_groundModelMatrix.pointer());
@@ -272,7 +276,7 @@ void  VSM::render()
 	glUniformMatrix3fv(_normalMatrixLoc,1,GL_FALSE, _groundNormalMatrix.pointer());
 	//glUniformMatrix4fv(_lightMVMatrixLoc,1,GL_FALSE,(_groundModelMatrix*_lightViewMatrix).pointer());
 
-	glUniform3fv(_lightPositionLoc,1,&_lightPosition.x);
+	glUniform3fv(_lightDirectionLoc,1,&_lightDirection.x);
 	glUniform4fv(_lightColorLoc,1,&_lightColor.x);
 	glUniform3fv(_lightAmbientColorLoc,1,&_lightAmbientColor.x);
 

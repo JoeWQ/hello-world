@@ -44,8 +44,9 @@ class VSM : public glk::Object
 	int                              _normalMatrixLoc;
 	int                              _shadowMapLoc;
 	//int                              _lightMVMatrixLoc;
-	int                              _lightViewProjMatrixLoc;
-	int                              _lightPositionLoc;
+	int                              _lightProjMatrixLoc;
+	int                              _lightViewMatrixLoc;
+	int                              _lightDirectionLoc;
 	int                              _lightAmbientColorLoc;
 	int                              _lightColorLoc;
 	int                              _lightBleedingLoc;
@@ -63,7 +64,8 @@ class VSM : public glk::Object
 	glk::GLProgram    *_shadowProgram;
 	int                               _shadowViewProjMatrixLoc;
 	int                               _shadowModelMatrixLoc;
-	int                               _shadowLightPositionLoc;
+	//int                               _shadowLightPositionLoc;
+	int                               _shadowLightViewMatrixLoc;
 
 	int                              _analysisScene;//是否开启场景分析
 	int                              _changeViewMode;//是否切换视角
