@@ -49,6 +49,7 @@ __NS_GLK_BEGIN
 		}
 	};
 	class  Matrix3;
+	class Matrix;
 	typedef Matrix3  Mat3;
 	struct  GLVector4;
 	typedef GLVector4 Vec4;
@@ -73,6 +74,7 @@ __NS_GLK_BEGIN
 		GLVector4  xyzw0()const;
 		GLVector4  xyzw1()const;
 		GLVector3   operator*(const Matrix3 &)const;
+		GLVector4   operator*(const Matrix &)const;
 		GLVector3   operator*(const GLVector3 &)const;
 		GLVector3   operator*(const float)const;
 		GLVector3   operator-(const GLVector3 &)const;
@@ -124,6 +126,8 @@ __NS_GLK_BEGIN
 		GLVector4   operator+(const GLVector4 &)const;
 		GLVector4   operator/(const float )const;
 		GLVector4   operator/(const GLVector4 &)const;
+		float               length()const;
+		float               length3()const;
 		const GLVector4&   operator/=(const float);
 		const GLVector4&   operator*=(const float);
 		GLVector4   min(const GLVector4 &)const;
@@ -232,6 +236,7 @@ __NS_GLK_BEGIN
 	class Matrix
 	{
 		friend class Matrix3;
+		friend struct GLVector3;
 	private:
 		float   m[4][4];
 	public:

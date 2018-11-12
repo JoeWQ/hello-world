@@ -19,13 +19,11 @@ void	main()
 	velocity += texture(g_BaseMap,v_fragCoord + vec2(-pixelSize.x,0.0)).r;//left
 
 	vec2	heightField = texture(g_BaseMap,v_fragCoord).rg;
-
 	heightField.g += velocity * 0.25 - heightField.r;
 	heightField.g *= 0.99;
-	heightField.r += heightField.g ;
+	heightField.r += heightField.g;
 	if(g_WaterParam.w > 0)
 	{
-
 		float	S = length(g_MeshSize * v_fragCoord - g_WaterParam.xy);
 		heightField.r -= g_WaterParam.w * max(g_WaterParam.z - S,0.0);
 	}

@@ -247,19 +247,19 @@ int  esGenCube ( float scale, float **vertices, float **normals,float **tangents
 	float cubeNormals[] =
 	{
 //Ç°
-		0.0f,0.0f,-1.0f,
-		0.0f, 0.0f, -1.0f,
-		0.0f, 0.0f, -1.0f,
-		0.0f, 0.0f, -1.0f,
-		0.0f, 0.0f, -1.0f, 
-		0.0f, 0.0f, -1.0f,
-//ºó
 		0.0f,0.0f,1.0f,
 		0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 
 		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
+//ºó
+		0.0f,0.0f,-1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
 //×ó
 		-1.0f, 0.0f, 0.0f,
 		-1.0f, 0.0f, 0.0f,
@@ -547,6 +547,18 @@ GLVector3   GLVector3::operator*(const Matrix3 &src)const
 
 	return  GLVector3(x,y,z);
 }
+
+GLVector4 GLVector3::operator*(const Matrix &mat)const
+{
+	float  x, y, z,w;
+	x = this->x*mat.m[0][0] + this->y*mat.m[1][0] + this->z*mat.m[2][0] + mat.m[3][0];
+	y = this->x*mat.m[0][1] + this->y*mat.m[1][1] + this->z*mat.m[2][1] + mat.m[3][1];
+	z = this->x*mat.m[0][2] + this->y*mat.m[1][2] + this->z*mat.m[2][2] + mat.m[3][2];
+	w = this->x * mat.m[0][3] + this->y * mat.m[1][3] + this->z*mat.m[2][3] + mat.m[3][3];
+
+	return  GLVector4(x, y, z,w);
+}
+
 GLVector3    GLVector3::operator*(const float   _factor)const
 {
 	return  GLVector3(x*_factor,y*_factor,z*_factor);
@@ -724,6 +736,16 @@ float    GLVector4::dot(const GLVector4 &other)const
 	return x*other.x + y*other.y + z*other.z + w*other.w;
 }
 
+float  GLVector4::length()const
+{
+	return sqrtf(x*x+y*y+z*z+w*w);
+}
+
+float GLVector4::length3()const
+{
+	return sqrtf(x*x+y*y+z*z);
+}
+
 GLVector4 GLVector4::operator*(const float factor)const
 {
 	return GLVector4(x*factor,y*factor,z*factor,w*factor);
@@ -883,7 +905,7 @@ void    Matrix::rotateX(float pitch)
 	Matrix  matX;
 
 	const float sinX = sinf(GLK_ANGLE_TO_RADIUS(pitch));
-	const float cosX = cosf(GLK_RADIUS_TO_ANGLE(pitch));
+	const float cosX = cosf(GLK_ANGLE_TO_RADIUS(pitch));
 
 	matX.m[1][1] = cosX;
 	matX.m[1][2] = sinX;

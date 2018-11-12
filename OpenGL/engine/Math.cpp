@@ -105,4 +105,23 @@ float     phillips(const float a, const float k[2], const float wind[2])
 //	   return phillips * expf(-Ksqr * w * w);
 //   }
 
+float gauss_distribution(float x, float y, float want_x,float want_y, float variance)
+{
+	float d_x = x - want_x;
+	float d_y = y - want_y;
+
+	float d_2x = d_x * d_x;
+	float d_2y = d_y * d_y;
+
+	float d_t = d_2x + d_2y;
+	float d_v = variance * variance;
+	float d_2v = 2.0f * d_v;
+
+	float gauss = 1.0f / sqrtf(2.0f * M_PI * d_v);
+
+	gauss *= expf(-d_t / d_2v);
+
+	return gauss;
+}
+
 __NS_GLK_END

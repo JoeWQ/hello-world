@@ -40,10 +40,10 @@ private:
 private:
 	static    GLCacheManager              _glCacheManager;
 //向程序对象缓存中加入程序对象,注意,引擎的使用者不要调用这个函数,这个函数只能在GLProgram中调用
-	friend     class    GLProgram;
-	void                          inserGLProgram(GLProgramType type, GLProgram *);
+	friend   class    GLProgram;
+	void      inserGLProgram(GLProgramType type, GLProgram *);
 public:
-	static    GLCacheManager              *getInstance();
+	static    GLCacheManager  *getInstance();
 	~GLCacheManager();
 //给定名字查找程序对象,如过没有找到,返回NULL
 	GLProgram            *findGLProgram(GLProgramType type);
