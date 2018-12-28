@@ -1,7 +1,7 @@
 /*
   *@date:2014-9-13
   *@aim:Fast Fourier Transform
-  *@author:µÒ½¨±ò
+  *@author:Ð¡ÐÜ
   */
 #ifndef    __FAST_FFT_H__
 #define    __FAST_FFT_H__

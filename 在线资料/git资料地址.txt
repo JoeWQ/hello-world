@@ -56,3 +56,8 @@ https://github.com/QianMo/Game-Programmer-Study-Notes.git
 
 ShaderToy
 https://github.com/tdmaav/shadertoy.git
+
+GPU-GEMS3:
+https://github.com/QianMo/GPU-Gems-Book-Source-Code
+//OpenCL + OpenGL
+https://github.com/sunzhiyuan/opencl.git
