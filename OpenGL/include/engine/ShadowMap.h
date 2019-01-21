@@ -56,7 +56,7 @@ public:
 	//恢复原来的缓冲区对象
 	void   restoreFramebuffer();
 	//设置视口变换标志
-	void   setViewportChange(const float b);
+	void   setViewportChange(const bool b);
 	//是否启用了视口变换
 	bool   isViewportChange()const;
 };

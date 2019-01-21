@@ -21,6 +21,7 @@ __NS_GLK_BEGIN
 		{
 			x = a, y = b;
 		}
+		GLVector2(float v) { x = y = v; };
 		GLVector2() { x = 0, y = 0; };
 		GLVector2     operator*(float)const;
 		GLVector2     operator*(const GLVector2 &)const;
@@ -29,10 +30,15 @@ __NS_GLK_BEGIN
 		GLVector2     operator/(float)const;
 		GLVector2     operator/(const GLVector2 &)const;
 		GLVector2&  operator=(const GLVector2 &src);
+		GLVector2&  operator+=(const GLVector2 &src);
+		GLVector2&  operator-=(const GLVector2 &src);
+		GLVector2& operator*=(const GLVector2 &src);
+		GLVector2& operator/=(const GLVector2 &src);
 		GLVector2     normalize()const;
 		const float     length()const;
 		float               dot(const GLVector2 &other)const;
 	};
+	typedef GLVector2 Vec2;
 	struct    Size
 	{
 		float   width, height;
@@ -43,7 +49,10 @@ __NS_GLK_BEGIN
 		}
 	};
 	class  Matrix3;
+	class Matrix;
+	typedef Matrix3  Mat3;
 	struct  GLVector4;
+	typedef GLVector4 Vec4;
 	struct  GLVector3
 	{
 		float    x, y, z;
@@ -55,24 +64,43 @@ __NS_GLK_BEGIN
 		{
 			x = y = z = xyz;
 		}
+		GLVector3(float ax,float ay)
+		{
+			x = ax;
+			y = ay;
+			z = 0;
+		}
 		GLVector3() { x = 0, y = 0, z = 0; };
 		GLVector4  xyzw0()const;
 		GLVector4  xyzw1()const;
 		GLVector3   operator*(const Matrix3 &)const;
+		GLVector4   operator*(const Matrix &)const;
 		GLVector3   operator*(const GLVector3 &)const;
 		GLVector3   operator*(const float)const;
 		GLVector3   operator-(const GLVector3 &)const;
 		GLVector3   operator+(const GLVector3 &)const;
 		GLVector3   operator/(const float)const;
 		GLVector3   operator/(const GLVector3 &)const;
+		GLVector3& operator +=(const GLVector3 &);
+		GLVector3& operator +=(float f);
+		GLVector3& operator -=(const GLVector3 &);
+		GLVector3& operator-=(float f);
+		GLVector3& operator *=(const GLVector3 &);
+		GLVector3& operator*=(float f);
+		GLVector3& operator /=(const GLVector3 &);
+		GLVector3& operator/=(float f);
 		GLVector3   normalize()const;
 		GLVector3   cross(const GLVector3 &)const;
 		GLVector3   min(const GLVector3 &)const;
 		GLVector3   max(const GLVector3 &)const;
 		float              dot(const GLVector3 &other)const;
 		const float    length()const;
+		//使用Z向量产生+X轴/+Y轴向量,向量产生的规则结果遵循摄像机原理
+		static   void  generateViewXY(const GLVector3 &Z,GLVector3 &X,GLVector3 &Y);
 	};
+	typedef GLVector3 Vec3;
 	class  Matrix;
+	typedef Matrix Mat4;
 	struct GLVector4
 	{
 		float   x, y, z, w;
@@ -83,7 +111,11 @@ __NS_GLK_BEGIN
 		}
 		GLVector4(const float xyzw)
 		{
-			x = y = z = xyzw;
+			x = y = z = w=xyzw;
+		}
+		GLVector4(const GLVector3&a, float d)
+		{
+			x = a.x, y = a.y, z = a.z, w = d;
 		}
 		GLVector4() { x = 0, y = 0, z = 0, w = 0; };
 		GLVector3    xyz() const{ return GLVector3(x, y, z); };
@@ -94,14 +126,33 @@ __NS_GLK_BEGIN
 		GLVector4   operator+(const GLVector4 &)const;
 		GLVector4   operator/(const float )const;
 		GLVector4   operator/(const GLVector4 &)const;
+		float               length()const;
+		float               length3()const;
+		const GLVector4&   operator/=(const float);
+		const GLVector4&   operator*=(const float);
 		GLVector4   min(const GLVector4 &)const;
 		GLVector4   max(const GLVector4 &)const;
 		GLVector4   normalize()const;
 		float              dot(const GLVector4 &other)const;
 	};
+	//空间射线方程
+	class  Ray
+	{
+		//射线的方向,必须经过单位化
+		GLVector3    _direction;
+		//射线上的起点
+		GLVector3    _point;
+	public:
+		Ray() {};
+		Ray(const GLVector3 &direction,const GLVector3 &point,bool needNormalize=true);
+		void    init(const GLVector3 &direction,const GLVector3 &point, bool needNormalize=true);
+		inline const GLVector3& getDirecction()const { return _direction; };
+		inline const GLVector3& getStartPoint()const { return _point; };
+	};
 	//平面方程式,形式为 A*x+B*y+C*z-d=0
 	class Plane
 	{
+	public:
 		//平面法向量(单位化之后的)
 		GLVector3    _normal;
 		//(0,0,0)点所在的平面(平面法向量为_normal)与该平面之间的有向距离
@@ -109,8 +160,12 @@ __NS_GLK_BEGIN
 	public:
 		Plane();
 		//A*x+B*y+C*z-d=0
-		Plane(const GLVector3 &normal,const float distance);
-		void   init(const GLVector3 &normal,const float distance);
+		//needNormalize是否需要单位化,默认需要在传入参数之后重新单位化,false则不会重新单位化
+		Plane(const GLVector3 &normal,const float distance,bool needNormalize=true);
+		Plane(const GLVector3 &normal,const GLVector3 &vertex,bool needNormalize=true);
+		void   init(const GLVector3 &normal,const float distance,bool needNormalize=true);
+		//给定法线,平面上的任意一个顶点,求平面方程
+		void   init(const GLVector3 &normal,const GLVector3 &vertex, bool needNormalize=true);
 		//获取平面方程的法向量
 		const GLVector3 &getNormal()const;
 		//获取有向距离
@@ -150,9 +205,12 @@ __NS_GLK_BEGIN
 		friend    class   Matrix;
 		friend    struct GLVector3;
 		Matrix3();
+		Matrix3(const GLVector3 &row0,const GLVector3 &row1,const GLVector3 &row2);
+		Matrix3(const Matrix &src);
 		inline     const float    *pointer() const { return  (float*)m; };
 		//求逆矩阵
 		Matrix3         reverse()const;
+		void                reverse(Matrix3 &)const;
 		//旋转矩阵旋转矩阵
 		void                rotate(float angle,const GLVector3 &axis);
 		void                rotate(float angle,float x,float y,float z);
@@ -161,6 +219,10 @@ __NS_GLK_BEGIN
 		void                scale(const GLVector3 &scaleFactor);
 		//行列式
 		float               det()const;
+		//求TBN矩阵,normal必须是单位向量
+		static void      tbn(const GLVector3 &normal,Matrix3 &);
+		//求TBN矩阵的逆矩阵
+		static void      reverseTBN(const GLVector3 &normal,Matrix3 &tbn);
 		//右乘三维列向量
 		GLVector3   operator*(const GLVector3 &)const;
 		Matrix3        operator*(const Matrix3 &src)const;
@@ -173,6 +235,8 @@ __NS_GLK_BEGIN
 	//四维矩阵,全新的实现
 	class Matrix
 	{
+		friend class Matrix3;
+		friend struct GLVector3;
 	private:
 		float   m[4][4];
 	public:
@@ -181,6 +245,9 @@ __NS_GLK_BEGIN
 		friend   class      Frustum;
 		friend   class      Camera;
 		Matrix();
+		Matrix(const GLVector4 &row0,const GLVector4 &row1,const GLVector4 &row2,const GLVector4 &row3);
+		//创建视图矩阵使用
+		Matrix(const GLVector3 &row1,const GLVector3 &row2,const GLVector3 &row3,const GLVector3 &eyePosition);
 		//返回指向矩阵内容的指针,浮点型指针
 		inline    const float     *pointer() const { return (float*)m; };
 		//加载单位矩阵
@@ -206,8 +273,10 @@ __NS_GLK_BEGIN
 		void    lookAt(const GLVector3  &eyePosition, const GLVector3  &targetPosition, const GLVector3  &upVector);
 		//右乘正交投影矩阵
 		void    orthoProject(float  left, float right, float  bottom, float  top, float  nearZ, float  farZ);
+		static void    createOrtho(float  left, float right, float  bottom, float  top, float  nearZ, float  farZ,Matrix &proj);
 		//透视投影矩阵
 		void    perspective(float fovy, float aspect, float nearZ, float farZ);
+		static   void    createPerspective(float fov,float aspect,float nearZ,float farZ,Matrix &proj);
 		//一般投影矩阵
 		void    frustum(float left, float right, float bottom, float top, float nearZ, float farZ);
 		//矩阵乘法,this=this*srcA
@@ -221,8 +290,10 @@ __NS_GLK_BEGIN
 		Matrix3     normalMatrix()const;
 		//截断为3维矩阵
 		Matrix3       trunk()const;
+		void             trunk(Matrix3 &)const;
 		//求逆矩阵
 		Matrix             reverse()const;
+		void                  reverse(Matrix &rm)const;
 		//行列式
 		float                 det()const;
 		//重载 乘法运算符
@@ -250,5 +321,10 @@ __NS_GLK_BEGIN
 	float     detVector2(GLVector2  *a, GLVector2  *b);
 	float     detVector3(GLVector3   *a, GLVector3   *b, GLVector3   *c);
 	//////////////////////////////////////////////////////////////////////////////
+	//typedef GLVector3 Vec3;
+	//typedef GLVector4 Vec4;
+	//typedef GLVector2 Vec2;
+	//typedef Matrix       Mat4;
+	//typedef Matrix3     Mat3;
 __NS_GLK_END
 #endif

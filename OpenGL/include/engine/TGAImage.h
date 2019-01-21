@@ -7,6 +7,8 @@
 //阴影
 #include<engine/Object.h>
 __NS_GLK_BEGIN
+//目前已经废弃了,该类的存在只是为了兼容以前的代码
+__declspec(deprecated)
 class       TGAImage
 {
 	//container

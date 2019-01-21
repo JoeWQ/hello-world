@@ -1,0 +1,156 @@
+{
+    "bindingConfig": [
+        {
+            "boneName": "w3",
+            "bindings": []
+        },
+        {
+            "boneName": "w2",
+            "bindings": []
+        },
+        {
+            "boneName": "q3q",
+            "bindings": []
+        },
+        {
+            "boneName": "q4",
+            "bindings": []
+        },
+        {
+            "boneName": "q5",
+            "bindings": []
+        },
+        {
+            "boneName": "q7",
+            "bindings": []
+        },
+        {
+            "boneName": "q6",
+            "bindings": []
+        },
+        {
+            "boneName": "w1",
+            "bindings": []
+        },
+        {
+            "boneName": "mei2",
+            "bindings": []
+        },
+        {
+            "boneName": "mei",
+            "bindings": []
+        },
+        {
+            "boneName": "yanpi2",
+            "bindings": []
+        },
+        {
+            "boneName": "yanpi",
+            "bindings": []
+        },
+        {
+            "boneName": "yan2",
+            "bindings": []
+        },
+        {
+            "boneName": "yan",
+            "bindings": []
+        },
+        {
+            "boneName": "tou",
+            "bindings": []
+        },
+        {
+            "boneName": "Bip01",
+            "bindings": [
+                {
+                    "type": 1,
+                    "rct": {
+                        "center": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "extension": [
+                            110.0,
+                            181.0,
+                            96.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            29.0,
+                            0.0
+                        ]
+                    },
+                    "hex": {
+                        "p1": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p2": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p3": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p4": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p5": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p6": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p7": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "p8": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

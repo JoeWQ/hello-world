@@ -50,7 +50,7 @@ void     Sprite::initWithFile(const char *file_name)
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_vertex), _vertex, GL_STATIC_DRAW);
 //着色器
-	_glProgram = GLCacheManager::getInstance()->findGLProgram(std::string(OpenGLSpriteProgram));
+	_glProgram = GLCacheManager::getInstance()->findGLProgram(GLCacheManager::GLProgramType_TextureColor);
 	_glProgram->retain();
 	_mvMatrixLoc = _glProgram->getUniformLocation("u_mvMatrix");
 	_baseMapLoc = _glProgram->getUniformLocation("u_baseMap");
@@ -97,7 +97,7 @@ void     Sprite::render()
 	glBindVertexArray(_vertexArrayBufferId);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _glTexture->name());
+	glBindTexture(GL_TEXTURE_2D, _glTexture->getName());
 	glUniform1i(_baseMapLoc,0);
 //颜色
 	glUniform4fv(_renderColorLoc, 1, (float*)&_renderColor);
@@ -121,7 +121,7 @@ void  Sprite::render(Matrix *_affineMatrix,unsigned   otherTextureId)
 	glVertexAttribPointer(GLAttribTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, otherTextureId?otherTextureId:_glTexture->name());
+	glBindTexture(GL_TEXTURE_2D, otherTextureId?otherTextureId:_glTexture->getName());
 	glUniform1i(_baseMapLoc, 0);
 //颜色
 	glUniform4fv(_renderColorLoc, 1, (float*)&_renderColor);

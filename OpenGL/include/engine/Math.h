@@ -21,7 +21,14 @@ void		gauss(float work[2]);
 	*@param:k:波数
 	*@param:wind:风的速度
 */
-float		phillips(float	a, const float     k[2], const float    wind[2]);
+float phillips(float	a, const float k[2], const float wind[2]);
+/*
+  *返回二元高斯概率分布
+  *x,y坐标分布
+  *want:数学期望
+  *variance:方差
+ */
+float  gauss_distribution(float x,float y,float want_x,float ant_y,float variance);
 __NS_GLK_END
 
 #endif

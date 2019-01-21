@@ -12,6 +12,7 @@
 #include<GL/glew.h>
 #include<assert.h>
 #include<stdlib.h>
+#include<math.h>
 __NS_GLK_BEGIN
 /////////////////////////////////////////Shape Class//////////////////////////////
 Shape::Shape()
@@ -46,10 +47,21 @@ int    Shape::numberOfVertex()
 {
 	return _numberOfVertex;
 }
-int      Shape::getVertexBufferId()
+int      Shape::getVertexBufferId()const
 {
 	return _vertexVBO;
 }
+
+int     Shape::getTexBufferId()const
+{
+	return _texCoordVBO;
+}
+
+int    Shape::getNormalBufferId()const
+{
+	return _normalVBO;
+}
+
 void    Shape::bindIndiceObject()
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indiceVBO);
@@ -237,6 +249,9 @@ void      Sphere::initWithSlice(int   slices,float  radius)
 {
 	float   *vertex, *texCoord, *normal,*tangent;
 	int     *indice;
+
+	_aabb._minBox = GLVector3(-radius,-radius,-radius);
+	_aabb._maxBox = GLVector3(radius, radius, radius);
 	_numberOfIndice = esGenSphere(slices, radius, &vertex, &normal, &tangent, &texCoord, &indice, &_numberOfVertex);
 
 	glGenBuffers(1, &_vertexVBO);
@@ -418,7 +433,7 @@ Chest::~Chest()
 
 }
 //
-void     Chest::initWithScale(float scale)
+void     Chest::initWithScale(float scaleX,float scaleY,float scaleZ)
 {
 	//从立方体的外面观察,所有的三角形都是正方向的
 	float cubeVerts[] =
@@ -505,8 +520,15 @@ void     Chest::initWithScale(float scale)
 		1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 	};
 	_numberOfVertex = sizeof(cubeVerts)/(sizeof(float)*3);
-	for (int i = 0; i < sizeof(cubeVerts) / sizeof(float); ++i)
-		cubeVerts[i] *= scale;
+	int index = 0;
+	//缩放不同的面
+	for (int i = 0; i < _numberOfVertex; ++i)
+	{
+		cubeVerts[index] *= scaleX;
+		cubeVerts[index + 1] *= scaleY;
+		cubeVerts[index + 2] *= scaleZ;
+		index += 3;
+	}
 
 	glGenBuffers(1, &_vertexVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
@@ -525,11 +547,11 @@ void     Chest::initWithScale(float scale)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(tangent), tangent, GL_STATIC_DRAW);
 }
 //
-Chest     *Chest::createWithScale(float scale)
+Chest     *Chest::createWithScale(float scaleX,float scaleY,float scaleZ)
 {
-	Chest    *_glChest = new  Chest();
-	_glChest->initWithScale(scale);
-	return _glChest;
+	Chest    *glChest = new  Chest();
+	glChest->initWithScale(scaleX,scaleY,scaleZ);
+	return glChest;
 }
 void    Chest::drawShape()
 {
@@ -547,7 +569,12 @@ Mesh::~Mesh()
 {
 }
 
-void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float texIntensity)
+void          Mesh::initWithMesh(int grid_size, float scaleX, float scaleY, float texIntensity)
+{
+	initWithMesh(grid_size, scaleX, scaleY, texIntensity, MeshType::MeshType_XOY);
+}
+
+void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float texIntensity,MeshType meshType)
 {
 	int i, j;
 	int numIndices = (size - 1) * (size - 1) * 2 * 3;
@@ -556,19 +583,58 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 	_numberOfVertex = numVertices;
 	_numberOfIndice = numIndices;
 	float   stepSize = ((float)(size - 1)) / 2.0f;
-	float   *_vertex = new float[3 * numVertices];
+	float   *vertex = new float[3 * numVertices];
 
+	if (meshType == MeshType_XOY)
+	{
+		_aabb._minBox = GLVector3(-scaleX,-scaleY,0);
+		_aabb._maxBox = GLVector3(scaleX,scaleY,0);
+	}
+
+	int  index = 0;
 	for (i = 0; i < size; ++i) // row
 	{
 		const    float     locX = scaleY*(i / stepSize - 1.0f);
 		for (j = 0; j < size; ++j) // column
 		{
-			int   _index = (i*size + j) * 3;
-			_vertex[_index] = scaleX*(j / stepSize - 1.0f);
-			_vertex[_index + 1] = locX;
-			_vertex[_index + 2] = 0.0f;
+			if (meshType == MeshType::MeshType_XOY)
+			{
+				vertex[index] = scaleX*(j / stepSize - 1.0f);
+				vertex[index + 1] = locX;
+				vertex[index + 2] = 0.0f;
+			}
+			else if (meshType == MeshType::MeshType_XOZ)
+			{
+				vertex[index] = (j/stepSize -1.0f )*scaleX ;
+				vertex[index+1] = 0.0f;
+				vertex[index + 2] =-locX ;
+			}
+			else if (meshType == MeshType::MeshType_YOZ)
+			{
+				vertex[index] = 0.0f;
+				vertex[index + 1] = locX;
+				vertex[index + 2] = (1.0f - j/stepSize)*scaleX;
+			}
+			index += 3;
 		}
 	}
+	//计算切线鱼与法线
+	if (meshType == MeshType::MeshType_XOY)
+	{
+		_normal = GLVector3(0,0,1.0f);
+		_tangent = GLVector3(1.0f,0.0f,0.0f);
+	}
+	else if (meshType ==MeshType::MeshType_XOZ)
+	{
+		_normal = GLVector3(0.0f,1.0f,0.0f);
+		_tangent = GLVector3(1.0f,0,0);
+	}
+	else if (meshType==MeshType::MeshType_YOZ)
+	{
+		_normal = GLVector3(1,0,0);
+		_tangent = GLVector3(0,0,-1);
+	}
+
 // Generate the indices
 	int   *_indice = new int[numIndices];
 	for (i = 0; i < size - 1; ++i)
@@ -589,13 +655,13 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 //Gen Buffers
 	glGenBuffers(1, &_vertexVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float)*_numberOfVertex, _vertex,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float)*_numberOfVertex, vertex,GL_STATIC_DRAW);
 //
 	glGenBuffers(1, &_indiceVBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indiceVBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*_numberOfIndice, _indice, GL_STATIC_DRAW);
 //tex coord
-	float     *texCoord = _vertex;
+	float     *texCoord = vertex;
 	const   float      _factor = size - 1;
 	for (int i = 0; i < _numberOfVertex; ++i)
 	{
@@ -608,7 +674,7 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 	glBindBuffer(GL_ARRAY_BUFFER, _texCoordVBO);
 	glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(float)*_numberOfVertex, texCoord, GL_STATIC_DRAW);
 
-	delete  _vertex;
+	delete  vertex;
 	delete  _indice;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -617,7 +683,13 @@ void          Mesh::initWithMesh(int    size,float scaleX, float scaleY, float t
 void       Mesh::bindNormalObject(int _loc)
 {
 	glDisableVertexAttribArray(_loc);
-	glVertexAttrib3f(_loc, 0.0f, 0.0f, 1.0f);
+	glVertexAttrib3fv(_loc, &_normal.x);
+}
+
+void Mesh::bindTangentObject(int _loc)
+{
+	glDisableVertexAttribArray(_loc);
+	glVertexAttrib3fv(_loc,&_tangent.x);
 }
 
 Mesh         *Mesh::createWithIntensity(int grid_size, float scaleX, float scaleY, float texIntensity)
@@ -625,5 +697,98 @@ Mesh         *Mesh::createWithIntensity(int grid_size, float scaleX, float scale
 	Mesh		*_mesh = new   Mesh();
 	_mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity);
 	return  _mesh;
+}
+
+Mesh  *Mesh::createWithIntensity(int grid_size, float scaleX, float scaleY, float texIntensity, MeshType meshType)
+{
+	Mesh *mesh = new Mesh();
+	mesh->initWithMesh(grid_size, scaleX, scaleY, texIntensity, meshType);
+	return mesh;
+}
+//////////////////////////Pyramid////////////////////////
+Pyramid::Pyramid(float l):
+	_lengthOfEdge(l)
+{
+	_height = sqrtf(6)/3.0f * l;
+}
+Pyramid *Pyramid::create(float length_of_edge)
+{
+	Pyramid *p = new Pyramid(length_of_edge);
+	p->init(length_of_edge);
+	return p;
+}
+
+void    Pyramid::init(float lengOfEdge)
+{
+	float   sqrtf_3 = sqrtf(3.0f);
+	float   sqrtf_6 = sqrtf(6.0f);
+	float   one_d_2sqrt3 = 1.0f / (2.0f*sqrtf_3);
+
+	const GLVector3    v_1(-lengOfEdge * 0.5f,0, lengOfEdge*one_d_2sqrt3);
+	const GLVector3    v_2(lengOfEdge*0.5f,0, lengOfEdge*one_d_2sqrt3);
+	const GLVector3    v_3(0,0,-lengOfEdge / sqrtf_3);
+	const GLVector3    v_4(0, lengOfEdge*sqrtf_6/3.0f,0);
+	_aabb._minBox = GLVector3(v_1.x, v_1.y,v_3.z);
+	_aabb._maxBox = GLVector3(v_2.x,v_4.y,v_2.z);
+	//四个平面的法线
+	const GLVector3   n_1 = (v_3 - v_1).cross(v_2 - v_1).normalize();
+	const GLVector3   n_2 = (v_2 - v_1).cross(v_4 - v_1).normalize();
+	const GLVector3   n_3 = (v_3-v_2).cross(v_4 -v_2).normalize();
+	const GLVector3   n_4 = (v_1 - v_3).cross(v_4 - v_3).normalize();
+	//12个顶点/法线/纹理坐标
+	float    vertex_data[] = {
+		v_2.x,v_2.y,v_2.z,n_1.x,n_1.y,n_1.z,0,1,//1
+		v_1.x,v_1.y,v_1.z,n_1.x,n_1.y,n_1.z,0,0,//2
+		v_3.x,v_3.y,v_3.z,n_1.x,n_1.y,n_1.z,1,1,//3
+
+		v_4.x,v_4.y,v_4.z,n_3.x,n_3.y,n_3.z,0,1,//4
+		v_2.x,v_2.y,v_2.z,n_3.x,n_3.y,n_3.z,0,0,//5
+		v_3.x,v_3.y,v_3.z,n_3.x,n_3.y,n_3.z,1,0,//6
+
+		v_4.x,v_4.y,v_4.z,n_4.x,n_4.y,n_4.z,0,1,//7
+		v_3.x,v_3.y,v_3.z,n_4.x,n_4.y,n_4.z,1,0,//8
+		v_1.x,v_1.y,v_1.z,n_4.x,n_4.y,n_4.z,1,1,//9
+
+		v_4.x,v_4.y,v_4.z,n_2.x,n_2.y,n_2.z,1,1,//10
+		v_1.x,v_1.y,v_1.z,n_2.x,n_2.y,n_2.z,0,0,//11
+		v_2.x,v_2.y,v_2.z,n_2.x,n_2.y,n_2.z,1,0,//12
+	};
+
+	_numberOfVertex = 12;
+	glGenBuffers(1, &_vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER,_vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, _numberOfVertex * sizeof(float) * 8, vertex_data,GL_STATIC_DRAW);
+}
+
+void Pyramid::bindVertexObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,_vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc,3,GL_FLOAT,GL_FALSE,sizeof(float)*8,nullptr);
+}
+
+void  Pyramid::bindNormalObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc,3,GL_FLOAT,GL_FALSE,sizeof(float)*8,(void*)(sizeof(float)*3));
+}
+
+void Pyramid::bindTexCoordObject(int loc)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexVBO);
+	glEnableVertexAttribArray(loc);
+	glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8,(void*)(sizeof(float)*6));
+}
+
+void Pyramid::bindTangentObject(int loc)
+{
+	glDisableVertexAttribArray(loc);
+	glVertexAttrib3f(loc,1.0f, 0,0);
+}
+
+void Pyramid::drawShape()
+{
+	glDrawArrays(GL_TRIANGLES, 0, _numberOfVertex);
 }
 __NS_GLK_END

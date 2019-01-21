@@ -26,7 +26,7 @@ Quaternion::Quaternion(const float w,const float x, const float y, const float z
 Quaternion::Quaternion(const float angle, const GLVector3 &vec)
 {
 //半角
-	float        _halfAngle = angle*__MATH_PI__/360.0f;
+	float        _halfAngle = angle*MATH_PI /360.0f;
 	float        _sinVector = sinf(_halfAngle);
 //单位化旋转向量
 	float        _vector_length = sqrtf(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);

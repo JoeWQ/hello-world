@@ -29,5 +29,5 @@ void   main()
 		             mix(refractColor,reflectColor,freshnel),
 		             0.775
 		           );
-	outColor.a =0.7 + 0.3*freshnel;
+	outColor.a *=0.7 + 0.3*freshnel;
 }

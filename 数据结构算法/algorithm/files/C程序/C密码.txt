@@ -1,0 +1,37 @@
+#include <stdio.h>
+#include <conio.h>
+#include <stdlib.h>
+void main()
+{
+        char password[20]="\0";  //存放密码的字符数组
+        char c;                             //临时存放一个字符
+        int i=0;                             //记数  
+   
+
+/**当输入的字符不是回车时，就存放进password
+*  当输入回车时，结束循环
+*/
+       while ((c=getch()) != '\r')
+       {
+               password = c;
+               i++;
+               if(c!='\b')    //输入内容不是退格时就显示 “*”号
+               {
+                       printf("*");
+               }
+              else     //输入内容是退格时 删除前一个 “*”号
+              {
+                       printf("\b \b");
+              }
+       }
+
+
+
+//显示输入的密码
+       printf("\n");
+       for(i=0;i<20;i++)
+       {
+              printf("%c",password);
+        }
+        system("pause");           //需要头文件stdlib.h支持
+ 

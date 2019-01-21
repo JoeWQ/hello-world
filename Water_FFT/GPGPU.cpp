@@ -81,7 +81,7 @@ void KFourierTransform::Release()
 
 
 
-HRESULT KFourierTransform::GetResultData(LPDIRECT3DTEXTURE9 pDestTexture, BOOL bMulFourierCoef)
+HRESULT KFourierTransform::GetResultData(IDirect3DTexture9* pDestTexture, BOOL bMulFourierCoef)
 {
 	if(m_iCreateAttrib != 2 || !m_pTexResult)
 		return D3DERR_NOTAVAILABLE;
@@ -158,7 +158,7 @@ HRESULT KFourierTransform::GetResultData(LPDIRECT3DTEXTURE9 pDestTexture, BOOL b
 
 
 
-HRESULT KFourierTransform::CoreProcess(BOOL bIFFT, LPDIRECT3DTEXTURE9 pTexFFTSource)
+HRESULT KFourierTransform::CoreProcess(BOOL bIFFT, IDirect3DTexture9* pTexFFTSource)
 {
 	if(!m_iCreateAttrib || !m_pTexTempUse || !m_pTexResult)
 		return D3DERR_NOTAVAILABLE;
@@ -258,7 +258,7 @@ HRESULT KFourierTransform::CoreProcess(BOOL bIFFT, LPDIRECT3DTEXTURE9 pTexFFTSou
 
 
 
-HRESULT KFourierTransform::ScrambleX(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT)
+HRESULT KFourierTransform::ScrambleX(IDirect3DTexture9* pSource, IDirect3DTexture9* pRT)
 {
 	if(!m_iCreateAttrib || !m_pTexScrambleX)
 		return D3DERR_NOTAVAILABLE;
@@ -312,7 +312,7 @@ HRESULT KFourierTransform::ScrambleX(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTU
 
 
 
-HRESULT KFourierTransform::ScrambleY(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT)
+HRESULT KFourierTransform::ScrambleY(IDirect3DTexture9* pSource, IDirect3DTexture9* pRT)
 {
 	if(!m_iCreateAttrib || !m_pTexScrambleY)
 		return D3DERR_NOTAVAILABLE;
@@ -368,7 +368,7 @@ HRESULT KFourierTransform::ScrambleY(LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTU
 
 
 
-HRESULT KFourierTransform::ButterflyX(UINT iLitNo, BOOL bIFFT, LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT)
+HRESULT KFourierTransform::ButterflyX(UINT iLitNo, BOOL bIFFT, IDirect3DTexture9* pSource, IDirect3DTexture9* pRT)
 {
 	if(!m_iCreateAttrib || !m_ppTexButterflyX || !m_ppTexButterflyX_Sign)
 		return D3DERR_NOTAVAILABLE;
@@ -433,7 +433,7 @@ HRESULT KFourierTransform::ButterflyX(UINT iLitNo, BOOL bIFFT, LPDIRECT3DTEXTURE
 
 
 
-HRESULT KFourierTransform::ButterflyY(UINT iLitNo, BOOL bIFFT, LPDIRECT3DTEXTURE9 pSource, LPDIRECT3DTEXTURE9 pRT)
+HRESULT KFourierTransform::ButterflyY(UINT iLitNo, BOOL bIFFT, IDirect3DTexture9* pSource, IDirect3DTexture9* pRT)
 {
 	if(!m_iCreateAttrib || !m_ppTexButterflyY || !m_ppTexButterflyY_Sign)
 		return D3DERR_NOTAVAILABLE;
@@ -687,10 +687,10 @@ HRESULT KFourierTransform::Init(UINT iWidth, UINT iHeight)
 	// 初始化Butterfly贴图
 	if(m_iButterflyNumX)
 	{
-		m_ppTexButterflyX = new LPDIRECT3DTEXTURE9[m_iButterflyNumX];
-		m_ppTexButterflyX_Sign = new LPDIRECT3DTEXTURE9[m_iButterflyNumX];
-		ZeroMemory(m_ppTexButterflyX, sizeof(LPDIRECT3DTEXTURE9) * m_iButterflyNumX);
-		ZeroMemory(m_ppTexButterflyX_Sign, sizeof(LPDIRECT3DTEXTURE9) * m_iButterflyNumX);
+		m_ppTexButterflyX = new IDirect3DTexture9*[m_iButterflyNumX];
+		m_ppTexButterflyX_Sign = new IDirect3DTexture9*[m_iButterflyNumX];
+		ZeroMemory(m_ppTexButterflyX, sizeof(IDirect3DTexture9*) * m_iButterflyNumX);
+		ZeroMemory(m_ppTexButterflyX_Sign, sizeof(IDirect3DTexture9*) * m_iButterflyNumX);
 
 		for(i = 0; i < m_iButterflyNumX; i++)
 		{
@@ -703,10 +703,10 @@ HRESULT KFourierTransform::Init(UINT iWidth, UINT iHeight)
 
 	if(m_iButterflyNumY)
 	{
-		m_ppTexButterflyY = new LPDIRECT3DTEXTURE9[m_iButterflyNumY];
-		m_ppTexButterflyY_Sign = new LPDIRECT3DTEXTURE9[m_iButterflyNumY];
-		ZeroMemory(m_ppTexButterflyY, sizeof(LPDIRECT3DTEXTURE9) * m_iButterflyNumY);
-		ZeroMemory(m_ppTexButterflyY_Sign, sizeof(LPDIRECT3DTEXTURE9) * m_iButterflyNumY);
+		m_ppTexButterflyY = new IDirect3DTexture9*[m_iButterflyNumY];
+		m_ppTexButterflyY_Sign = new IDirect3DTexture9*[m_iButterflyNumY];
+		ZeroMemory(m_ppTexButterflyY, sizeof(IDirect3DTexture9*) * m_iButterflyNumY);
+		ZeroMemory(m_ppTexButterflyY_Sign, sizeof(IDirect3DTexture9*) * m_iButterflyNumY);
 
 		for(i = 0; i < m_iButterflyNumY; i++)
 		{
@@ -998,7 +998,7 @@ HRESULT KFourierTransform::InitButterflyY(UINT iLitNo)
 /*********************************以下是用CPU做傅里叶变换************************/
 
 // 做IDFT并log
-HRESULT KFourierTransform::DFTCPU(LPDIRECT3DTEXTURE9 pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef)
+HRESULT KFourierTransform::DFTCPU(IDirect3DTexture9* pTexFFTSource, BOOL bIDFT, BOOL bMulFourierCoef)
 {
 	// 必须先初始化
 	if(!m_iCreateAttrib || !m_pTexResult)
@@ -1016,7 +1016,7 @@ HRESULT KFourierTransform::DFTCPU(LPDIRECT3DTEXTURE9 pTexFFTSource, BOOL bIDFT, 
 		return D3DERR_WRONGTEXTUREFORMAT;
 
 	// 来源贴图和目的贴图，用于中转Pool_Default的贴图
-	LPDIRECT3DTEXTURE9 pTexSrc = NULL, pTexDst = NULL;
+	IDirect3DTexture9* pTexSrc = NULL, *pTexDst = NULL;
 	LPDIRECT3DSURFACE9 pSurfSrc = NULL, pSurfDst = NULL, pSurfUser = NULL, pSurfResult = NULL;
 
 	V_RETURN(d3ddevice->CreateTexture(Desc.Width, Desc.Height, 1, 0, Desc.Format, D3DPOOL_SYSTEMMEM, &pTexDst, NULL));
@@ -1263,7 +1263,7 @@ void KFourierTransform::IFFTCPUCore(complex<double> * TD, complex<double> * FD, 
 
 /*
 // FFT--CPU
-HRESULT KFourierTransform::FFTCPU(BOOL bIDFT, LPDIRECT3DTEXTURE9 pTexFFTSource)
+HRESULT KFourierTransform::FFTCPU(BOOL bIDFT, IDirect3DTexture9* pTexFFTSource)
 {
 FILE *fp = fopen("c:\\fftcpulog.txt", "w");
 
@@ -1605,13 +1605,13 @@ HRESULT KFluidSimulation2D::ResetFluid()
 
 
 
-HRESULT KFluidSimulation2D::SetObstacleTexture(LPDIRECT3DTEXTURE9 pTexObstacle, LPDIRECT3DTEXTURE9 pTexOffset /* = NULL */)
+HRESULT KFluidSimulation2D::SetObstacleTexture(IDirect3DTexture9* pTexObstacle, IDirect3DTexture9* pTexOffset /* = NULL */)
 {
 	if(!m_iCreateAttrib)
 		return D3DERR_NOTAVAILABLE;
 
 	// 防止每帧连续设置相同的Obstacle图，导致的性能下降
-	static LPDIRECT3DTEXTURE9 s_pTexture = NULL;
+	static IDirect3DTexture9* s_pTexture = NULL;
 
 	if(!pTexObstacle)
 	{
@@ -2031,7 +2031,7 @@ HRESULT KFluidSimulation2D::ApplyForce()
 
 
 	// 如果是纹理注入器，就要设置相应的纹理
-	LPDIRECT3DTEXTURE9 pTexInject = NULL;
+	IDirect3DTexture9* pTexInject = NULL;
 	if(m_pInjectForce[i].Type == Inject_Texture)
 		pTexInject = m_pInjectForce[i].pTexInjectForce;
 
@@ -2112,7 +2112,7 @@ HRESULT KFluidSimulation2D::ApplySource()
 	UINT i = 0;
 
 	// 如果是纹理注入器，就要设置相应的纹理
-	LPDIRECT3DTEXTURE9 pTexInject = NULL;
+	IDirect3DTexture9* pTexInject = NULL;
 	if(m_pInjectSource[i].Type == Inject_Texture)
 		pTexInject = m_pInjectSource[i].pTexInjectSource;
 
@@ -2239,7 +2239,7 @@ HRESULT KFluidSimulation2D::RefineVorticity()
 
 
 
-HRESULT KFluidSimulation2D::ApplyBoundaryCondition(enuFluid_VectorField Type, LPDIRECT3DTEXTURE9 pTexture)
+HRESULT KFluidSimulation2D::ApplyBoundaryCondition(enuFluid_VectorField Type, IDirect3DTexture9* pTexture)
 {
 	if(!m_iCreateAttrib)
 		return D3DERR_NOTAVAILABLE;
@@ -2366,7 +2366,7 @@ HRESULT KFluidSimulation2D::GenerateNormal()
 
 
 /****************************内部接口--公用**********************************/
-HRESULT KFluidSimulation2D::CommonComputeQuad(LPDIRECT3DTEXTURE9 pSrcTex1, LPDIRECT3DTEXTURE9 pSrcTex2, LPDIRECT3DTEXTURE9 pSrcTex3, LPDIRECT3DTEXTURE9 pRT, PIXELSHADER *pPS)
+HRESULT KFluidSimulation2D::CommonComputeQuad(IDirect3DTexture9* pSrcTex1, IDirect3DTexture9* pSrcTex2, IDirect3DTexture9* pSrcTex3, IDirect3DTexture9* pRT, PIXELSHADER *pPS)
 {
 	if(!m_pVBQuad || !m_pVBQuadExceptBoundary)
 		return D3DERR_NOTAVAILABLE;
@@ -2441,7 +2441,7 @@ HRESULT KFluidSimulation2D::CommonComputeQuad(LPDIRECT3DTEXTURE9 pSrcTex1, LPDIR
 	return S_OK;
 }
 
-HRESULT KFluidSimulation2D::CommonComputeLine(LPDIRECT3DTEXTURE9 pSrcTex1, LPDIRECT3DTEXTURE9 pSrcTex2, LPDIRECT3DTEXTURE9 pSrcTex3, LPDIRECT3DTEXTURE9 pRT, PIXELSHADER *pPS, UINT iLineNo)
+HRESULT KFluidSimulation2D::CommonComputeLine(IDirect3DTexture9* pSrcTex1, IDirect3DTexture9* pSrcTex2, IDirect3DTexture9* pSrcTex3, IDirect3DTexture9* pRT, PIXELSHADER *pPS, UINT iLineNo)
 {
 	if(iLineNo > 3)
 		return D3DERR_INVALIDCALL;

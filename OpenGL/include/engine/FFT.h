@@ -9,8 +9,11 @@ struct Complex
 {
 	float real;
 	float imag;
+	Complex() {};
+	Complex(float real, float imag) { this->real = real; this->imag = imag; };
 };
-#define NY 64
+
+#define NY 128
 int	FFT(int, int, double *, double *);
 int	FFT2D(Complex[][NY], int, int, int);
 int	DFT(int, int, double *, double *);

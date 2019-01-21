@@ -36,7 +36,7 @@ vec2     __gradient_wave(float x,float y)
          _param/=2.0;
          ++_now_times;
     }while(_now_times<_iterator_times);
-    return  VAVE_ATITUDE*dxdy;
+    return  VAVE_ATITUDE*dxdy*0.787;
 }
 
 vec2   __refract_light( )

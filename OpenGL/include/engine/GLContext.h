@@ -23,16 +23,15 @@ struct   GLContext
 	void      *userObject;
 public:
 	//定时回调函数
-	void(*update)(GLContext *, float  deltaTime);//
+	void(*update)(GLContext *, float  deltaTime,float delay_time);//
 	void(*draw)(GLContext *);
 
 	void(*init)(GLContext *);//    初始化函数
 	void(*finalize)(GLContext *);//程序关闭时回调
 
-	int          lastTickCount;//上次获取的开机毫秒数
-	//非windows系统使用
-#ifndef  _WIN32
-	int          baseTickCount;
+	int          _lastTickCount;//上次获取的开机毫秒数
+#ifndef _WIN32
+	int          _baseTickCount;
 #endif
 	//屏幕尺寸,单位像素
 	Size                winSize;
@@ -40,8 +39,6 @@ public:
 	GLVector2     winPosition;
 	//窗口缓冲区的类型
 	int         displayMode;
-	//窗口的名字
-	char      *winTitle;
 	//全局标志,具体含义请参见GLState.h中tDrawFlagType
 	unsigned          _globleFlag;
 	//一下是关于全局着色的数据
@@ -54,7 +51,7 @@ private:
 public:
 	static     GLContext         *getInstance();
 	//注册接口
-	void      registerUpdateFunc(void(*update)(GLContext*, float));
+	void      registerUpdateFunc(void(*update)(GLContext*, float,float));
 	void      registerDrawFunc(void(*draw)(GLContext *));
 	void      registerInitFunc(void(*init)(GLContext *));
 	void      registerShutDownFunc(void(*finalize)(GLContext *));
